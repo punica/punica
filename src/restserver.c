@@ -28,7 +28,6 @@
 
 #include "connection.h"
 #include "restserver.h"
-#include "rest-ssdp.h"
 #include "logging.h"
 #include "settings.h"
 #include "version.h"
@@ -258,8 +257,6 @@ int main(int argc, char *argv[])
     int res;
     rest_context_t rest;
     char coap_port[6];
-    ssdp_t *ssdp;
-    ssdp_param_t ssdp_params;
 
     static settings_t settings =
     {
@@ -425,25 +422,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    /* SSDP service section */
-    log_message(LOG_LEVEL_INFO, "Starting SSDP service...\n");
-
-    memset(&ssdp_params, 0, sizeof(ssdp_params));
-    ssdp_params.coap_port = coap_port;
-
-    ssdp = ssdp_init(&ssdp_params);
-    if (ssdp == NULL)
-    {
-        log_message(LOG_LEVEL_FATAL, "Failed to allocate SSDP service\n");
-        return -1;
-    }
-
-    if (ssdp_start(ssdp) != SSDP_OK)
-    {
-        log_message(LOG_LEVEL_FATAL, "Failed to start SSDP service!\n");
-        return -1;
-    }
-
     /* Main section */
     while (!restserver_quit)
     {
@@ -486,9 +464,6 @@ int main(int argc, char *argv[])
         }
 
     }
-
-    ssdp_stop(ssdp);
-    ssdp_free(ssdp);
 
     ulfius_stop_framework(&instance);
     ulfius_clean_instance(&instance);

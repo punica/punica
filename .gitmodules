@@ -1,0 +1,3 @@
+[submodule "third_party/wakaama"]
+	path = third_party/wakaama
+	url = git@github.com:punica/wakaama.git
