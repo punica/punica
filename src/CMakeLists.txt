@@ -8,24 +8,20 @@ if(DTLS)
     message(FATAL_ERROR "DTLS option is not supported." )
 endif()
 
-#include wakaama cmake? or build in shell script?
-
 add_definitions(-DLWM2M_SERVER_MODE)
 add_definitions(${SHARED_DEFINITIONS} ${WAKAAMA_DEFINITIONS})
 add_definitions(-D_GNU_SOURCE)
 
-#temporary
 SET(WAKAAMA_SOURCES_DIR "../third_party/wakaama/core")
 SET(SHARED_INCLUDE_DIRS "../third_party/wakaama/examples/shared")
 include_directories (${WAKAAMA_SOURCES_DIR} ${SHARED_INCLUDE_DIRS})
 
-#no tags yet
-#execute_process(COMMAND git describe --abbrev=0 --tags OUTPUT_VARIABLE RESTSERVER_VERSION)
+execute_process(COMMAND git describe --abbrev=0 --tags OUTPUT_VARIABLE RESTSERVER_VERSION)
 
-#string(REPLACE "\n" "" RESTSERVER_VERSION ${RESTSERVER_VERSION})
-#string(REPLACE "v" "" RESTSERVER_VERSION ${RESTSERVER_VERSION})
+string(REPLACE "\n" "" RESTSERVER_VERSION ${RESTSERVER_VERSION})
+string(REPLACE "v" "" RESTSERVER_VERSION ${RESTSERVER_VERSION})
 
-#set(RESTSERVER_FULL_VERSION "restserver ${RESTSERVER_VERSION}")
+set(RESTSERVER_FULL_VERSION "restserver ${RESTSERVER_VERSION}")
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_SOURCE_DIR}/version.h)
 
@@ -49,8 +45,9 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${WAKAAMA_SOURCES} ${SHARED_SOURCES})
 find_library(ULFIUS_LIB ulfius)
 find_library(JANSSON_LIB jansson)
 find_library(JWT_LIB jwt)
+find_library(WAKAAMA_LIB wakaama)
 target_compile_options(restserver PRIVATE "-Wall" "-pthread")
-target_link_libraries(restserver pthread "${ULFIUS_LIB}" "${JANSSON_LIB}" "${JWT_LIB}")
+target_link_libraries(restserver pthread "${ULFIUS_LIB}" "${JANSSON_LIB}" "${JWT_LIB}" "${WAKAAMA_LIB}")
 
 
 if(CODE_COVERAGE)
