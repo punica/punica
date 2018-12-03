@@ -1,4 +1,4 @@
-#Punica
+# Punica
 
 **Introduction**
 ----
@@ -14,7 +14,10 @@ you can read [manual project build instructions](./doc/MANUAL_BUILD.md).
 
 1. Build Punica by executing ```script/setup``` script, it will automatically
 acquire and build required dependencies, after that script will build Punica:
-```# script/setup```
+
+```
+punica # script/setup
+```
 
 If script succeeds, you should have binary file called `punica` in your `punica/build/` directory.
 
