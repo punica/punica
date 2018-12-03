@@ -20,7 +20,7 @@
 #ifndef VERSION_H
 #define VERSION_H
 
-#define RESTSERVER_VERSION "1.1.1"
-#define RESTSERVER_FULL_VERSION "restserver 1.1.1"
+#define PUNICA_VERSION "1.1.1"
+#define PUNICA_FULL_VERSION "punica 1.1.1"
 
 #endif // VERSION_H

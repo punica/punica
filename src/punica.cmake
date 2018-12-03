@@ -1,5 +1,7 @@
 # Provides PUNICA_SOURCES variable and defines 'LWM2M_SERVER_MODE'
 
+set(PUNICA_SOURCES_DIR ${CMAKE_CURRENT_LIST_DIR})
+
 set(PUNICA_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/restserver.c
     ${CMAKE_CURRENT_LIST_DIR}/rest-core.c
