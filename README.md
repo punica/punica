@@ -16,7 +16,7 @@ you can read [manual project build instructions](./doc/MANUAL_BUILD.md).
 acquire and build required dependencies, after that script will build Punica:
 
 ```
-punica # script/setup
+# script/setup
 ```
 
 If script succeeds, you should have binary file called `punica` in your `punica/build/` directory.
@@ -25,7 +25,7 @@ If script succeeds, you should have binary file called `punica` in your `punica/
 ----
 You can get some details about `punica` by using `--help` or `-?` argument:
 ```
-punica/build $ ./punica --usage
+$ ./build/punica --help
 Usage: punica [OPTION...]
 Punica - interface to LwM2M server and all clients connected to it
 
@@ -41,7 +41,7 @@ for any corresponding short options.
 
 You can get some details about `punica` usage by using `--usage` argument:
 ```
-punica/build $ ./punica --usage
+$ ./build/punica --usage
 Usage: punica [-?V] [-c FILE] [-C CERTIFICATE] [-k PRIVATE_KEY]
             [-l LOGGING_LEVEL] [--config=FILE] [--certificate=CERTIFICATE]
             [--private_key=PRIVATE_KEY] [--log=LOGGING_LEVEL] [--help]
