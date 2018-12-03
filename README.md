@@ -4,7 +4,7 @@
 ----
 Punica contains easy to use interface to the LwM2M server and client communication.
 
-Detailed [Punica documentation](./doc/PUNICA_API.md).
+Detailed [Punica API documentation](./doc/PUNICA_API.md).
 
 **Building**
 ----
@@ -137,7 +137,7 @@ Example of configuration file:
       -  ``expiration_time`` _(integer)_ - Seconds after which token is expired and wont be accepted anymore, default is `3600`. _**Optional**, default value is 3600._
       -  ``users``  _(list of objects)_ - List, which contains JWT authentication users. If no Users are specified, authentication wont work properly . _If you want to configure authentication, this option is **mandatory**._
 
-         User object structure (more in [Punica documentation](./doc/PUNICA_API.md)):
+         User object structure (more in [Punica API documentation](./doc/PUNICA_API.md)):
          - ``name`` _(string)_ - User name, which will be used on authentication process. _If you want to configure user authentication, this option is **mandatory**._
          - ``secret`` _(string)_ - User secret, which will be used on authentication process.  _If you want to configure user authentication, this option is **mandatory**._
          - ``scope`` _(list of strings)_ - User scope, which will be used on validating user request access, if user wont have required scope, it will get _Access Denied_.  _If you want to configure user authentication, this option is **optional**, however if scope is not specified, user will have access only to ``GET /version`` request._
