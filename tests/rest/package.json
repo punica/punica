@@ -1,13 +1,13 @@
 {
-  "name": "lwm2m-rest-tests",
+  "name": "punica-rest-tests",
   "version": "1.0.0",
-  "description": "NodeJS test suite for wakaama's LwM2M server with REST API",
+  "description": "NodeJS test suite for Punica REST API",
   "main": "index.js",
   "scripts": {
     "test": "mocha *.spec.js"
   },
   "author": "Giedrius Medzevičius <giedrius@8devices.com>",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "devDependencies": {
     "chai": "^4.1.1",
     "chai-http": "^3.0.0",
