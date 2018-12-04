@@ -114,7 +114,7 @@ const char *binding_to_string(lwm2m_binding_t bind)
 
 int rest_version_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
-    ulfius_set_string_body_response(resp, 200, RESTSERVER_VERSION);
+    ulfius_set_string_body_response(resp, 200, PUNICA_VERSION);
 
     return U_CALLBACK_COMPLETE;
 }
