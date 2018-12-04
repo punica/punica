@@ -18,7 +18,7 @@ The code in this directory is licensed under the MIT license, however please not
 
 * **URL**
 
-  /endpoints
+ `/endpoints`
 
 * **Method:**
   
@@ -43,7 +43,7 @@ The code in this directory is licensed under the MIT license, however please not
 
 * **URL**
 
-  /endpoints/:name
+  `/endpoints/:name`
 
 * **Method:**
 
@@ -74,7 +74,7 @@ The code in this directory is licensed under the MIT license, however please not
 
 * **URL**
 
-  /endpoints/:name/:path
+  `/endpoints/:name/:path`
 
 * **Method:**
 
@@ -113,7 +113,7 @@ The code in this directory is licensed under the MIT license, however please not
 
 * **URL**
 
-  /endpoints/:name/:path
+  `/endpoints/:name/:path`
 
 * **Method:**
 
@@ -155,7 +155,7 @@ The code in this directory is licensed under the MIT license, however please not
 
 * **URL**
 
-  /endpoints/:name/:path
+  `/endpoints/:name/:path`
 
 * **Method:**
 
@@ -199,7 +199,7 @@ The code in this directory is licensed under the MIT license, however please not
 
 * **URL**
 
-  /subscriptions/:name/:path
+  `/subscriptions/:name/:path`
 
 * **Method:**
 
@@ -233,7 +233,7 @@ The code in this directory is licensed under the MIT license, however please not
 
 * **URL**
 
-  /notification/pull
+  `/notification/pull`
 
 * **Method:**
 
@@ -273,7 +273,7 @@ The code in this directory is licensed under the MIT license, however please not
 
 * **URL**
 
-  /notification/callback
+  `/notification/callback`
 
 * **Method:**
   
@@ -312,7 +312,7 @@ The code in this directory is licensed under the MIT license, however please not
 
 * **URL**
 
-  /notification/callback
+  `/notification/callback`
 
 * **Method:**
   
@@ -338,7 +338,7 @@ The code in this directory is licensed under the MIT license, however please not
 
 * **URL**
 
-  /notification/callback
+  `/notification/callback`
 
 * **Method:**
   
@@ -365,7 +365,7 @@ The code in this directory is licensed under the MIT license, however please not
 
 * **URL**
 
-  /version
+  `/version`
 
 * **Method:**
   
@@ -394,7 +394,7 @@ The code in this directory is licensed under the MIT license, however please not
 
 * **URL**
 
-  /authenticate
+  `/authenticate`
 
 * **Method:**
   

@@ -6,9 +6,10 @@ $ git clone --recursive git@github.com:punica/punica.git
 $ cd punica
 ```
 _Note: If you already cloned Punica without initializing submodules, you can do so by executing:_
-    ```
-    $ git submodule update --init --recursive
-    ```
+    
+```
+$ git submodule update --init --recursive
+```
 
 2. Build libwakaama by following [punica/wakaama](https://github.com/punica/wakaama) instructions.
 
@@ -24,6 +25,7 @@ $ make
 $ sudo make install
 $ cd ..
 $ git clone https://github.com/benmcollins/libjwt
+$ cd libjwt
 $ autoreconf -i
 $ ./configure
 $ make

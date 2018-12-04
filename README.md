@@ -1,10 +1,10 @@
-#Punica
+# Punica
 
 **Introduction**
 ----
 Punica contains easy to use interface to the LwM2M server and client communication.
 
-Detailed [Punica documentation](./doc/PUNICA_API.md).
+Detailed [Punica API documentation](./doc/PUNICA_API.md).
 
 **Building**
 ----
@@ -14,7 +14,10 @@ you can read [manual project build instructions](./doc/MANUAL_BUILD.md).
 
 1. Build Punica by executing ```script/setup``` script, it will automatically
 acquire and build required dependencies, after that script will build Punica:
-```# script/setup```
+
+```
+# script/setup
+```
 
 If script succeeds, you should have binary file called `punica` in your `punica/build/` directory.
 
@@ -22,7 +25,7 @@ If script succeeds, you should have binary file called `punica` in your `punica/
 ----
 You can get some details about `punica` by using `--help` or `-?` argument:
 ```
-punica/build $ ./punica --usage
+$ ./build/punica --help
 Usage: punica [OPTION...]
 Punica - interface to LwM2M server and all clients connected to it
 
@@ -38,7 +41,7 @@ for any corresponding short options.
 
 You can get some details about `punica` usage by using `--usage` argument:
 ```
-punica/build $ ./punica --usage
+$ ./build/punica --usage
 Usage: punica [-?V] [-c FILE] [-C CERTIFICATE] [-k PRIVATE_KEY]
             [-l LOGGING_LEVEL] [--config=FILE] [--certificate=CERTIFICATE]
             [--private_key=PRIVATE_KEY] [--log=LOGGING_LEVEL] [--help]
@@ -134,7 +137,7 @@ Example of configuration file:
       -  ``expiration_time`` _(integer)_ - Seconds after which token is expired and wont be accepted anymore, default is `3600`. _**Optional**, default value is 3600._
       -  ``users``  _(list of objects)_ - List, which contains JWT authentication users. If no Users are specified, authentication wont work properly . _If you want to configure authentication, this option is **mandatory**._
 
-         User object structure (more in [Punica documentation](./doc/PUNICA_API.md)):
+         User object structure (more in [Punica API documentation](./doc/PUNICA_API.md)):
          - ``name`` _(string)_ - User name, which will be used on authentication process. _If you want to configure user authentication, this option is **mandatory**._
          - ``secret`` _(string)_ - User secret, which will be used on authentication process.  _If you want to configure user authentication, this option is **mandatory**._
          - ``scope`` _(list of strings)_ - User scope, which will be used on validating user request access, if user wont have required scope, it will get _Access Denied_.  _If you want to configure user authentication, this option is **optional**, however if scope is not specified, user will have access only to ``GET /version`` request._
