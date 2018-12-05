@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 const should = chai.should();
 chai.use(chai_http);
 
-const version_regex = /^1\.\d+\.\d+$/
+const version_regex = /^0\.\d+\.\d+$/
 
 describe('Secure connection', function () {
   before(function (done) {
