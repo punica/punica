@@ -1,0 +1,112 @@
+#!/bin/sh
+#
+# MIT License
+#
+# Copyright (c) 2018 8devices
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+
+set -e
+
+PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
+SCRIPTS_DIR="${PROJECT_ROOT_DIR}/script"
+
+TEST_PRIVATE_KEY="${PROJECT_ROOT_DIR}/private.key"
+TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/certificate.pem"
+OTHER_TEST_PRIVATE_KEY="${PROJECT_ROOT_DIR}/other_private.key"
+OTHER_TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/other_certificate.pem"
+
+generate_key_and_certificate () {
+    if [ "$#" -ne 2 ]; then
+        echo "Illegal number of parameters"
+        return 1
+    fi
+
+    if [ -z "$1" ]; then
+        echo "Private key file name argument is missing or is invalid"
+        return 1
+    fi
+    
+    if [ -z "$2" ]; then
+        echo "Certificate file name argument is missing or is invalid"
+        return 1
+    fi
+
+    openssl genrsa -out $1 2048
+
+    openssl req -days 365 -out $2 -new -x509 -key $1 -subj '/CN=localhost'
+
+    return 0
+}
+
+run_punica () {
+    initial_punica_arguments=""
+    punica_command="build/punica ${initial_punica_arguments}"
+
+    if ! [ -z "$1" ]; then
+        coverage_prefix="GCOV_PREFIX_STRIP=5 GCOV_PREFIX=$1"
+        punica_command="${coverage_prefix} ${punica_command}"
+    fi
+
+    if ! [ -z "$2" ]; then
+        punica_arguments="$2"
+        punica_command="${punica_command} ${punica_arguments}"
+    fi
+
+    eval "${punica_command} > /dev/null &"
+
+    echo $!
+}
+
+stop_punica () {
+    eval "kill -2 $1"
+    wait $1 || true
+}
+
+eval "${SCRIPTS_DIR}/format_style.sh --dry-run"
+
+if [ ! -x "${PROJECT_ROOT_DIR}/build/punica" ]
+then
+    echo "Punica binary not found! Exiting..."
+    exit 1
+fi
+
+echo "==> Generating security files..."
+generate_key_and_certificate ${TEST_PRIVATE_KEY} ${TEST_CERTIFICATE}
+generate_key_and_certificate ${OTHER_TEST_PRIVATE_KEY} ${OTHER_TEST_CERTIFICATE}
+
+echo "==> Starting punica(-s)..."
+REGULAR_PUNICA_PID=$(run_punica "regular")
+SECURE_PUNICA_PID=$(run_punica "secure" "-c ${PROJECT_ROOT_DIR}/tests/rest/secure.cfg")
+
+echo "==> Running coverage tests..."
+if eval "cd ${PROJECT_ROOT_DIR}/tests/rest" && npm install && npm test
+then
+    coverage_tests_status=0
+else
+    coverage_tests_status=1
+fi
+cd -
+
+echo "==> Stopping punica(-s)..."
+stop_punica $REGULAR_PUNICA_PID
+stop_punica $SECURE_PUNICA_PID
+
+exit $coverage_tests_status
