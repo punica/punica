@@ -26,7 +26,7 @@
 #include <liblwm2m.h>
 #include <ulfius.h>
 
-#include "connection.h"
+#include "mbedtlsconnection.h"
 #include "restserver.h"
 #include "logging.h"
 #include "settings.h"
@@ -212,47 +212,8 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
     }
 }
 
-int socket_receive(lwm2m_context_t *lwm2m, int sock)
-{
-    int nbytes;
-    uint8_t buf[1500];
-    struct sockaddr_storage addr;
-    socklen_t addrLen = sizeof(addr);
-    connection_t *con;
-    static connection_t *connectionList = NULL;
-
-    memset(buf, 0, sizeof(buf));
-
-    nbytes = recvfrom(sock, buf, sizeof(buf), 0, (struct sockaddr *)&addr, &addrLen);
-
-    if (nbytes < 0)
-    {
-        log_message(LOG_LEVEL_FATAL, "recvfrom() error: %d\n", nbytes);
-        return -1;
-    }
-
-    con = connection_find(connectionList, &addr, addrLen);
-    if (con == NULL)
-    {
-        con = connection_new_incoming(connectionList, sock, (struct sockaddr *)&addr, addrLen);
-        if (con)
-        {
-            connectionList = con;
-        }
-    }
-
-    if (con)
-    {
-        lwm2m_handle_packet(lwm2m, buf, nbytes, con);
-    }
-
-    return 0;
-}
-
 int main(int argc, char *argv[])
 {
-    int sock;
-    fd_set readfds;
     struct timeval tv;
     int res;
     rest_context_t rest;
@@ -307,8 +268,8 @@ int main(int argc, char *argv[])
     /* Socket section */
     snprintf(coap_port, sizeof(coap_port), "%d", settings.coap.port);
     log_message(LOG_LEVEL_INFO, "Creating coap socket on port %s\n", coap_port);
-    sock = create_socket(coap_port, AF_INET6);
-    if (sock < 0)
+    res = create_socket(coap_port, AF_INET6);
+    if (res < 0)
     {
         log_message(LOG_LEVEL_FATAL, "Failed to create socket!\n");
         return -1;
@@ -425,9 +386,6 @@ int main(int argc, char *argv[])
     /* Main section */
     while (!restserver_quit)
     {
-        FD_ZERO(&readfds);
-        FD_SET(sock, &readfds);
-
         tv.tv_sec = 5;
         tv.tv_usec = 0;
 
@@ -445,24 +403,8 @@ int main(int argc, char *argv[])
         }
         rest_unlock(&rest);
 
-        res = select(FD_SETSIZE, &readfds, NULL, NULL, &tv);
-        if (res < 0)
-        {
-            if (errno == EINTR)
-            {
-                continue;
-            }
-
-            log_message(LOG_LEVEL_ERROR, "select() error: %d\n", res);
-        }
-
-        if (FD_ISSET(sock, &readfds))
-        {
-            rest_lock(&rest);
-            socket_receive(rest.lwm2m, sock);
-            rest_unlock(&rest);
-        }
-
+//      should rest_lock be called?
+        mbedtls_step(rest.lwm2m, tv.tv_sec);
     }
 
     ulfius_stop_framework(&instance);
