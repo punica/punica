@@ -23,12 +23,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "rest-list.h"
+#include "linked_list.h"
 
 
 typedef struct
 {
-    rest_list_t list;
+    linked_list_t list;
     time_t timestamp;
     char id[40];
     int status;
@@ -39,25 +39,25 @@ typedef rest_notif_async_response_t rest_async_response_t;
 
 typedef struct
 {
-    rest_list_t list;
+    linked_list_t list;
     const char *name;
 } rest_notif_registration_t;
 
 typedef struct
 {
-    rest_list_t list;
+    linked_list_t list;
     const char *name;
 } rest_notif_update_t;
 
 typedef struct
 {
-    rest_list_t list;
+    linked_list_t list;
     const char *name;
 } rest_notif_deregistration_t;
 
 typedef struct
 {
-    rest_list_t list;
+    linked_list_t list;
     const char *name;
 } rest_notif_timeout_t;
 

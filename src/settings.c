@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "rest-list.h"
+#include "linked_list.h"
 #include "settings.h"
 #include "version.h"
 #include "security.h"
@@ -59,10 +59,10 @@ static void set_coap_settings(json_t *j_section, coap_settings_t *settings)
     }
 }
 
-static int set_user_settings(json_t *user_settings, rest_list_t *users_list)
+static int set_user_settings(json_t *user_settings, linked_list_t *users_list)
 {
     user_t *user, *user_entry;
-    rest_list_entry_t *entry;
+    linked_list_entry_t *entry;
     json_t *j_name, *j_secret, *j_scope, *j_scope_value;
     const char *user_name, *user_secret;
     char *scope_value;
@@ -138,7 +138,7 @@ static int set_user_settings(json_t *user_settings, rest_list_t *users_list)
 
     security_user_set(user, user_name, user_secret, j_scope);
 
-    rest_list_add(users_list, user);
+    linked_list_add(users_list, user);
 
     return 0;
 }
