@@ -55,12 +55,10 @@ update_submodules () {
 }
 
 install_wakaama () {
-    set -x
     eval "${WAKAAMA_SUBMODULE_DIR}/script/setup"
     eval "cd ${WAKAAMA_SUBMODULE_DIR}/build"
     sudo make install
     cd -
-    set +x
 }
 
 install_submodules () {
