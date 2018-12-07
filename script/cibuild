@@ -28,9 +28,9 @@ set -e
 PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
 SCRIPTS_DIR="${PROJECT_ROOT_DIR}/script"
 
-eval "${SCRIPT_DIR}/setup -DCODE_COVERAGE=ON"
+eval "${SCRIPTS_DIR}/setup -DCODE_COVERAGE=ON"
 
-eval "${SCRIPT_DIR}/test"
+eval "${SCRIPTS_DIR}/test"
 
 ###############################################################################
 # FOLLOWING SECTION WAITS UNTIL COVERAGE REPORT DIRECTORIES APPEAR IN PROJECT
