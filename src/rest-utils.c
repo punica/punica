@@ -18,9 +18,7 @@
  */
 
 #include "rest-utils.h"
-
-#include "restserver.h"
-
+#include "punica.h"
 
 int coap_to_http_status(int status)
 {

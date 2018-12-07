@@ -19,7 +19,7 @@
 
 #include <string.h>
 
-#include "restserver.h"
+#include "punica.h"
 #include "logging.h"
 
 
@@ -296,7 +296,7 @@ static int rest_subscriptions_delete_cb_unsafe(rest_context_t *rest,
 
     if (res == COAP_404_NOT_FOUND)
     {
-        log_message(LOG_LEVEL_WARN, "[WARNING] LwM2M and restserver subscriptions mismatch!");
+        log_message(LOG_LEVEL_WARN, "[WARNING] LwM2M server and client subscriptions mismatch!");
     }
     else if (res != 0)
     {

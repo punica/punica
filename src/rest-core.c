@@ -21,7 +21,7 @@
 #include <string.h>
 
 #include "logging.h"
-#include "restserver.h"
+#include "punica.h"
 
 void rest_init(rest_context_t *rest)
 {

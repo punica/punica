@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef RESTSERVER_H
-#define RESTSERVER_H
+#ifndef PUNICA_H
+#define PUNICA_H
 
 #include <liblwm2m.h>
 #include <ulfius.h>
@@ -93,5 +93,5 @@ int rest_step(rest_context_t *rest, struct timeval *tv);
 void rest_lock(rest_context_t *rest);
 void rest_unlock(rest_context_t *rest);
 
-#endif // RESTSERVER_H
+#endif // PUNICA_H
 
