@@ -24,8 +24,8 @@
 #include <ulfius.h>
 
 #include "http_codes.h"
-#include "rest-core-types.h"
-#include "rest-utils.h"
+#include "rest_core_types.h"
+#include "rest_utils.h"
 
 
 typedef struct _u_request ulfius_req_t;
@@ -37,24 +37,24 @@ typedef struct
 
     lwm2m_context_t *lwm2m;
 
-    // rest-core
+    // punica-core
     json_t *callback;
 
-    // rest-notifications
+    // punica-notifications
     linked_list_t *registrationList;
     linked_list_t *updateList;
     linked_list_t *deregistrationList;
     linked_list_t *timeoutList;
     linked_list_t *asyncResponseList;
 
-    // rest-resources
+    // punica-resources
     linked_list_t *pendingResponseList;
 
-    // rest-subsciptions
+    // punica-subsciptions
     linked_list_t *observeList;
-} rest_context_t;
+} punica_context_t;
 
-lwm2m_client_t *rest_endpoints_find_client(lwm2m_client_t *list, const char *name);
+lwm2m_client_t *punica_endpoints_find_client(lwm2m_client_t *list, const char *name);
 
 int rest_endpoints_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context);
 
@@ -62,16 +62,15 @@ int rest_endpoints_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
 
 int rest_resources_rwe_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context);
 
+void rest_notify_registration(punica_context_t *punica, rest_notif_registration_t *reg);
+void rest_notify_update(punica_context_t *punica, rest_notif_update_t *update);
+void rest_notify_deregistration(punica_context_t *punica, rest_notif_deregistration_t *dereg);
+void rest_notify_timeout(punica_context_t *punica, rest_notif_timeout_t *timeout);
+void rest_notify_async_response(punica_context_t *punica, rest_notif_async_response_t *resp);
 
-void rest_notify_registration(rest_context_t *rest, rest_notif_registration_t *reg);
-void rest_notify_update(rest_context_t *rest, rest_notif_update_t *update);
-void rest_notify_deregistration(rest_context_t *rest, rest_notif_deregistration_t *dereg);
-void rest_notify_timeout(rest_context_t *rest, rest_notif_timeout_t *timeout);
-void rest_notify_async_response(rest_context_t *rest, rest_notif_async_response_t *resp);
+json_t *rest_notifications_json(punica_context_t *punica);
 
-json_t *rest_notifications_json(rest_context_t *rest);
-
-void rest_notifications_clear(rest_context_t *rest);
+void rest_notifications_clear(punica_context_t *punica);
 
 int rest_notifications_get_callback_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context);
 int rest_notifications_put_callback_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context);
@@ -84,14 +83,14 @@ int rest_notifications_pull_cb(const ulfius_req_t *req, ulfius_resp_t *resp, voi
 int rest_subscriptions_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context);
 int rest_subscriptions_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context);
 
-int rest_version_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context);
+int punica_version_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context);
 
-void rest_init(rest_context_t *rest);
-void rest_cleanup(rest_context_t *rest);
-int rest_step(rest_context_t *rest, struct timeval *tv);
+void punica_init(punica_context_t *punica);
+void punica_cleanup(punica_context_t *punica);
+int punica_step(punica_context_t *punica, struct timeval *tv);
 
-void rest_lock(rest_context_t *rest);
-void rest_unlock(rest_context_t *rest);
+void punica_lock(punica_context_t *punica);
+void punica_unlock(punica_context_t *punica);
 
 #endif // PUNICA_H
 

@@ -17,11 +17,22 @@
  *
  */
 
-#ifndef REST_UTILS_H
-#define REST_UTILS_H
+#include "rest_utils.h"
+#include "punica.h"
 
+int coap_to_http_status(int status)
+{
+    switch (status)
+    {
+    case COAP_204_CHANGED:
+    case COAP_205_CONTENT:
+        return HTTP_200_OK;
 
-int coap_to_http_status(int status);
+    case COAP_404_NOT_FOUND:
+        return HTTP_404_NOT_FOUND;
 
-#endif // REST_UTILS_H
+    default:
+        return -(((status >> 5) & 0x7) * 100 + (status & 0x1F));
+    }
+}
 

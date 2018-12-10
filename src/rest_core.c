@@ -23,42 +23,42 @@
 #include "logging.h"
 #include "punica.h"
 
-void rest_init(rest_context_t *rest)
+void punica_init(punica_context_t *punica)
 {
-    memset(rest, 0, sizeof(rest_context_t));
+    memset(punica, 0, sizeof(punica_context_t));
 
-    rest->registrationList = linked_list_new();
-    rest->updateList = linked_list_new();
-    rest->deregistrationList = linked_list_new();
-    rest->timeoutList = linked_list_new();
-    rest->asyncResponseList = linked_list_new();
-    rest->pendingResponseList = linked_list_new();
-    rest->observeList = linked_list_new();
+    punica->registrationList = linked_list_new();
+    punica->updateList = linked_list_new();
+    punica->deregistrationList = linked_list_new();
+    punica->timeoutList = linked_list_new();
+    punica->asyncResponseList = linked_list_new();
+    punica->pendingResponseList = linked_list_new();
+    punica->observeList = linked_list_new();
 
-    assert(pthread_mutex_init(&rest->mutex, NULL) == 0);
+    assert(pthread_mutex_init(&punica->mutex, NULL) == 0);
 }
 
-void rest_cleanup(rest_context_t *rest)
+void punica_cleanup(punica_context_t *punica)
 {
-    if (rest->callback)
+    if (punica->callback)
     {
-        json_decref(rest->callback);
-        rest->callback = NULL;
+        json_decref(punica->callback);
+        punica->callback = NULL;
     }
 
-    rest_notifications_clear(rest);
-    linked_list_delete(rest->registrationList);
-    linked_list_delete(rest->updateList);
-    linked_list_delete(rest->deregistrationList);
-    linked_list_delete(rest->timeoutList);
-    linked_list_delete(rest->asyncResponseList);
-    linked_list_delete(rest->pendingResponseList);
-    linked_list_delete(rest->observeList);
+    rest_notifications_clear(punica);
+    linked_list_delete(punica->registrationList);
+    linked_list_delete(punica->updateList);
+    linked_list_delete(punica->deregistrationList);
+    linked_list_delete(punica->timeoutList);
+    linked_list_delete(punica->asyncResponseList);
+    linked_list_delete(punica->pendingResponseList);
+    linked_list_delete(punica->observeList);
 
-    assert(pthread_mutex_destroy(&rest->mutex) == 0);
+    assert(pthread_mutex_destroy(&punica->mutex) == 0);
 }
 
-int rest_step(rest_context_t *rest, struct timeval *tv)
+int punica_step(punica_context_t *punica, struct timeval *tv)
 {
     ulfius_req_t request;
     ulfius_resp_t response;
@@ -69,14 +69,14 @@ int rest_step(rest_context_t *rest, struct timeval *tv)
     struct _u_map headers;
     int res;
 
-    if ((rest->registrationList->head != NULL
-         || rest->updateList->head != NULL
-         || rest->deregistrationList->head != NULL
-         || rest->asyncResponseList->head != NULL)
-        && rest->callback != NULL)
+    if ((punica->registrationList->head != NULL
+         || punica->updateList->head != NULL
+         || punica->deregistrationList->head != NULL
+         || punica->asyncResponseList->head != NULL)
+        && punica->callback != NULL)
     {
-        const char *url = json_string_value(json_object_get(rest->callback, "url"));
-        jheaders = json_object_get(rest->callback, "headers");
+        const char *url = json_string_value(json_object_get(punica->callback, "url"));
+        jheaders = json_object_get(punica->callback, "headers");
         u_map_init(&headers);
         json_object_foreach(jheaders, header, value)
         {
@@ -85,7 +85,7 @@ int rest_step(rest_context_t *rest, struct timeval *tv)
 
         log_message(LOG_LEVEL_INFO, "[CALLBACK] Sending to %s\n", url);
 
-        jbody = rest_notifications_json(rest);
+        jbody = rest_notifications_json(punica);
 
         ulfius_init_request(&request);
         request.http_verb = strdup("PUT");
@@ -100,7 +100,7 @@ int rest_step(rest_context_t *rest, struct timeval *tv)
         res = ulfius_send_http_request(&request, &response);
         if (res == U_OK)
         {
-            rest_notifications_clear(rest);
+            rest_notifications_clear(punica);
         }
 
         u_map_clean(&headers);
@@ -111,13 +111,13 @@ int rest_step(rest_context_t *rest, struct timeval *tv)
     return 0;
 }
 
-void rest_lock(rest_context_t *rest)
+void punica_lock(punica_context_t *punica)
 {
-    assert(pthread_mutex_lock(&rest->mutex) == 0);
+    assert(pthread_mutex_lock(&punica->mutex) == 0);
 }
 
-void rest_unlock(rest_context_t *rest)
+void punica_unlock(punica_context_t *punica)
 {
-    assert(pthread_mutex_unlock(&rest->mutex) == 0);
+    assert(pthread_mutex_unlock(&punica->mutex) == 0);
 }
 

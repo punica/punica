@@ -17,7 +17,7 @@
  *
  */
 
-#include "rest-core-types.h"
+#include "rest_core_types.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -25,7 +25,6 @@
 #include <time.h>
 
 #include <liblwm2m.h>
-
 
 static const char *base64_table =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -81,9 +80,8 @@ rest_async_response_t *rest_async_response_clone(const rest_async_response_t *re
         return NULL;
     }
 
-    memcpy(clone->id, response->id, sizeof(clone->id));
-
     // XXX: should the payload be cloned?
+    memcpy(clone->id, response->id, sizeof(clone->id));
 
     return clone;
 }

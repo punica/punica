@@ -29,7 +29,7 @@
 
 typedef struct
 {
-    rest_context_t *rest;
+    punica_context_t *punica;
     uint8_t *payload;
     rest_async_response_t *response;
 } rest_async_context_t;
@@ -69,12 +69,12 @@ static void rest_async_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
     log_message(LOG_LEVEL_INFO, "[ASYNC-RESPONSE] id=%s status=%d\n",
                 ctx->response->id, coap_to_http_status(status));
 
-    linked_list_remove(ctx->rest->pendingResponseList, ctx->response);
+    linked_list_remove(ctx->punica->pendingResponseList, ctx->response);
 
     err = rest_async_response_set(ctx->response, coap_to_http_status(status), data, dataLength);
     assert(err == 0);
 
-    rest_notify_async_response(ctx->rest, ctx->response);
+    rest_notify_async_response(ctx->punica, ctx->response);
 
     // Free rest_async_context_t which was allocated in rest_resources_read_cb
     if (ctx->payload != NULL)
@@ -85,7 +85,7 @@ static void rest_async_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
     free(ctx);
 }
 
-static int rest_resources_rwe_cb_unsafe(rest_context_t *rest,
+static int rest_resources_rwe_cb_unsafe(punica_context_t *punica,
                                         const ulfius_req_t *req, ulfius_resp_t *resp)
 {
     enum
@@ -167,7 +167,7 @@ static int rest_resources_rwe_cb_unsafe(rest_context_t *rest,
 
     /* Find requested client */
     name = u_map_get(req->map_url, "name");
-    client = rest_endpoints_find_client(rest->lwm2m->clientList, name);
+    client = punica_endpoints_find_client(punica->lwm2m->clientList, name);
     if (client == NULL)
     {
         ulfius_set_empty_body_response(resp, 410);
@@ -212,7 +212,7 @@ static int rest_resources_rwe_cb_unsafe(rest_context_t *rest,
         goto exit;
     }
 
-    async_context->rest = rest;
+    async_context->punica = punica;
 
     async_context->payload = malloc(req->binary_body_length);
     if (async_context->payload == NULL)
@@ -231,14 +231,14 @@ static int rest_resources_rwe_cb_unsafe(rest_context_t *rest,
     {
     case RES_ACTION_READ:
         res = lwm2m_dm_read(
-                  rest->lwm2m, client->internalID, &uri,
+                  punica->lwm2m, client->internalID, &uri,
                   rest_async_cb, async_context
               );
         break;
 
     case RES_ACTION_WRITE:
         res = lwm2m_dm_write(
-                  rest->lwm2m, client->internalID, &uri,
+                  punica->lwm2m, client->internalID, &uri,
                   format, async_context->payload, req->binary_body_length,
                   rest_async_cb, async_context
               );
@@ -246,7 +246,7 @@ static int rest_resources_rwe_cb_unsafe(rest_context_t *rest,
 
     case RES_ACTION_EXEC:
         res = lwm2m_dm_execute(
-                  rest->lwm2m, client->internalID, &uri,
+                  punica->lwm2m, client->internalID, &uri,
                   format, async_context->payload, req->binary_body_length,
                   rest_async_cb, async_context
               );
@@ -261,7 +261,7 @@ static int rest_resources_rwe_cb_unsafe(rest_context_t *rest,
     {
         goto exit;
     }
-    linked_list_add(rest->pendingResponseList, async_context->response);
+    linked_list_add(punica->pendingResponseList, async_context->response);
 
     jresponse = json_object();
     json_object_set_new(jresponse, "async-response-id", json_string(async_context->response->id));
@@ -294,12 +294,12 @@ exit:
 
 int rest_resources_rwe_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
-    rest_context_t *rest = (rest_context_t *)context;
+    punica_context_t *punica = (punica_context_t *)context;
     int ret;
 
-    rest_lock(rest);
-    ret = rest_resources_rwe_cb_unsafe(rest, req, resp);
-    rest_unlock(rest);
+    punica_lock(punica);
+    ret = rest_resources_rwe_cb_unsafe(punica, req, resp);
+    punica_unlock(punica);
 
     return ret;
 }

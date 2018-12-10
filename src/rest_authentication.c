@@ -19,7 +19,7 @@
 
 #include <string.h>
 
-#include "rest-authentication.h"
+#include "rest_authentication.h"
 #include "security.h"
 #include "logging.h"
 #include "http_codes.h"
