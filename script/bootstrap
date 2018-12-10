@@ -45,7 +45,9 @@ update_repositories () {
 }
 
 update_submodules () {
+    eval "cd ${PROJECT_ROOT_DIR}"
     git submodule update --recursive --remote
+    cd -
 }
 
 install_wakaama () {
