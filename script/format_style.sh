@@ -21,18 +21,19 @@ get_astyle () {
     cd -
 }
 
-if [ ! -x $ASTYLE ]; then
-    get_astyle | rm -rf ${TMP_BUILD_DIR}; exit 1
+if [ ! -x ${ASTYLE} ]; then
+    get_astyle || (rm -rf ${TMP_BUILD_DIR}; exit 1)
 fi
 rm -rf ${TMP_BUILD_DIR}
 
-if [ `eval "${ASTYLE} --version"` != "Artistic Style Version 3.1" ]; then
+version_output=$(eval "${ASTYLE} --version")
+if [ "${version_output}" != "Artistic Style Version 3.1" ]; then
     echo "Error! Astyle version must be 3.1!"
     exit 1
 fi
 
-output=`eval "${ASTYLE} ${ASTYLE_OPTS} ${ASTYLE_FILES}"`
-if [ -z "${output}" ]; then
+style_check_output=`eval "${ASTYLE} ${ASTYLE_OPTS} ${ASTYLE_FILES}"`
+if [ -z "${style_check_output}" ]; then
     echo "Code style pass!"
 else
     echo "Code style fail!"
