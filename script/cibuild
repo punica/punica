@@ -39,8 +39,8 @@ do
         echo "Time until coverage directories appeared: ${time_slept} s"
         # If another way of making sure that coverage reports appears is found,
         # following code can be moved out of this for-if section
-        cp -r ${PROJECT_ROOT_DIR}/src ${PROJECT_ROOT_DIR}/include ${PROJECT_ROOT_DIR}/secure
-        cp -r ${PROJECT_ROOT_DIR}/src ${PROJECT_ROOT_DIR}/include ${PROJECT_ROOT_DIR}/regular
+        cp -r ${PROJECT_ROOT_DIR}/src ${PROJECT_ROOT_DIR}/secure
+        cp -r ${PROJECT_ROOT_DIR}/src ${PROJECT_ROOT_DIR}/regular
         exit 0
     fi
     sleep ${sleep_interval}
