@@ -11,29 +11,37 @@ _Note: If you already cloned Punica without initializing submodules, you can do 
 $ git submodule update --init --recursive
 ```
 
-2. Build libwakaama by following [punica/wakaama](https://github.com/punica/wakaama) instructions.
+2. Build `libwakaama` by following [punica/wakaama](https://github.com/punica/wakaama) instructions:
+```
+$ git clone https://github.com/punica/wakaama.git
+$ wakaama/script/setup
+$ cd wakaama/build
+$ sudo make install
+```
 
 3. Install other required libraries from Github:
-```
-$ git clone --recursive https://github.com/babelouest/ulfius.git
-$ cd ulfius/lib/orcania
-$ make && sudo make install
-$ cd ../yder
-$ make && sudo make install
-$ cd ../..
-$ make
-$ sudo make install
-$ cd ..
-$ git clone https://github.com/benmcollins/libjwt
-$ cd libjwt
-$ autoreconf -i
-$ ./configure
-$ make
-$ sudo make install
-$ cd ..
-```
+    - Install [`libulfius`](https://github.com/babelouest/ulfius):
+    ```
+    $ git clone https://github.com/babelouest/ulfius.git
+    $ mkdir ulfius/build
+    $ cd ulfius/build
+    $ cmake ../
+    $ sudo make install
+    $ cd -
+    ```
+    
+    - Install [`libjwt`](https://github.com/benmcollins/libjwt):
+    ```
+    $ git clone https://github.com/benmcollins/libjwt.git
+    $ cd libjwt
+    $ autoreconf -i
+    $ ./configure
+    $ make
+    $ sudo make install
+    $ cd -
+    ```
 
-3. Build PUNICA server
+4. Build PUNICA server
 ```
 $ mkdir build
 $ cd build/
