@@ -212,8 +212,60 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
     }
 }
 
+struct client_cred_t
+{
+    struct client_cred_t* next;
+
+    unsigned char psk[50];
+
+    size_t psk_len;
+
+    const char* psk_id;
+
+    size_t psk_id_len;
+};
+
+struct client_cred_t* cred_list;
+
+int psk_callback(void* p_psk, mbedtls_ssl_context* ssl, const unsigned char* name, size_t name_len)
+{
+    struct client_cred_t* curr = (struct client_cred_t*)p_psk;
+
+    while(curr != NULL)
+    {
+        if(memcmp(name, curr->psk_id, name_len) == 0)
+        {
+            return mbedtls_ssl_set_hs_psk(ssl, curr->psk, curr->psk_len);
+        }
+        curr = curr->next;
+    }
+
+    return -1;
+}
+
+void dummy_cred_init(void)
+{
+    struct client_cred_t* curr = (struct client_cred_t*)malloc(sizeof(struct client_cred_t));
+
+    unhexify(curr->psk, "ABC123", &curr->psk_len);
+    curr->psk_id = "id_a";
+    curr->psk_id_len = strlen(curr->psk_id);
+    curr->next = NULL;
+    cred_list = curr;
+
+    curr = (struct client_cred_t*)malloc(sizeof(struct client_cred_t));
+
+    unhexify(curr->psk, "123ABC", &curr->psk_len);
+    curr->psk_id = "id_b";
+    curr->psk_id_len = strlen(curr->psk_id);
+    curr->next = cred_list;
+    cred_list = curr;
+}
+
 int main(int argc, char *argv[])
 {
+    dummy_cred_init();
+
     struct timeval tv;
     int res;
     rest_context_t rest;
@@ -248,6 +300,22 @@ int main(int argc, char *argv[])
         },
     };
 
+    snprintf(coap_port, sizeof(coap_port), "%d", settings.coap.port);
+
+    struct u_mbedtls_options options =
+    {
+        .server_addr         = "localhost",
+        .server_port         = coap_port,
+        .debug_level         = 0,
+        .ca_file             = "",
+        .ca_path             = "",
+        .crt_file            = "",
+        .key_file            = "",
+        .psk                 = "",
+        .psk_identity        = "",
+        .psk_list            = cred_list,
+    };
+
     settings.http.security.jwt.users_list = rest_list_new();
     settings.http.security.jwt.secret_key = (unsigned char *) malloc(
                                                 settings.http.security.jwt.secret_key_length * sizeof(unsigned char));
@@ -266,9 +334,8 @@ int main(int argc, char *argv[])
     rest_init(&rest);
 
     /* Socket section */
-    snprintf(coap_port, sizeof(coap_port), "%d", settings.coap.port);
     log_message(LOG_LEVEL_INFO, "Creating coap socket on port %s\n", coap_port);
-    res = create_socket(coap_port, AF_INET6);
+    res = create_socket(&options);
     if (res < 0)
     {
         log_message(LOG_LEVEL_FATAL, "Failed to create socket!\n");
