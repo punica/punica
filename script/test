@@ -50,12 +50,32 @@ generate_key_and_certificate () {
     return 0
 }
 
+get_path_level() {
+    ROOT_DIR="$(cd / && pwd -P)"
+    level=0
+
+    if ! [ -d "$1" ]; then
+        full_path="$(cd $(dirname "$1") && pwd -P)"
+    else
+        full_path="$(cd "$1" && pwd -P)"
+    fi
+    current_path=${full_path}
+
+    while [ "${current_path}" != "${ROOT_DIR}" ]; do
+        level=$(( ${level} + 1 ));
+        current_path="$(dirname ${current_path})"
+    done
+
+    echo "${level}"
+}
+
 run_punica () {
     initial_punica_arguments=""
-    punica_command="build/punica ${initial_punica_arguments}"
+    punica_command="${PROJECT_ROOT_DIR}/build/punica ${initial_punica_arguments}"
 
     if ! [ -z "$1" ]; then
-        coverage_prefix="GCOV_PREFIX_STRIP=5 GCOV_PREFIX=$1"
+        strip_level="$(get_path_level ${PROJECT_ROOT_DIR})"
+        coverage_prefix="GCOV_PREFIX_STRIP=${strip_level} GCOV_PREFIX=$1"
         punica_command="${coverage_prefix} ${punica_command}"
     fi
 
