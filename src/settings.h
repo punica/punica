@@ -34,9 +34,22 @@ typedef struct
     http_security_settings_t security;
 } http_settings_t;
 
+typedef struct _device_database_t device_database_t;
+
+struct _device_database_t
+{
+    device_database_t *next;
+    char* uuid;
+    uint8_t* psk;
+    size_t psk_len;
+    uint8_t* psk_id;
+    size_t psk_id_len;
+};
+
 typedef struct
 {
     uint16_t port;
+    device_database_t *security;
 } coap_settings_t;
 
 typedef struct

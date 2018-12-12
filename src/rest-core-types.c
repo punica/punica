@@ -98,6 +98,59 @@ void rest_async_response_delete(rest_async_response_t *response)
     free(response);
 }
 
+static void string2base(const char* string, uint8_t* buffer)
+{
+    for(int i = 0; i < strlen(string); i++)
+    {
+        if(string[i] == 0x3d) // '='
+        {
+            buffer[i] = string[i];
+            continue;
+        }
+
+        buffer[i] = strchr(base64_table, string[i]) - base64_table;
+    }
+}
+
+void base64_decode(const char *string, uint8_t *data, size_t *length)
+{
+    int string_index, data_index = 0;
+
+    uint8_t *base64_string = (uint8_t*)malloc(strlen(string));
+    string2base(string, base64_string);
+
+    for(string_index = 0; string_index < strlen(string); string_index++)
+    {
+        if(base64_string[string_index] == 0x3d) // '='
+        {
+            data_index = data_index + (string_index % 4) - 1;
+            break;
+        }
+
+        switch (string_index % 4)
+        {
+        case 0:
+            data[data_index] = data[data_index] | (base64_string[string_index] << 2);
+            break;
+        case 1:
+            data[data_index] = data[data_index] | (base64_string[string_index] >> 4);
+            data[data_index + 1] = data[data_index + 1] | (base64_string[string_index] << 4);
+            break;
+        case 2:
+            data[data_index + 1] = data[data_index + 1] | (base64_string[string_index] >> 2);
+            data[data_index + 2] = data[data_index + 2] | (base64_string[string_index] << 6);
+            break;
+        case 3:
+            data[data_index + 2] = data[data_index + 2] | (base64_string[string_index]);
+            data_index = data_index + 3;
+            break;
+        }
+    }
+
+    *length = data_index;
+    free(base64_string);
+}
+
 const char *base64_encode(const uint8_t *data, size_t length)
 {
     size_t buffer_length = ((length + 2) / 3) * 4 + 1; // +1 for null-terminator

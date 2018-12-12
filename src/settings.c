@@ -25,6 +25,7 @@
 #include "settings.h"
 #include "version.h"
 #include "security.h"
+#include "rest-core-types.h"
 
 const char *argp_program_version = PUNICA_FULL_VERSION;
 
@@ -34,6 +35,7 @@ static struct argp_option options[] =
 {
     {"log",   'l', "LOGGING_LEVEL", 0, "Specify logging level (0-5)" },
     {"config",   'c', "FILE", 0, "Specify parameters configuration file" },
+    {"database",   'd', "FILE", 0, "Specify device database file" },
     {"private_key",   'k', "PRIVATE_KEY", 0, "Specify TLS security private key file" },
     {"certificate",   'C', "CERTIFICATE", 0, "Specify TLS security certificate file" },
     { 0 }
@@ -365,6 +367,62 @@ int read_config(char *config_name, settings_t *settings)
     return 0;
 }
 
+int read_database(char *database_name, settings_t *settings)
+{
+    json_error_t error;
+    const char *section;
+    size_t index;
+    json_t *j_value;
+    json_t *j_entry;
+
+    json_t *database_json = json_array();
+
+    database_json = json_load_file(database_name, 0, &error);
+
+    if (database_json == NULL)
+    {
+        fprintf(stderr, "%s:%d:%d error:%s \n",
+                database_name, error.line, error.column, error.text);
+        return 1;
+    }
+
+    json_array_foreach(database_json, index, j_entry)
+    {
+        device_database_t *entry = (device_database_t*)malloc(sizeof(device_database_t));
+        entry->next = settings->coap.security;
+        settings->coap.security = entry;
+
+        json_object_foreach(j_entry, section, j_value)
+        {
+            if (strcasecmp(section, "uuid") == 0)
+            {
+                entry->uuid = (char*)json_string_value(j_value);
+            }
+            else if (strcasecmp(section, "psk") == 0)
+            {
+                size_t len = (strlen(json_string_value(j_value)) / 4) * 3;
+                entry->psk = (uint8_t*)malloc(len);
+                memset(entry->psk, 0, len);
+                base64_decode(json_string_value(j_value), entry->psk, &entry->psk_len);
+            }
+            else if (strcasecmp(section, "psk_id") == 0)
+            {
+                size_t len = (strlen(json_string_value(j_value)) / 4) * 3;
+                entry->psk_id = (uint8_t*)malloc(len);
+                memset(entry->psk_id, 0, len);
+                base64_decode(json_string_value(j_value), entry->psk_id, &entry->psk_id_len);
+            }
+            else
+            {
+                fprintf(stdout, "Unrecognised configuration file section: %s\n", section);
+            }
+        }
+//      add error on missing section?
+    }
+
+    return 0;
+}
+
 error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
     settings_t *settings = state->input;
@@ -377,6 +435,14 @@ error_t parse_opt(int key, char *arg, struct argp_state *state)
 
     case 'c':
         if (read_config(arg, settings) != 0)
+        {
+            argp_usage(state);
+            return 1;
+        }
+        break;
+
+    case 'd':
+        if (read_database(arg, settings) != 0)
         {
             argp_usage(state);
             return 1;

@@ -93,5 +93,10 @@ void rest_notif_deregistration_delete(rest_notif_deregistration_t *deregistratio
 
 int rest_notif_deregistration_set(rest_notif_deregistration_t *deregistration, const char *name);
 
+
+void base64_decode(const char *string, uint8_t *data, size_t *length);
+
+const char *base64_encode(const uint8_t *data, size_t length);
+
 #endif // REST_CORE_TYPES_H
 
