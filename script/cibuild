@@ -29,7 +29,7 @@ eval "${SCRIPTS_DIR}/test"
 ###############################################################################
 # FOLLOWING SECTION WAITS UNTIL COVERAGE REPORT DIRECTORIES APPEAR IN PROJECT
 # DIRECTORY, BY DEFAULT TIMEOUT IS SET TO 10 s, INTERVAL IS 100 ms
-# IF NO COVERAGE REPORTS APPEAR IN DIRECTORY, 
+# IF NO COVERAGE REPORTS APPEAR IN DIRECTORY, SCRIPT EXITS WITH CODE 1
 ###############################################################################
 sleep_interval=0.1
 sleep_timeout=10 # Timeout in seconds
@@ -46,4 +46,5 @@ do
     sleep ${sleep_interval}
 done
 
+echo "Not all code coverage report directories appeared in ${sleep_timeout} seconds!"
 exit 1
