@@ -104,7 +104,7 @@ static void string2base(const char* string, uint8_t* buffer)
     {
         if(string[i] == 0x3d) // '='
         {
-            buffer[i] = string[i];
+            buffer[i] = 0x40; // change to value outside of base64 table
             continue;
         }
 
@@ -121,7 +121,7 @@ void base64_decode(const char *string, uint8_t *data, size_t *length)
 
     for(string_index = 0; string_index < strlen(string); string_index++)
     {
-        if(base64_string[string_index] == 0x3d) // '='
+        if(base64_string[string_index] == 0x40)
         {
             data_index = data_index + (string_index % 4) - 1;
             break;
