@@ -60,8 +60,6 @@ typedef struct
     const char *name;
 } rest_notif_timeout_t;
 
-size_t rest_get_random(void *buf, size_t buflen);
-
 rest_async_response_t *rest_async_response_new(void);
 void rest_async_response_delete(rest_async_response_t *response);
 rest_async_response_t *rest_async_response_clone(const rest_async_response_t *resp);

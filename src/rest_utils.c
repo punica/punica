@@ -20,6 +20,66 @@
 #include "rest_utils.h"
 #include "punica.h"
 
+#include <assert.h>
+
+static const char *base64_table =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+const char *base64_encode(const uint8_t *data, size_t length)
+{
+    size_t buffer_length = ((length + 2) / 3) * 4 + 1; // +1 for null-terminator
+    char *buffer;
+    static uint8_t previous_byte;
+    int data_index = 0,
+        buffer_index = 0;
+
+    buffer = malloc(buffer_length);
+    if (buffer == NULL)
+    {
+        return NULL;
+    }
+
+    for (data_index = 0; data_index < length; data_index++)
+    {
+        switch (data_index % 3)
+        {
+        case 2:
+            buffer[buffer_index++] = base64_table[
+                                         ((previous_byte & 0x0f) << 2) + ((data[data_index] & 0xc0) >> 6)
+                                     ];
+            buffer[buffer_index++] = base64_table[data[data_index] & 0x3f];
+            break;
+        case 1:
+            buffer[buffer_index++] = base64_table[
+                                         ((previous_byte & 0x03) << 4) + ((data[data_index] & 0xf0) >> 4)
+                                     ];
+            break;
+        case 0:
+            buffer[buffer_index++] = base64_table[(data[data_index] & 0xfc) >> 2];
+            break;
+        }
+        previous_byte = data[data_index];
+    }
+
+    if ((data_index % 3) == 2)
+    {
+        buffer[buffer_index++] = base64_table[(previous_byte & 0x0f) << 2];
+        buffer[buffer_index++] = '=';
+    }
+    else if ((data_index % 3) == 1)
+    {
+        buffer[buffer_index++] = base64_table[(previous_byte & 0x03) << 4];
+        buffer[buffer_index++] = '=';
+        buffer[buffer_index++] = '=';
+    }
+
+    buffer[buffer_index++] = '\0';
+
+    assert(buffer_index == buffer_length);
+
+    return buffer;
+}
+
 int coap_to_http_status(int status)
 {
     switch (status)
@@ -36,3 +96,18 @@ int coap_to_http_status(int status)
     }
 }
 
+size_t rest_get_random(void *buf, size_t buflen)
+{
+    FILE *f;
+    size_t len;
+
+    f = fopen("/dev/urandom", "r");
+    if (f == NULL)
+    {
+        return 0;
+    }
+
+    len = fread(buf, 1, buflen, f);
+    fclose(f);
+    return len;
+}
