@@ -17,14 +17,14 @@
  *
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "linked_list.h"
 #include "settings.h"
-#include "version.h"
+#include "linked_list.h"
 #include "security.h"
+#include "version.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 const char *argp_program_version = PUNICA_FULL_VERSION;
 

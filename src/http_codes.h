@@ -17,7 +17,6 @@
  *
  */
 
-
 #ifndef HTTP_CODES_H
 #define HTTP_CODES_H
 

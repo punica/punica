@@ -17,10 +17,10 @@
  *
  */
 
-#include <string.h>
-
 #include "logging.h"
 #include "punica.h"
+
+#include <string.h>
 
 bool valid_callback_url(const char *url)
 {

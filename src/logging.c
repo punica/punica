@@ -17,13 +17,13 @@
  *
  */
 
-#include <stdio.h>
+#include "logging.h"
+
+#include <sys/time.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include <sys/time.h>
-
-#include "logging.h"
 
 static logging_settings_t logging_settings;
 

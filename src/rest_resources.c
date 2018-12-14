@@ -17,15 +17,15 @@
  *
  */
 
+#include "logging.h"
+#include "punica.h"
+
 #include <assert.h>
 #include <errno.h>
+#include <linux/random.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/syscall.h>
-#include <linux/random.h>
-
-#include "logging.h"
-#include "punica.h"
 
 typedef struct
 {

@@ -17,11 +17,11 @@
  *
  */
 
-#include <assert.h>
-#include <string.h>
-
 #include "logging.h"
 #include "punica.h"
+
+#include <assert.h>
+#include <string.h>
 
 void punica_init(punica_context_t *punica)
 {

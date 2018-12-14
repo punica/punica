@@ -17,12 +17,12 @@
  *
  */
 
-#include <string.h>
-
 #include "rest_authentication.h"
-#include "security.h"
-#include "logging.h"
 #include "http_codes.h"
+#include "logging.h"
+#include "security.h"
+
+#include <string.h>
 
 static int validate_authentication_body(json_t *authentication_json)
 {

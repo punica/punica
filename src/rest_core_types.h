@@ -20,10 +20,10 @@
 #ifndef REST_CORE_TYPES_H
 #define REST_CORE_TYPES_H
 
-#include <stdint.h>
-#include <stdlib.h>
-
 #include "linked_list.h"
+
+#include <stdlib.h>
+#include <stdint.h>
 
 typedef struct
 {

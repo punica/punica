@@ -20,12 +20,13 @@
 #ifndef SECURITY_H
 #define SECURITY_H
 
+#include "linked_list.h"
+
 #include <jwt.h>
 #include <ulfius.h>
-#include <stdint.h>
-#include <stdbool.h>
 
-#include "linked_list.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 enum
 {

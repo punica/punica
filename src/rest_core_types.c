@@ -20,11 +20,11 @@
 #include "rest_core_types.h"
 #include "rest_utils.h"
 
+#include <liblwm2m.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-
-#include <liblwm2m.h>
 
 rest_async_response_t *rest_async_response_new(void)
 {

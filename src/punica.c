@@ -17,23 +17,22 @@
  *
  */
 
-#include <sys/socket.h>
+#include "punica.h"
+#include "connection.h"
+#include "linked_list.h"
+#include "logging.h"
+#include "rest_authentication.h"
+#include "security.h"
+#include "settings.h"
+#include "version.h"
+
+#include <liblwm2m.h>
+
 #include <errno.h>
 #include <signal.h>
 #include <stdint.h>
 #include <string.h>
-
-#include <liblwm2m.h>
-#include <ulfius.h>
-
-#include "connection.h"
-#include "punica.h"
-#include "logging.h"
-#include "settings.h"
-#include "version.h"
-#include "security.h"
-#include "linked_list.h"
-#include "rest_authentication.h"
+#include <sys/socket.h>
 
 static volatile int punica_quit;
 static void sigint_handler(int signo)

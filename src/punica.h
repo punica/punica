@@ -20,13 +20,12 @@
 #ifndef PUNICA_H
 #define PUNICA_H
 
-#include <liblwm2m.h>
-#include <ulfius.h>
-
 #include "http_codes.h"
 #include "rest_core_types.h"
 #include "rest_utils.h"
 
+#include <liblwm2m.h>
+#include <ulfius.h>
 
 typedef struct _u_request ulfius_req_t;
 typedef struct _u_response ulfius_resp_t;

@@ -17,14 +17,14 @@
  *
  */
 
-#include <string.h>
-#include <stdio.h>
-#include <malloc.h>
-#include <jansson.h>
-#include <regex.h>
-
 #include "security.h"
 #include "logging.h"
+
+#include <jansson.h>
+#include <malloc.h>
+#include <regex.h>
+#include <stdio.h>
+#include <string.h>
 
 static char *read_file(const char *filename)
 {
