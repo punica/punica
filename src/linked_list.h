@@ -22,7 +22,6 @@
 
 #include <pthread.h>
 
-
 typedef struct linked_list_entry_t
 {
     struct linked_list_entry_t *next;

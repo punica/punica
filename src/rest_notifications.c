@@ -43,7 +43,6 @@ bool validate_callback(json_t *jcallback)
                               "registrations", "reg-updates",
                               "async-responses", "de-registrations");
 
-
     if (jcallback == NULL)
     {
         return false;

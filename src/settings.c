@@ -391,7 +391,6 @@ error_t parse_opt(int key, char *arg, struct argp_state *state)
         settings->http.security.private_key = arg;
         break;
 
-
     default:
         return ARGP_ERR_UNKNOWN;
     }

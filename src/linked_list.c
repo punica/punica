@@ -24,7 +24,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-
 linked_list_t *linked_list_new(void)
 {
     linked_list_t *list = malloc(sizeof(linked_list_t));

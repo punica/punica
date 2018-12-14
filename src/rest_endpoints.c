@@ -21,7 +21,6 @@
 
 #include <string.h>
 
-
 static json_t *endpoint_to_json(lwm2m_client_t *client)
 {
     bool queue;

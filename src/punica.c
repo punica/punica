@@ -52,7 +52,6 @@ static void sigpipe_handler(int sig)
     log_message(LOG_LEVEL_ERROR, "SIGPIPE occurs: %d times.\n", sigpipe_cnt);
 }
 
-
 /**
  * setup handlers to ignore SIGPIPE, handle SIGINT...
  */
@@ -77,7 +76,6 @@ static void init_signals(void)
         log_message(LOG_LEVEL_FATAL, "Failed to install SIGTERM handler: %s\n", strerror(errno));
     }
 
-
     memset(&sig, 0, sizeof(sig));
     sig.sa_handler = &sigpipe_handler;
     sigemptyset(&sig.sa_mask);
@@ -87,7 +85,6 @@ static void init_signals(void)
         log_message(LOG_LEVEL_FATAL, "Failed to install SIGPIPE handler: %s\n", strerror(errno));
     }
 }
-
 
 const char *binding_to_string(lwm2m_binding_t bind)
 {
@@ -109,7 +106,6 @@ const char *binding_to_string(lwm2m_binding_t bind)
         return "Unknown";
     }
 }
-
 
 int punica_version_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
