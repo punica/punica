@@ -5,7 +5,7 @@ const server = require('./server-if');
 const should = chai.should();
 chai.use(chai_http);
 
-const version_regex = /^1\.\d+\.\d+$/
+const version_regex = /^0\.\d+\.\d+$/
 
 describe('Version', function () {
   before(function (done) {

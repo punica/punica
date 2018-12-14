@@ -1,0 +1,19 @@
+language: c
+
+sudo: required
+dist: trusty
+
+compiler: 
+  - gcc
+
+before_script:
+  - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
+      sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6';
+    fi
+
+script:
+  - ./script/cibuild
+
+after_script:
+  - bash <(curl -s https://codecov.io/bash) -cZF secure -p secure -s ./
+  - bash <(curl -s https://codecov.io/bash) -cZF regular -p regular -s ./
