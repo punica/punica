@@ -23,7 +23,7 @@
 #include "logging.h"
 #include "restserver.h"
 
-void rest_init(rest_context_t *rest)
+void rest_init(rest_context_t *rest, settings_t *settings)
 {
     memset(rest, 0, sizeof(rest_context_t));
 
@@ -34,6 +34,9 @@ void rest_init(rest_context_t *rest)
     rest->asyncResponseList = rest_list_new();
     rest->pendingResponseList = rest_list_new();
     rest->observeList = rest_list_new();
+
+    rest->certificate = settings->http.security.certificate;
+    rest->key = settings->http.security.private_key;
 
     assert(pthread_mutex_init(&rest->mutex, NULL) == 0);
 }
@@ -91,6 +94,10 @@ int rest_step(rest_context_t *rest, struct timeval *tv)
         request.http_verb = strdup("PUT");
         request.http_url = strdup(url);
         request.timeout = 20;
+        request.check_server_certificate = 0;
+        request.client_cert_file = o_strdup(rest->certificate);
+        request.client_key_file = o_strdup(rest->key);
+
         u_map_copy_into(request.map_header, &headers);
 
         ulfius_set_json_body_request(&request, jbody);

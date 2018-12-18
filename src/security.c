@@ -121,10 +121,10 @@ int security_user_set(user_t *user, const char *name, const char *secret, json_t
 
 int security_unload(http_security_settings_t *settings)
 {
-    memset(settings->private_key, 0, strlen(settings->private_key));
-    memset(settings->certificate, 0, strlen(settings->certificate));
-    memset(settings->private_key_file, 0, strlen(settings->private_key_file));
-    memset(settings->certificate_file, 0, strlen(settings->certificate_file));
+    free(settings->private_key);
+    free(settings->certificate);
+    free(settings->private_key_file);
+    free(settings->certificate_file);
 
     log_message(LOG_LEVEL_TRACE, "Successfully unloaded security");
     return 0;

@@ -28,7 +28,7 @@ bool valid_callback_url(const char *url)
     return true;
 }
 
-bool validate_callback(json_t *jcallback)
+bool validate_callback(json_t *jcallback, rest_context_t *rest)
 {
     json_t *url, *jheaders;
     const char *header;
@@ -89,6 +89,10 @@ bool validate_callback(json_t *jcallback)
     test_request.http_verb = strdup("PUT");
     test_request.http_url = strdup(callback_url);
     test_request.timeout = 20;
+    test_request.check_server_certificate = 0;
+    test_request.client_cert_file = o_strdup(rest->certificate);
+    test_request.client_key_file = o_strdup(rest->key);
+
     u_map_copy_into(test_request.map_header, &headers);
     ulfius_set_json_body_request(&test_request, jbody);
     json_decref(jbody);
@@ -147,7 +151,7 @@ int rest_notifications_put_callback_cb(const ulfius_req_t *req, ulfius_resp_t *r
     }
 
     jcallback = json_loadb(req->binary_body, req->binary_body_length, 0, NULL);
-    if (!validate_callback(jcallback))
+    if (!validate_callback(jcallback, rest))
     {
         if (jcallback != NULL)
         {
