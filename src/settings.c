@@ -375,6 +375,9 @@ int read_database(char *database_name, settings_t *settings)
     json_t *j_value;
     json_t *j_entry;
 
+    settings->coap.database_file = (char*)malloc(strlen(database_name) + 1);
+    memcpy(settings->coap.database_file, database_name, strlen(database_name) + 1);
+
     json_t *database_json = json_array();
 
     database_json = json_load_file(database_name, 0, &error);

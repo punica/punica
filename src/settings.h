@@ -49,6 +49,7 @@ struct _device_database_t
 typedef struct
 {
     uint16_t port;
+    char *database_file;
     device_database_t *security;
 } coap_settings_t;
 
