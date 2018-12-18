@@ -346,9 +346,9 @@ int main(int argc, char *argv[])
                                &rest_endpoints_name_cb, &rest);
     // Devices
     ulfius_add_endpoint_by_val(&instance, "GET", "/devices", NULL, 10,
-                               &rest_devices_get_cb, &rest);
+                               &rest_devices_get_cb, &settings.coap);
     ulfius_add_endpoint_by_val(&instance, "PUT", "/devices", NULL, 10,
-                               &rest_devices_put_cb, &rest);
+                               &rest_devices_put_cb, &settings.coap);
 
     // Resources
     ulfius_add_endpoint_by_val(&instance, "*", "/endpoints", ":name/*", 10,
