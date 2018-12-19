@@ -327,15 +327,13 @@ static void set_logging_settings(json_t *j_section, logging_settings_t *settings
     }
 }
 
-int read_config(char *config_name, settings_t *settings)
+static int read_config(char *config_name, settings_t *settings)
 {
     json_error_t error;
     const char *section;
     json_t *j_value;
 
-    json_t *settings_json = json_object();
-
-    settings_json = json_load_file(config_name, 0, &error);
+    json_t *settings_json = json_load_file(config_name, 0, &error);
 
     if (settings_json == NULL)
     {
@@ -367,63 +365,185 @@ int read_config(char *config_name, settings_t *settings)
     return 0;
 }
 
-int read_database(char *database_name, settings_t *settings)
+static void free_device_list(device_database_t *head)
+{
+    device_database_t *curr, *next;
+    curr = head;
+
+    while(curr != NULL)
+    {
+        next = curr->next;
+        if(curr->uuid)
+        {
+            free(curr->uuid);
+        }
+        if(curr->psk)
+        {
+            free(curr->psk);
+        }
+        if(curr->psk_id)
+        {
+            free(curr->psk_id);
+        }
+        free(curr);
+        curr = next;
+    }
+}
+
+static device_database_t * alloc_device_list(size_t size)
+{
+    device_database_t *head, *next = NULL;
+
+    for(int i = 0; i < size; i++)
+    {
+        head = calloc(1, sizeof(device_database_t));
+        if(head == NULL)
+        {
+            free_device_list(next);
+            return NULL;
+        }
+        head->next = next;
+        next = head;
+    }
+
+    return head;
+}
+
+static int read_database(char *database_name, settings_t *settings)
 {
     json_error_t error;
     const char *section;
     size_t index;
     json_t *j_value;
     json_t *j_entry;
+    json_t *j_database;
+    int key_check;
+    int ret = 1;
 
-    settings->coap.database_file = (char*)malloc(strlen(database_name) + 1);
-    memcpy(settings->coap.database_file, database_name, strlen(database_name) + 1);
+    j_database = json_load_file(database_name, 0, &error);
 
-    json_t *database_json = json_array();
-
-    database_json = json_load_file(database_name, 0, &error);
-
-    if (database_json == NULL)
+    if (!json_is_array(j_database))
     {
         fprintf(stderr, "%s:%d:%d error:%s \n",
                 database_name, error.line, error.column, error.text);
-        return 1;
+        return ret;
     }
 
-    json_array_foreach(database_json, index, j_entry)
+    device_database_t *device_list = alloc_device_list(json_array_size(j_database));
+    if(device_list == NULL)
     {
-        device_database_t *entry = (device_database_t*)malloc(sizeof(device_database_t));
-        entry->next = settings->coap.security;
-        settings->coap.security = entry;
+        fprintf(stderr, "%s:%d - failed to allocate device list\r\n",
+                __FILE__, __LINE__);
+        return ret;
+    }
+
+    device_database_t *curr = device_list;
+    const char *json_string;
+    json_array_foreach(j_database, index, j_entry)
+    {
+        key_check = 0;
 
         json_object_foreach(j_entry, section, j_value)
         {
+            if(!json_is_string(j_value))
+            {
+                fprintf(stderr, "%s:%d - key \'%s\' must be a string\r\n",
+                        __FILE__, __LINE__, section);
+                goto exit;
+            }
             if (strcasecmp(section, "uuid") == 0)
             {
-                entry->uuid = (char*)json_string_value(j_value);
+                // pointer returned by 'json_string_value' exists as long as 'j_value' exists, so allocate new
+                json_string = json_string_value(j_value);
+                curr->uuid = (char*)calloc(1, strlen(json_string));
+                if(curr->uuid == NULL)
+                {
+                    fprintf(stderr, "%s:%d - failed to allocate string\r\n",
+                            __FILE__, __LINE__);
+                    goto exit;
+                }
+                memcpy(curr->uuid, json_string, strlen(json_string) + 1);
+                key_check |= DATABASE_UUID_KEY_BIT;
             }
             else if (strcasecmp(section, "psk") == 0)
             {
-                size_t len = (strlen(json_string_value(j_value)) / 4) * 3;
-                entry->psk = (uint8_t*)malloc(len);
-                memset(entry->psk, 0, len);
-                base64_decode(json_string_value(j_value), entry->psk, &entry->psk_len);
+                if((ret = base64_decode(json_string_value(j_value), NULL, &curr->psk_len)))
+                {
+                    fprintf(stderr, "%s:%d base64_decode failed with status %d\r\n",
+                            __FILE__, __LINE__, ret);
+                    goto exit;
+                }
+                curr->psk = (uint8_t*)calloc(1, curr->psk_len);
+                if(curr->psk == NULL)
+                {
+                    fprintf(stderr, "%s:%d - failed to allocate buffer\r\n",
+                            __FILE__, __LINE__);
+                    goto exit;
+                }
+                if((ret = base64_decode(json_string_value(j_value), curr->psk, &curr->psk_len)))
+                {
+                    fprintf(stderr, "%s:%d base64_decode failed with status %d\r\n",
+                            __FILE__, __LINE__, ret);
+                    goto exit;
+                }
+                key_check |= DATABASE_PSK_KEY_BIT;
             }
             else if (strcasecmp(section, "psk_id") == 0)
             {
-                size_t len = (strlen(json_string_value(j_value)) / 4) * 3;
-                entry->psk_id = (uint8_t*)malloc(len);
-                memset(entry->psk_id, 0, len);
-                base64_decode(json_string_value(j_value), entry->psk_id, &entry->psk_id_len);
+                if((ret = base64_decode(json_string_value(j_value), NULL, &curr->psk_id_len)))
+                {
+                    fprintf(stderr, "%s:%d base64_decode failed with status %d\r\n",
+                            __FILE__, __LINE__, ret);
+                    goto exit;
+                }
+                curr->psk_id = (uint8_t*)calloc(1, curr->psk_id_len);
+                if(curr->psk_id == NULL)
+                {
+                    fprintf(stderr, "%s:%d - failed to allocate buffer\r\n",
+                            __FILE__, __LINE__);
+                    goto exit;
+                }
+                if((ret = base64_decode(json_string_value(j_value), curr->psk_id, &curr->psk_id_len)))
+                {
+                    fprintf(stderr, "%s:%d base64_decode failed with status %d\r\n",
+                            __FILE__, __LINE__, ret);
+                    goto exit;
+                }
+                key_check |= DATABASE_PSK_ID_KEY_BIT;
             }
             else
             {
                 fprintf(stdout, "Unrecognised configuration file section: %s\n", section);
             }
         }
-//      add error on missing section?
+
+        if(key_check != DATABASE_ALL_KEYS_SET)
+        {
+            fprintf(stderr, "%s:%d - missing \'key:value\' pair\r\n",
+                    __FILE__, __LINE__);
+            goto exit;
+        }
+        curr = curr->next;
     }
 
-    return 0;
+    settings->coap.database_file = (char*)calloc(1, strlen(database_name) + 1);
+    if(settings->coap.database_file == NULL)
+    {
+        fprintf(stderr, "%s:%d - failed to allocate string\r\n",
+                __FILE__, __LINE__);
+        goto exit;
+    }
+    memcpy(settings->coap.database_file, database_name, strlen(database_name) + 1);
+    settings->coap.security = device_list;
+    ret = 0;
+
+exit:
+    if(ret)
+    {
+        free_device_list(device_list);
+    }
+    json_decref(j_database);
+    return ret;
 }
 
 error_t parse_opt(int key, char *arg, struct argp_state *state)

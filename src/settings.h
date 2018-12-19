@@ -28,23 +28,26 @@
 #include "logging.h"
 #include "security.h"
 
+#define DATABASE_UUID_KEY_BIT       0x1
+#define DATABASE_PSK_KEY_BIT        0x2
+#define DATABASE_PSK_ID_KEY_BIT     0x4
+#define DATABASE_ALL_KEYS_SET       0x7
+
 typedef struct
 {
     uint16_t port;
     http_security_settings_t security;
 } http_settings_t;
 
-typedef struct _device_database_t device_database_t;
-
-struct _device_database_t
+typedef struct device_database_t
 {
-    device_database_t *next;
+    struct device_database_t *next;
     char* uuid;
     uint8_t* psk;
     size_t psk_len;
     uint8_t* psk_id;
     size_t psk_id_len;
-};
+} device_database_t;
 
 typedef struct
 {
@@ -59,8 +62,6 @@ typedef struct
     coap_settings_t coap;
     logging_settings_t logging;
 } settings_t;
-
-int read_config(char *config_name, settings_t *settings);
 
 error_t parse_opt(int key, char *arg, struct argp_state *state);
 
