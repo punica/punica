@@ -98,12 +98,12 @@ int rest_step(rest_context_t *rest, struct timeval *tv)
         request.client_cert_file = o_strdup(rest->certificate);
         if(rest->certificate != NULL && request.client_cert_file == NULL)
         {
-            log_message(LOG_LEVEL_DEBUG, "[CALLBACK] Failed to set client certificate\n");
+            log_message(LOG_LEVEL_WARN, "[CALLBACK] Failed to set client certificate\n");
         }
         request.client_key_file = o_strdup(rest->key);
         if(rest->key != NULL && request.client_key_file == NULL)
         {
-            log_message(LOG_LEVEL_DEBUG, "[CALLBACK] Failed to set client private key\n");
+            log_message(LOG_LEVEL_WARN, "[CALLBACK] Failed to set client private key\n");
         }
 
         u_map_copy_into(request.map_header, &headers);

@@ -93,12 +93,12 @@ bool validate_callback(json_t *jcallback, rest_context_t *rest)
     test_request.client_cert_file = o_strdup(rest->certificate);
     if(rest->certificate != NULL && test_request.client_cert_file == NULL)
     {
-        log_message(LOG_LEVEL_DEBUG, "[CALLBACK] Failed to set client certificate\n");
+        log_message(LOG_LEVEL_WARN, "[CALLBACK] Failed to set client certificate\n");
     }
     test_request.client_key_file = o_strdup(rest->key);
     if(rest->key != NULL && test_request.client_key_file == NULL)
     {
-        log_message(LOG_LEVEL_DEBUG, "[CALLBACK] Failed to set client private key\n");
+        log_message(LOG_LEVEL_WARN, "[CALLBACK] Failed to set client private key\n");
     }
 
 
