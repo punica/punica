@@ -20,18 +20,6 @@
 #include "restserver.h"
 #include "settings.h"
 
-static void abort_list(device_database_t *list)
-{
-    device_database_t *next, *curr;
-
-    for(curr = list; curr != NULL; )
-    {
-        next = curr->next;
-        free(curr);
-        curr = next;
-    }
-}
-
 static int update_list(device_database_t *list, json_t *array)
 {
     const char* string;
@@ -40,21 +28,27 @@ static int update_list(device_database_t *list, json_t *array)
     json_t *value, *key;
     device_database_t *entry, *head = NULL;
 
+    entry = alloc_device_list(json_array_size(j_database));
+    if(entry == NULL)
+    {
+        return -1;
+    }
+    head = entry;
+
     json_array_foreach(array, index, value)
     {
         count = 0;
-        entry = (device_database_t*)malloc(sizeof(device_database_t));
-        if(entry == NULL)
-        {
-            return -1;
-        }
-        memset(entry, 0, sizeof(device_database_t));
-
         if((key = json_object_get(value, "uuid")) != NULL)
         {
             string = json_string_value(key);
             if(string == NULL)
                 goto abort;
+
+            entry->uuid = (char*)malloc(strlen(string) + 1);
+            if(entry->uuid == NULL)
+            {
+                goto abort;
+            }
 
             memcpy(entry->uuid, string, strlen(string) + 1);
             count++;
@@ -65,7 +59,13 @@ static int update_list(device_database_t *list, json_t *array)
             if(string == NULL)
                 goto abort;
 
-            memcpy(entry->uuid, string, strlen(string) + 1);
+            entry->psk = (uint8_t*)malloc(strlen(string) + 1);
+            if(entry->psk == NULL)
+            {
+                goto abort;
+            }
+
+            memcpy(entry->psk, string, strlen(string) + 1);
             count++;
         }
         if((key = json_object_get(value, "psk_id")) != NULL)
@@ -74,29 +74,27 @@ static int update_list(device_database_t *list, json_t *array)
             if(string == NULL)
                 goto abort;
 
-            memcpy(entry->uuid, string, strlen(string) + 1);
+            entry->psk_id = (uint8_t*)malloc(strlen(string) + 1);
+            if(entry->psk_id == NULL)
+            {
+                goto abort;
+            }
+
+            memcpy(entry->psk_id, string, strlen(string) + 1);
             count++;
         }
 
 abort:
-        entry->next = head;
-        head = entry;
+        entry = entry->next;
 
         if(count != 3)
         {
-            abort_list(head);
+            free_device_list(head);
             return -1;
         }
     }
 
-    head = entry;
-    while(entry->next != NULL)
-    {
-        entry = entry->next;
-    }
-    entry->next = list;
-    list = head;
-
+    list->next = head;
     return 0;
 }
 
