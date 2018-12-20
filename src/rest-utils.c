@@ -65,6 +65,10 @@ void free_device_list(device_database_t *head)
 
 device_database_t * alloc_device_list(size_t size)
 {
+    if(size < 1)
+    {
+        return NULL;
+    }
     device_database_t *head, *next = NULL;
 
     for(int i = 0; i < size; i++)
