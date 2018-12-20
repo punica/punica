@@ -94,7 +94,13 @@ abort:
         }
     }
 
-    list->next = head;
+    entry = list;
+    while(entry->next != NULL)
+    {
+        entry = entry->next;
+    }
+    entry->next = head;
+
     return 0;
 }
 
