@@ -385,12 +385,17 @@ static int read_database(char *database_name, settings_t *settings)
         return ret;
     }
 
-    device_database_t *device_list = alloc_device_list(json_array_size(j_database));
-    if(device_list == NULL)
+    device_database_t *device_list = 0;
+    int array_size = json_array_size(j_database);
+    if(array_size > 0)
     {
-        fprintf(stderr, "%s:%d - failed to allocate device list\r\n",
-                __FILE__, __LINE__);
-        return ret;
+        device_list = alloc_device_list(array_size);
+        if(device_list == NULL)
+        {
+            fprintf(stderr, "%s:%d - failed to allocate device list\r\n",
+                    __FILE__, __LINE__);
+            return ret;
+        }
     }
 
     device_database_t *curr = device_list;
