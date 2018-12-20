@@ -98,28 +98,6 @@ void rest_async_response_delete(rest_async_response_t *response)
     free(response);
 }
 
-static int string2byte(const char* string, uint8_t* buffer)
-{
-    const char* pos;
-
-    for(int i = 0; i < strlen(string); i++)
-    {
-        if(string[i] == 0x3d) // '='
-        {
-            buffer[i] = 0x40; // change to value outside of base64 table
-            continue;
-        }
-
-        if((pos = strchr(base64_table, string[i])) == NULL)
-        {
-            return 1;
-        }
-        buffer[i] = pos - base64_table;
-    }
-
-    return 0;
-}
-
 int base64_decode(const char *base64_string, uint8_t *data, size_t *length)
 {
     if(!base64_string || !length)
@@ -127,70 +105,71 @@ int base64_decode(const char *base64_string, uint8_t *data, size_t *length)
         return BASE64_ERR_ARG;
     }
 
-    int buf_len;
     int string_index, data_index = 0;
-    int str_len = strlen(base64_string);
+    int buffer_length, string_length, padding = 0;
 
-    if(str_len > BASE64_MAX_STRING_LEN)
-    {
-        return BASE64_ERR_LEN;
-    }
-
-    buf_len = str_len;
-    for(int i = 0; i < str_len; i++)
+    string_length = strlen(base64_string);
+    for(int i = 0; i < string_length; i++)
     {
         if(base64_string[i] == 0x3d)
         {
-            buf_len = i;
+            padding++;
+            if(base64_string[i + 1] == 0x3d)
+            {
+                padding++;
+            }
+            break;
         }
     }
+    buffer_length = (string_length / 4) * 3 - padding;
 
     if(data == NULL)
     {
-        *length = buf_len;
+        *length = buffer_length;
         return BASE64_ERR_NONE;
     }
 
-    if(*length < buf_len)
+    if(*length < buffer_length)
     {
         return BASE64_ERR_BUF_SIZE;
     }
 
-    uint8_t base64_buffer[BASE64_MAX_STRING_LEN];
-    if(string2byte(base64_string, base64_buffer))
-    {
-        return BASE64_ERR_INV_CHAR;
-    }
+    memset(data, 0, *length);
 
-    for(string_index = 0; string_index < str_len; string_index++)
+    uint8_t bits6;
+    const char *pos;
+    for(string_index = 0; string_index < string_length; string_index++)
     {
-        if(base64_buffer[string_index] == 0x40)
+        if(base64_string[string_index] == 0x3d)
         {
-            data_index = data_index + (string_index % 4) - 1;
             break;
         }
+        if((pos = strchr(base64_table, base64_string[string_index])) == NULL)
+        {
+            return BASE64_ERR_INV_CHAR;
+        }
+        bits6 = pos - base64_table;
 
         switch (string_index % 4)
         {
         case 0:
-            data[data_index] = data[data_index] | (base64_buffer[string_index] << 2);
+            data[data_index] = data[data_index] | (bits6 << 2);
             break;
         case 1:
-            data[data_index] = data[data_index] | (base64_buffer[string_index] >> 4);
-            data[data_index + 1] = data[data_index + 1] | (base64_buffer[string_index] << 4);
+            data[data_index] = data[data_index] | (bits6 >> 4);
+            data[data_index + 1] = data[data_index + 1] | (bits6 << 4);
             break;
         case 2:
-            data[data_index + 1] = data[data_index + 1] | (base64_buffer[string_index] >> 2);
-            data[data_index + 2] = data[data_index + 2] | (base64_buffer[string_index] << 6);
+            data[data_index + 1] = data[data_index + 1] | (bits6 >> 2);
+            data[data_index + 2] = data[data_index + 2] | (bits6 << 6);
             break;
         case 3:
-            data[data_index + 2] = data[data_index + 2] | (base64_buffer[string_index]);
+            data[data_index + 2] = data[data_index + 2] | (bits6);
             data_index = data_index + 3;
             break;
         }
     }
 
-    *length = data_index;
     return BASE64_ERR_NONE;
 }
 
@@ -205,10 +184,16 @@ int base64_encode(const uint8_t *data, size_t length, char *base64_string, size_
         return BASE64_ERR_ARG;
     }
 
+    int string_length = ((length + 2) / 3) * 4;
     if(base64_string == NULL)
     {
-        *base64_length = ((length + 2) / 3) * 4 + 1; // +1 for null-terminator
+        *base64_length = string_length;
         return BASE64_ERR_NONE;
+    }
+
+    if(*base64_length < string_length)
+    {
+        return BASE64_ERR_STR_SIZE;
     }
 
     for (data_index = 0; data_index < length; data_index++)
@@ -246,8 +231,6 @@ int base64_encode(const uint8_t *data, size_t length, char *base64_string, size_
     }
 
     base64_string[buffer_index++] = '\0';
-
-    *base64_length = buffer_index;
 
     return BASE64_ERR_NONE;
 }

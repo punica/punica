@@ -29,7 +29,7 @@
 
 enum base64_error_t {
     BASE64_ERR_NONE     = 0,
-    BASE64_ERR_LEN      = -1,
+    BASE64_ERR_STR_SIZE = -1,
     BASE64_ERR_INV_CHAR = -2,
     BASE64_ERR_BUF_SIZE = -3,
     BASE64_ERR_ARG      = -4,
@@ -108,9 +108,9 @@ int rest_notif_deregistration_set(rest_notif_deregistration_t *deregistration, c
  * data [out] - pointer to a buffer, can be NULL (in this case function calculates required buffer length).
  * length [in/out] - the length of the data buffer (in) / the length of binary base64 data (out).
  * Returns 0 on success, negative value on error:
- *      BASE64_ERR_LEN      (-1) base64 string length exceeds allowed maximum
+ *      BASE64_ERR_STR_SIZE (-1) supplied base64_string length is too small
  *      BASE64_ERR_INV_CHAR (-2) base64 string contains invalid characters
- *      BASE64_ERR_BUF_SIZE (-3) provided buffer length is too small
+ *      BASE64_ERR_BUF_SIZE (-3) provided binary buffer length is too small
  *      BASE64_ERR_ARG      (-4) invalid function arguments
  */
 int base64_decode(const char *base64_string, uint8_t *data, size_t *length);
@@ -120,11 +120,11 @@ int base64_decode(const char *base64_string, uint8_t *data, size_t *length);
  * data [in] - binary data to be encoded
  * length [in] - length of the binary data
  * base64_string [out] - pointer to a string buffer, can be NULL
- * base64_length [in/out] - pointer to variable storing length of the string buffer (in) / the length of encoded base64 string.
+ * base64_length [in/out] - pointer to variable storing length of the string buffer (in) / the length of encoded base64 string (out) (NOT INCLUDING THE NULL TERMINATOR).
  * Returns 0 on success, negative value on error:
- *      BASE64_ERR_LEN      (-1) base64 string length exceeds allowed maximum
+ *      BASE64_ERR_STR_SIZE (-1) supplied base64_string length is too small
  *      BASE64_ERR_INV_CHAR (-2) base64 string contains invalid characters
- *      BASE64_ERR_BUF_SIZE (-3) provided buffer length is too small
+ *      BASE64_ERR_BUF_SIZE (-3) provided binary buffer length is too small
  *      BASE64_ERR_ARG      (-4) invalid function arguments
  */
 int base64_encode(const uint8_t *data, size_t length, char *base64_string, size_t *base64_length);
