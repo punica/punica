@@ -20,7 +20,7 @@
 #include "restserver.h"
 #include "settings.h"
 
-static int update_list(device_database_t *list, json_t *array)
+static int update_list(device_database_t **list, json_t *array)
 {
     const char* string;
     int count;
@@ -94,7 +94,13 @@ abort:
         }
     }
 
-    entry = list;
+    if(*list == NULL)
+    {
+        *list = head;
+        return 0;
+    }
+
+    entry = *list;
     while(entry->next != NULL)
     {
         entry = entry->next;
@@ -143,7 +149,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
         return U_CALLBACK_COMPLETE;
     }
 
-    if(update_list(data->security, jdevice_list))
+    if(update_list(&data->security, jdevice_list))
     {
         json_decref(jdevice_list);
         ulfius_set_empty_body_response(resp, 400);
