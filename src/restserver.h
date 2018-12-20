@@ -95,6 +95,7 @@ void rest_unlock(rest_context_t *rest);
 
 int rest_devices_get_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context);
 int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context);
+int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context);
 
 #endif // RESTSERVER_H
 

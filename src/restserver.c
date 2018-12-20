@@ -349,6 +349,8 @@ int main(int argc, char *argv[])
                                &rest_devices_get_cb, &settings.coap);
     ulfius_add_endpoint_by_val(&instance, "PUT", "/devices", NULL, 10,
                                &rest_devices_put_cb, &settings.coap);
+    ulfius_add_endpoint_by_val(&instance, "DELETE", "/devices", ":id/*", 10,
+                               &rest_devices_delete_cb, &settings.coap);
 
     // Resources
     ulfius_add_endpoint_by_val(&instance, "*", "/endpoints", ":name/*", 10,

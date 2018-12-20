@@ -17,6 +17,8 @@
  *
  */
 
+#include <string.h>
+
 #include "restserver.h"
 #include "settings.h"
 
@@ -157,6 +159,14 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     }
 
     jdatabase_list = json_load_file(data->database_file, 0, NULL);
+    if(json_is_array(jdatabase_list) == 0)
+    {
+        json_decref(jdevice_list);
+        json_decref(jdatabase_list);
+        ulfius_set_empty_body_response(resp, 500);
+        return U_CALLBACK_COMPLETE;
+    }
+
     json_array_extend(jdatabase_list, jdevice_list);
 
     if(json_dump_file(jdatabase_list, data->database_file, 0) != 0)
@@ -174,3 +184,63 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     return U_CALLBACK_COMPLETE;
 }
 
+int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
+{
+    int ret = 500;
+    coap_settings_t *data = (coap_settings_t *)context;
+    json_t *jdatabase_list;
+
+    const char* id;
+    id = u_map_get(req->map_url, "id");
+    if(id == NULL)
+    {
+        ulfius_set_empty_body_response(resp, 400);
+        return U_CALLBACK_COMPLETE;
+    }
+
+    if(remove_device_list(&data->security, id))
+    {
+        //  device not found
+        ulfius_set_empty_body_response(resp, 404);
+        return U_CALLBACK_COMPLETE;
+    }
+
+    jdatabase_list = json_load_file(data->database_file, 0, NULL);
+    if(json_is_array(jdatabase_list) == 0)
+    {
+        goto exit;
+    }
+
+    size_t index;
+    json_t *j_value, *j_entry;
+    const char* j_string;
+    json_array_foreach(jdatabase_list, index, j_value)
+    {
+        j_entry = json_object_get(j_value, "uuid");
+        if(j_entry == NULL)
+        {
+            goto exit;
+        }
+
+        j_string = json_string_value(j_entry);
+        if(j_string == NULL)
+        {
+            goto exit;
+        }
+
+        if(strcmp(j_string, id) != 0)
+        {
+            continue;
+        }
+
+        json_array_remove(jdatabase_list, index);
+        json_dump_file(jdatabase_list, data->database_file, 0);
+        ret = 200;
+        goto exit;
+    }
+
+exit:
+    json_decref(jdatabase_list);
+    ulfius_set_empty_body_response(resp, ret);
+    return U_CALLBACK_COMPLETE;
+}
