@@ -38,3 +38,47 @@ int coap_to_http_status(int status)
     }
 }
 
+void free_device_list(device_database_t *head)
+{
+    device_database_t *curr, *next;
+    curr = head;
+
+    while(curr != NULL)
+    {
+        next = curr->next;
+        if(curr->uuid)
+        {
+            free(curr->uuid);
+        }
+        if(curr->psk)
+        {
+            free(curr->psk);
+        }
+        if(curr->psk_id)
+        {
+            free(curr->psk_id);
+        }
+        free(curr);
+        curr = next;
+    }
+}
+
+device_database_t * alloc_device_list(size_t size)
+{
+    device_database_t *head, *next = NULL;
+
+    for(int i = 0; i < size; i++)
+    {
+        head = calloc(1, sizeof(device_database_t));
+        if(head == NULL)
+        {
+            free_device_list(next);
+            return NULL;
+        }
+        head->next = next;
+        next = head;
+    }
+
+    return head;
+}
+

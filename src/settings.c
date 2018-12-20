@@ -365,50 +365,6 @@ static int read_config(char *config_name, settings_t *settings)
     return 0;
 }
 
-static void free_device_list(device_database_t *head)
-{
-    device_database_t *curr, *next;
-    curr = head;
-
-    while(curr != NULL)
-    {
-        next = curr->next;
-        if(curr->uuid)
-        {
-            free(curr->uuid);
-        }
-        if(curr->psk)
-        {
-            free(curr->psk);
-        }
-        if(curr->psk_id)
-        {
-            free(curr->psk_id);
-        }
-        free(curr);
-        curr = next;
-    }
-}
-
-static device_database_t * alloc_device_list(size_t size)
-{
-    device_database_t *head, *next = NULL;
-
-    for(int i = 0; i < size; i++)
-    {
-        head = calloc(1, sizeof(device_database_t));
-        if(head == NULL)
-        {
-            free_device_list(next);
-            return NULL;
-        }
-        head->next = next;
-        next = head;
-    }
-
-    return head;
-}
-
 static int read_database(char *database_name, settings_t *settings)
 {
     json_error_t error;

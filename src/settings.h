@@ -27,6 +27,7 @@
 
 #include "logging.h"
 #include "security.h"
+#include "rest-utils.h"
 
 #define DATABASE_UUID_KEY_BIT       0x1
 #define DATABASE_PSK_KEY_BIT        0x2
@@ -38,16 +39,6 @@ typedef struct
     uint16_t port;
     http_security_settings_t security;
 } http_settings_t;
-
-typedef struct device_database_t
-{
-    struct device_database_t *next;
-    char* uuid;
-    uint8_t* psk;
-    size_t psk_len;
-    uint8_t* psk_id;
-    size_t psk_id_len;
-} device_database_t;
 
 typedef struct
 {
