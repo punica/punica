@@ -44,6 +44,10 @@ static int update_list(device_database_t *list, json_t *array)
     {
         count = 0;
         entry = (device_database_t*)malloc(sizeof(device_database_t));
+        if(entry == NULL)
+        {
+            return -1;
+        }
         memset(entry, 0, sizeof(device_database_t));
 
         if((key = json_object_get(value, "uuid")) != NULL)
@@ -81,7 +85,7 @@ abort:
         if(count != 3)
         {
             abort_list(head);
-            return 1;
+            return -1;
         }
     }
 
