@@ -28,7 +28,7 @@ static int update_list(device_database_t *list, json_t *array)
     json_t *value, *key;
     device_database_t *entry, *head = NULL;
 
-    entry = alloc_device_list(json_array_size(j_database));
+    entry = alloc_device_list(json_array_size(array));
     if(entry == NULL)
     {
         return -1;
@@ -100,7 +100,7 @@ abort:
 
 int rest_devices_get_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
-    coap_settings_t *data = (rest_context_t *)context;
+    coap_settings_t *data = (coap_settings_t *)context;
     device_database_t *device;
 
     json_t *jdevices = json_array();
@@ -118,7 +118,7 @@ int rest_devices_get_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
 
 int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
-    coap_settings_t *data = (rest_context_t *)context;
+    coap_settings_t *data = (coap_settings_t *)context;
     const char *ct;
     json_t *jdevice_list, *jdatabase_list;
 
@@ -147,7 +147,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     jdatabase_list = json_load_file(data->database_file, 0, NULL);
     json_array_extend(jdatabase_list, jdevice_list);
 
-    if(json_dump_file(jdatabase_list, data->database_file, 0) != NULL)
+    if(json_dump_file(jdatabase_list, data->database_file, 0) != 0)
     {
         json_decref(jdevice_list);
         json_decref(jdatabase_list);
