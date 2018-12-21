@@ -120,7 +120,7 @@ int rest_devices_get_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     json_t *jdevices = json_array();
     for (device = data->security; device != NULL; device = device->next)
     {
-        json_t *jstring = json_string(device->uuid);
+        json_t *jstring = json_string(device->psk_id);
         json_array_append_new(jdevices, jstring);
     }
 
