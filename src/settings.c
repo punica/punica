@@ -375,17 +375,22 @@ static int read_database(char *database_name, settings_t *settings)
     json_t *j_database;
     int key_check;
     int ret = 1;
+    device_database_t *device_list = NULL;
 
     j_database = json_load_file(database_name, 0, &error);
+    if(j_database == NULL)
+    {
+        // no file found, will be created with /devices REST API
+        goto no_file;
+    }
 
     if (!json_is_array(j_database))
     {
-        fprintf(stderr, "%s:%d:%d error:%s \n",
-                database_name, error.line, error.column, error.text);
+        fprintf(stderr, "%s:%d - database file must contain a json array\r\n",
+                __FILE__, __LINE__);
         return ret;
     }
 
-    device_database_t *device_list = 0;
     int array_size = json_array_size(j_database);
     if(array_size > 0)
     {
@@ -487,6 +492,7 @@ static int read_database(char *database_name, settings_t *settings)
         curr = curr->next;
     }
 
+no_file:
     settings->coap.database_file = (char*)calloc(1, strlen(database_name) + 1);
     if(settings->coap.database_file == NULL)
     {

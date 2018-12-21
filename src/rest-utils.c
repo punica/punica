@@ -16,11 +16,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>. 
  *
  */
+#include <string.h>
 
 #include "rest-utils.h"
 
 #include "restserver.h"
-
 
 int coap_to_http_status(int status)
 {
