@@ -29,6 +29,8 @@ static device_database_t * prepare_list(json_t *array)
     size_t index;
     json_t *value, *key;
     device_database_t *entry, *head = NULL;
+    uint8_t binary_buffer[512];
+    size_t length;
 
     entry = alloc_device_list(json_array_size(array));
     if(entry == NULL)
@@ -61,13 +63,20 @@ static device_database_t * prepare_list(json_t *array)
             if(string == NULL)
                 goto abort;
 
-            entry->psk = (uint8_t*)malloc(strlen(string) + 1);
+            base64_decode(string, NULL, &length);
+            if(base64_decode(string, binary_buffer, &length))
+            {
+                goto abort;
+            }
+
+            entry->psk = (uint8_t*)malloc(length);
             if(entry->psk == NULL)
             {
                 goto abort;
             }
 
-            memcpy(entry->psk, string, strlen(string) + 1);
+            memcpy(entry->psk, binary_buffer, length);
+            entry->psk_len = length;
             count++;
         }
         if((key = json_object_get(value, "psk_id")) != NULL)
@@ -76,13 +85,20 @@ static device_database_t * prepare_list(json_t *array)
             if(string == NULL)
                 goto abort;
 
-            entry->psk_id = (uint8_t*)malloc(strlen(string) + 1);
+            base64_decode(string, NULL, &length);
+            if(base64_decode(string, binary_buffer, &length))
+            {
+                goto abort;
+            }
+
+            entry->psk_id = (uint8_t*)malloc(length);
             if(entry->psk_id == NULL)
             {
                 goto abort;
             }
 
-            memcpy(entry->psk_id, string, strlen(string) + 1);
+            memcpy(entry->psk_id, binary_buffer, length);
+            entry->psk_id_len = length;
             count++;
         }
 
@@ -110,6 +126,8 @@ static int update_list(device_database_t *list, json_t *jdevice)
     json_t *jstring;
     device_database_t *device;
     uint8_t *oldpsk, *oldid;
+    uint8_t binary_buffer[512];
+    size_t length;
 
     jstring = json_object_get(jdevice, "uuid");
     string = json_string_value(jstring);
@@ -120,27 +138,41 @@ static int update_list(device_database_t *list, json_t *jdevice)
         {
             jstring = json_object_get(jdevice, "psk");
             string = json_string_value(jstring);
+
+            base64_decode(string, NULL, &length);
+            if(base64_decode(string, binary_buffer, &length))
+            {
+                return -1;
+            }
+
             oldpsk = device->psk;
-            device->psk = calloc(1, strlen(string) + 1);
+            device->psk = malloc(length);
             if(device->psk == NULL)
             {
                 device->psk = oldpsk;
                 return -1;
             }
-            memcpy(device->psk, string, strlen(string) + 1);
+            memcpy(device->psk, binary_buffer, length);
 
             jstring = json_object_get(jdevice, "psk_id");
             string = json_string_value(jstring);
-            oldid = device->psk;
-            device->psk = calloc(1, strlen(string) + 1);
-            if(device->psk == NULL)
+
+            base64_decode(string, NULL, &length);
+            if(base64_decode(string, binary_buffer, &length))
+            {
+                return -1;
+            }
+
+            oldid = device->psk_id;
+            device->psk_id = malloc(length);
+            if(device->psk_id == NULL)
             {
                 free(device->psk);
                 device->psk = oldpsk;
                 device->psk_id = oldid;
                 return -1;
             }
-            memcpy(device->psk, string, strlen(string) + 1);
+            memcpy(device->psk_id, binary_buffer, length);
             free(oldpsk);
             free(oldid);
 
@@ -155,11 +187,22 @@ int rest_devices_get_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
 {
     coap_settings_t *data = (coap_settings_t *)context;
     device_database_t *device;
+    char string[512];
+    size_t length = sizeof(string);
 
     json_t *jdevices = json_array();
     for (device = data->security; device != NULL; device = device->next)
     {
-        json_t *jstring = json_string((const char*)device->psk_id);
+        memset(string, 0, length);
+
+        if(base64_encode(device->psk_id, device->psk_id_len, string, &length))
+        {
+            json_decref(jdevices);
+            ulfius_set_empty_body_response(resp, 500);
+            return U_CALLBACK_COMPLETE;
+        }
+
+        json_t *jstring = json_string(string);
         json_array_append_new(jdevices, jstring);
     }
 
@@ -173,6 +216,8 @@ int rest_devices_get_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void 
 {
     coap_settings_t *data = (coap_settings_t *)context;
     device_database_t *device;
+    char string[512];
+    size_t length = sizeof(string);
 
     const char* id;
     id = u_map_get(req->map_url, "id");
@@ -187,7 +232,16 @@ int rest_devices_get_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void 
     {
         if(strcmp(id, device->uuid) == 0)
         {
-            json_t *jstring = json_string((const char*)device->psk_id);
+            memset(string, 0, length);
+
+            if(base64_encode(device->psk_id, device->psk_id_len, string, &length))
+            {
+                json_decref(jdevice);
+                ulfius_set_empty_body_response(resp, 500);
+                return U_CALLBACK_COMPLETE;
+            }
+
+            json_t *jstring = json_string(string);
             json_object_set_new(jdevice, "psk_id", jstring);
             break;
         }
