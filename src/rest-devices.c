@@ -159,22 +159,27 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     }
 
     jdatabase_list = json_load_file(data->database_file, 0, NULL);
-    if(json_is_array(jdatabase_list) == 0)
+    if(json_is_array(jdatabase_list) != 0)
     {
-        json_decref(jdevice_list);
-        json_decref(jdatabase_list);
-        ulfius_set_empty_body_response(resp, 500);
-        return U_CALLBACK_COMPLETE;
+        json_array_extend(jdatabase_list, jdevice_list);
+
+        if(json_dump_file(jdatabase_list, data->database_file, 0) != 0)
+        {
+            json_decref(jdevice_list);
+            json_decref(jdatabase_list);
+            ulfius_set_empty_body_response(resp, 500);
+            return U_CALLBACK_COMPLETE;
+        }
     }
-
-    json_array_extend(jdatabase_list, jdevice_list);
-
-    if(json_dump_file(jdatabase_list, data->database_file, 0) != 0)
+    else
     {
-        json_decref(jdevice_list);
-        json_decref(jdatabase_list);
-        ulfius_set_empty_body_response(resp, 500);
-        return U_CALLBACK_COMPLETE;
+        if(json_dump_file(jdevice_list, data->database_file, 0) != 0)
+        {
+            json_decref(jdevice_list);
+            json_decref(jdatabase_list);
+            ulfius_set_empty_body_response(resp, 500);
+            return U_CALLBACK_COMPLETE;
+        }
     }
 
     ulfius_set_empty_body_response(resp, 201);
