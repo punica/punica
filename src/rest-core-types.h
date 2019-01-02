@@ -25,7 +25,6 @@
 
 #include "rest-list.h"
 
-#define BASE64_MAX_STRING_LEN   512
 
 enum base64_error_t {
     BASE64_ERR_NONE     = 0,

@@ -27,6 +27,11 @@
 #include "security.h"
 #include "rest-core-types.h"
 
+#define DATABASE_UUID_KEY_BIT       0x1
+#define DATABASE_PSK_KEY_BIT        0x2
+#define DATABASE_PSK_ID_KEY_BIT     0x4
+#define DATABASE_ALL_KEYS_SET       0x7
+
 const char *argp_program_version = PUNICA_FULL_VERSION;
 
 static char doc[] = "Restserver - interface to LwM2M server and all clients connected to it";
@@ -419,16 +424,14 @@ static int read_database(char *database_name, settings_t *settings)
             }
             if (strcasecmp(section, "uuid") == 0)
             {
-                // pointer returned by 'json_string_value' exists as long as 'j_value' exists, so allocate new
                 json_string = json_string_value(j_value);
-                curr->uuid = (char*)calloc(1, strlen(json_string));
+                curr->uuid = strdup(json_string);
                 if(curr->uuid == NULL)
                 {
                     fprintf(stderr, "%s:%d - failed to allocate string\r\n",
                             __FILE__, __LINE__);
                     goto exit;
                 }
-                memcpy(curr->uuid, json_string, strlen(json_string) + 1);
                 key_check |= DATABASE_UUID_KEY_BIT;
             }
             else if (strcasecmp(section, "psk") == 0)
