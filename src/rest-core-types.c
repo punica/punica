@@ -182,7 +182,8 @@ int base64_encode(const uint8_t *data, size_t length, char *base64_string, size_
 
     if (data == NULL || length <= 0)
     {
-        return BASE64_ERR_ARG;
+        *base64_length = 0;
+        return BASE64_ERR_NONE;
     }
 
     int string_length = ((length + 2) / 3) * 4;
@@ -194,6 +195,7 @@ int base64_encode(const uint8_t *data, size_t length, char *base64_string, size_
 
     if (*base64_length < string_length)
     {
+        *base64_length = string_length;
         return BASE64_ERR_STR_SIZE;
     }
 
@@ -232,6 +234,7 @@ int base64_encode(const uint8_t *data, size_t length, char *base64_string, size_
     }
 
     base64_string[buffer_index++] = '\0';
+    *base64_length = string_length;
 
     return BASE64_ERR_NONE;
 }
@@ -254,7 +257,7 @@ int rest_async_response_set(rest_async_response_t *response, int status,
         return -1;
     }
 
-    response->payload = (const char *)calloc(1, base64_length);
+    response->payload = (const char *)calloc(1, base64_length + 1);
     if (response->payload == NULL)
     {
         return -1;
