@@ -418,7 +418,7 @@ static int read_database(char *database_name, settings_t *settings)
         {
             if(!json_is_string(j_value))
             {
-                fprintf(stderr, "%s:%d - key \'%s\' must be a string\r\n",
+                fprintf(stderr, "%s:%d - \'%s\' must be a string\r\n",
                         __FILE__, __LINE__, section);
                 goto exit;
             }
