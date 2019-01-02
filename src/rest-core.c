@@ -94,12 +94,12 @@ int rest_step(rest_context_t *rest, struct timeval *tv)
         request.timeout = 20;
         request.check_server_certificate = 0;
         request.client_cert_file = o_strdup(rest->settings->http.security.certificate);
-        if(rest->settings->http.security.certificate != NULL && request.client_cert_file == NULL)
+        if (rest->settings->http.security.certificate != NULL && request.client_cert_file == NULL)
         {
             log_message(LOG_LEVEL_WARN, "[CALLBACK] Failed to set client certificate\n");
         }
         request.client_key_file = o_strdup(rest->settings->http.security.private_key);
-        if(rest->settings->http.security.private_key != NULL && request.client_key_file == NULL)
+        if (rest->settings->http.security.private_key != NULL && request.client_key_file == NULL)
         {
             log_message(LOG_LEVEL_WARN, "[CALLBACK] Failed to set client private key\n");
         }
