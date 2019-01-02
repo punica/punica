@@ -107,9 +107,10 @@ int base64_decode(const char *base64_string, uint8_t *data, size_t *length)
 
     int string_index, data_index = 0;
     int buffer_length, string_length, padding = 0;
+    int i;
 
     string_length = strlen(base64_string);
-    for(int i = 0; i < string_length; i++)
+    for(i = 0; i < string_length; i++)
     {
         if(base64_string[i] == 0x3d)
         {
