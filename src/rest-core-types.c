@@ -100,7 +100,7 @@ void rest_async_response_delete(rest_async_response_t *response)
 
 int base64_decode(const char *base64_string, uint8_t *data, size_t *length)
 {
-    if(!base64_string || !length)
+    if (!base64_string || !length)
     {
         return BASE64_ERR_ARG;
     }
@@ -110,12 +110,12 @@ int base64_decode(const char *base64_string, uint8_t *data, size_t *length)
     int i;
 
     string_length = strlen(base64_string);
-    for(i = 0; i < string_length; i++)
+    for (i = 0; i < string_length; i++)
     {
-        if(base64_string[i] == 0x3d)
+        if (base64_string[i] == 0x3d)
         {
             padding++;
-            if(base64_string[i + 1] == 0x3d)
+            if (base64_string[i + 1] == 0x3d)
             {
                 padding++;
             }
@@ -124,13 +124,13 @@ int base64_decode(const char *base64_string, uint8_t *data, size_t *length)
     }
     buffer_length = (string_length / 4) * 3 - padding;
 
-    if(data == NULL)
+    if (data == NULL)
     {
         *length = buffer_length;
         return BASE64_ERR_NONE;
     }
 
-    if(*length < buffer_length)
+    if (*length < buffer_length)
     {
         return BASE64_ERR_BUF_SIZE;
     }
@@ -139,13 +139,13 @@ int base64_decode(const char *base64_string, uint8_t *data, size_t *length)
 
     uint8_t bits6;
     const char *pos;
-    for(string_index = 0; string_index < string_length; string_index++)
+    for (string_index = 0; string_index < string_length; string_index++)
     {
-        if(base64_string[string_index] == 0x3d)
+        if (base64_string[string_index] == 0x3d)
         {
             break;
         }
-        if((pos = strchr(base64_table, base64_string[string_index])) == NULL)
+        if ((pos = strchr(base64_table, base64_string[string_index])) == NULL)
         {
             return BASE64_ERR_INV_CHAR;
         }
@@ -180,19 +180,19 @@ int base64_encode(const uint8_t *data, size_t length, char *base64_string, size_
     int data_index = 0,
         buffer_index = 0;
 
-    if(data == NULL || length <= 0)
+    if (data == NULL || length <= 0)
     {
         return BASE64_ERR_ARG;
     }
 
     int string_length = ((length + 2) / 3) * 4;
-    if(base64_string == NULL)
+    if (base64_string == NULL)
     {
         *base64_length = string_length;
         return BASE64_ERR_NONE;
     }
 
-    if(*base64_length < string_length)
+    if (*base64_length < string_length)
     {
         return BASE64_ERR_STR_SIZE;
     }
@@ -203,14 +203,14 @@ int base64_encode(const uint8_t *data, size_t length, char *base64_string, size_
         {
         case 2:
             base64_string[buffer_index++] = base64_table[
-                                         ((previous_byte & 0x0f) << 2) + ((data[data_index] & 0xc0) >> 6)
-                                     ];
+                                                ((previous_byte & 0x0f) << 2) + ((data[data_index] & 0xc0) >> 6)
+                                            ];
             base64_string[buffer_index++] = base64_table[data[data_index] & 0x3f];
             break;
         case 1:
             base64_string[buffer_index++] = base64_table[
-                                         ((previous_byte & 0x03) << 4) + ((data[data_index] & 0xf0) >> 4)
-                                     ];
+                                                ((previous_byte & 0x03) << 4) + ((data[data_index] & 0xf0) >> 4)
+                                            ];
             break;
         case 0:
             base64_string[buffer_index++] = base64_table[(data[data_index] & 0xfc) >> 2];
@@ -249,18 +249,18 @@ int rest_async_response_set(rest_async_response_t *response, int status,
     }
 
     size_t base64_length;
-    if(base64_encode(payload, length, NULL, &base64_length))
+    if (base64_encode(payload, length, NULL, &base64_length))
     {
         return -1;
     }
 
-    response->payload = (const char*)calloc(1, base64_length);
-    if(response->payload == NULL)
+    response->payload = (const char *)calloc(1, base64_length);
+    if (response->payload == NULL)
     {
         return -1;
     }
 
-    if(base64_encode(payload, length, (char*)response->payload, &base64_length))
+    if (base64_encode(payload, length, (char *)response->payload, &base64_length))
     {
         return -1;
     }

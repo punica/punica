@@ -26,7 +26,8 @@
 #include "rest-list.h"
 
 
-enum base64_error_t {
+enum base64_error_t
+{
     BASE64_ERR_NONE     = 0,
     BASE64_ERR_STR_SIZE = -1,
     BASE64_ERR_INV_CHAR = -2,

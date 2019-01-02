@@ -43,18 +43,18 @@ void free_device_list(device_database_t *head)
     device_database_t *curr, *next;
     curr = head;
 
-    while(curr != NULL)
+    while (curr != NULL)
     {
         next = curr->next;
-        if(curr->uuid)
+        if (curr->uuid)
         {
             free(curr->uuid);
         }
-        if(curr->psk)
+        if (curr->psk)
         {
             free(curr->psk);
         }
-        if(curr->psk_id)
+        if (curr->psk_id)
         {
             free(curr->psk_id);
         }
@@ -63,19 +63,19 @@ void free_device_list(device_database_t *head)
     }
 }
 
-device_database_t * alloc_device_list(size_t size)
+device_database_t *alloc_device_list(size_t size)
 {
-    if(size < 1)
+    if (size < 1)
     {
         return NULL;
     }
     device_database_t *head, *next = NULL;
     int i;
 
-    for(i = 0; i < size; i++)
+    for (i = 0; i < size; i++)
     {
         head = calloc(1, sizeof(device_database_t));
-        if(head == NULL)
+        if (head == NULL)
         {
             free_device_list(next);
             return NULL;
@@ -87,9 +87,9 @@ device_database_t * alloc_device_list(size_t size)
     return head;
 }
 
-int remove_device_list(device_database_t **list, const char* id)
+int remove_device_list(device_database_t **list, const char *id)
 {
-    if(*list == NULL || id == NULL)
+    if (*list == NULL || id == NULL)
     {
         return -1;
     }
@@ -97,11 +97,11 @@ int remove_device_list(device_database_t **list, const char* id)
     device_database_t *prev = NULL, *curr;
     curr = *list;
 
-    while(curr != NULL)
+    while (curr != NULL)
     {
-        if(strcmp(id, curr->uuid) == 0)
+        if (strcmp(id, curr->uuid) == 0)
         {
-            if(curr == *list)
+            if (curr == *list)
             {
                 *list = curr->next;
                 return 0;

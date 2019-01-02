@@ -26,10 +26,10 @@
 typedef struct device_database_t
 {
     struct device_database_t *next;
-    char* uuid;
-    uint8_t* psk;
+    char *uuid;
+    uint8_t *psk;
     size_t psk_len;
-    uint8_t* psk_id;
+    uint8_t *psk_id;
     size_t psk_id_len;
 } device_database_t;
 
@@ -37,9 +37,9 @@ int coap_to_http_status(int status);
 
 void free_device_list(device_database_t *head);
 
-device_database_t * alloc_device_list(size_t size);
+device_database_t *alloc_device_list(size_t size);
 
-int remove_device_list(device_database_t **list, const char* id);
+int remove_device_list(device_database_t **list, const char *id);
 
 #endif // REST_UTILS_H
 
