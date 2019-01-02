@@ -70,8 +70,9 @@ device_database_t * alloc_device_list(size_t size)
         return NULL;
     }
     device_database_t *head, *next = NULL;
+    int i;
 
-    for(int i = 0; i < size; i++)
+    for(i = 0; i < size; i++)
     {
         head = calloc(1, sizeof(device_database_t));
         if(head == NULL)
