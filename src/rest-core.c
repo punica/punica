@@ -34,9 +34,7 @@ void rest_init(rest_context_t *rest, settings_t *settings)
     rest->asyncResponseList = rest_list_new();
     rest->pendingResponseList = rest_list_new();
     rest->observeList = rest_list_new();
-
-    rest->certificate = settings->http.security.certificate;
-    rest->key = settings->http.security.private_key;
+    rest->settings = settings;
 
     assert(pthread_mutex_init(&rest->mutex, NULL) == 0);
 }
@@ -95,13 +93,13 @@ int rest_step(rest_context_t *rest, struct timeval *tv)
         request.http_url = strdup(url);
         request.timeout = 20;
         request.check_server_certificate = 0;
-        request.client_cert_file = o_strdup(rest->certificate);
-        if(rest->certificate != NULL && request.client_cert_file == NULL)
+        request.client_cert_file = o_strdup(rest->settings->http.security.certificate);
+        if(rest->settings->http.security.certificate != NULL && request.client_cert_file == NULL)
         {
             log_message(LOG_LEVEL_WARN, "[CALLBACK] Failed to set client certificate\n");
         }
-        request.client_key_file = o_strdup(rest->key);
-        if(rest->key != NULL && request.client_key_file == NULL)
+        request.client_key_file = o_strdup(rest->settings->http.security.private_key);
+        if(rest->settings->http.security.private_key != NULL && request.client_key_file == NULL)
         {
             log_message(LOG_LEVEL_WARN, "[CALLBACK] Failed to set client private key\n");
         }

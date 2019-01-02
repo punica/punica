@@ -54,8 +54,7 @@ typedef struct
     // rest-subsciptions
     rest_list_t *observeList;
 
-    char *certificate;
-    char *key;
+    settings_t *settings;
 } rest_context_t;
 
 lwm2m_client_t *rest_endpoints_find_client(lwm2m_client_t *list, const char *name);

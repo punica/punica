@@ -28,7 +28,6 @@ find_library(ULFIUS_LIB ulfius)
 find_library(JANSSON_LIB jansson)
 find_library(JWT_LIB jwt)
 find_library(WAKAAMA_LIB wakaama)
-find_library(ORCANIA_LIB orcania)
 target_compile_options(${PROJECT_NAME} PRIVATE "-Wall" "-pthread")
 target_link_libraries(${PROJECT_NAME} pthread "${ULFIUS_LIB}" "${JANSSON_LIB}" "${JWT_LIB}" "${WAKAAMA_LIB}" "${ORCANIA_LIB}")
 
