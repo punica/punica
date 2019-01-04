@@ -454,3 +454,186 @@ The code in this directory is licensed under the MIT license, however please not
     **Content:** Empty body, ``WWW-Authenticate`` header containing error code and description <br />
   
 [More information about JWT](https://jwt.io)
+
+
+
+**Manage registered devices with devices REST API**
+  ----  
+  Devices API is used to create and store device information in a database/json file. Devices that are not present in the /devices list will not be able to register to the server.
+  
+  Example of database file:
+```
+[
+  {"psk":"cHNrMQ==","psk_id":"cHNraWQx","uuid":"ABC"},
+  {"psk":"cHNrMg==","psk_id":"cHNraWQy","uuid":"DEF"},
+  {"psk":"cHNrMw==","psk_id":"cHNraWQz","uuid":"GHI"}
+]
+```
+  
+  The file is a json array, consisting of multiple objects, each representing a single device. Keys 'psk' and 'psk_id' ar used as binary arrays, and must be encoded using base64. The user must not edit the database file during runtime.
+
+
+**List registered devices**
+----
+  Returns a list of registered devices psk_id's.
+
+* **URL**
+
+  `/devices`
+
+* **Method:**
+  
+  `GET`
+
+* **Success Response:**
+
+  * **Code:** 200 <br />
+    **Content:** `[{"cHNraWQx"}, {"cHNraWQy"}, {"cHNraWQz"}]`
+    
+* **Error Response:**
+
+  * **Code:** 500 INTERNAL SERVER ERROR <br />
+
+* **Sample Call:**
+
+  ```shell
+  $ curl -X GET http://localhost:8888/devices
+  ```
+  
+  
+**Print registered device psk_id**
+  ----
+  Returns the psk_id of a specific device.
+
+* **URL**
+
+  `/devices/:name`
+
+* **Method:**
+  
+  `GET`
+
+* **Success Response:**
+
+  * **Code:** 200 <br />
+    **Content:** `{"cHNraWQy"}`
+    
+* **Error Response:**
+
+  * **Code:** 500 INTERNAL SERVER ERROR <br />
+
+* **Sample Call:**
+
+  ```shell
+  $ curl -X GET http://localhost:8888/devices/DEF
+  ```
+  
+  
+**Register devices**
+----
+  Used to register one or more devices. All new devices are appended to the existing list and get written to the database file.
+
+* **URL**
+
+  `/devices`
+
+* **Method:**
+  
+  `PUT`
+  
+* **Data Params**
+
+  A json array of device objects, such as in a database file.
+
+* **Success Response:**
+
+  * **Code:** 201 <br />
+  
+* **Error Response:**
+
+  * **Code:** 415 UNSUPPORTED MEDIA TYPE - user provided wrong content type <br />
+  
+  OR
+  
+  * **Code:** 400 BAD REQUEST - sent data was not a json array or was an empty array <br />
+  
+  OR
+  
+  * **Code:** 500 INTERNAL SERVER ERROR <br />
+
+* **Sample Call:**
+
+  ```shell
+  $ curl http://localhost:8888/devices -X PUT -H "Content-Type: application/json" --data '[{"psk":"cHNrMQ==","psk_id":"cHNraWQx","uuid":"ABC"}, {"psk":"cHNrMg==","psk_id":"cHNraWQy","uuid":"DEF"}]'
+  
+  
+**Edit device**
+----
+  Edit the credentials of a specific device.
+
+* **URL**
+
+  `/devices/:name`
+
+* **Method:**
+  
+  `POST`
+  
+* **Data Params**
+
+  A json object with updated 'psk' and 'psk_id'.
+
+* **Success Response:**
+
+  * **Code:** 201 <br />
+  
+* **Error Response:**
+
+  * **Code:** 415 UNSUPPORTED MEDIA TYPE - user provided wrong content type <br />
+  
+  OR
+  
+  * **Code:** 400 BAD REQUEST - sent data was not a json object or is missing 'psk' and/or 'psk_id' keys <br />
+  
+  OR
+  
+  * **Code:** 404 NOT FOUND - registered device list is empty <br />
+  
+  OR
+  
+  * **Code:** 500 INTERNAL SERVER ERROR <br />
+
+* **Sample Call:**
+
+  ```shell
+  $ curl http://localhost:8888/devices/ABC -X POST -H "Content-Type: application/json" --data '{"psk":"cHNrMQ==","psk_id":"cHNraWQa"}'
+  
+  
+**Remove device**
+----
+  Remove specific device from registered devices list.
+
+* **URL**
+
+  `/devices/:name`
+
+* **Method:**
+  
+  `DELETE`
+  
+* **Success Response:**
+
+  * **Code:** 200 <br />
+  
+* **Error Response:**
+  
+  * **Code:** 404 NOT FOUND - device not found in list <br />
+  
+  OR
+  
+  * **Code:** 500 INTERNAL SERVER ERROR <br />
+
+* **Sample Call:**
+
+  ```shell
+  $ curl http://localhost:8888/devices/ABC -X DELETE
