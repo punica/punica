@@ -19,25 +19,45 @@
 
 set -e
 
-TMP_BUILD_DIR="$(mktemp -d)"
 PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
 
-WAKAAMA_SUBMODULE_DIR="${PROJECT_ROOT_DIR}/third_party/wakaama"
+SCRIPT_NAME=$(basename -- "$0")
+TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
+
+JANSSON_DIR="${PROJECT_ROOT_DIR}/third_party/jansson"
+LIBJWT_DIR="${PROJECT_ROOT_DIR}/third_party/libjwt"
+LIBMICROHTTPD_DIR="${PROJECT_ROOT_DIR}/third_party/libmicrohttpd"
+GNUTLS_DIR="${PROJECT_ROOT_DIR}/third_party/gnutls"
+ULFFIUS_DIR="${PROJECT_ROOT_DIR}/third_party/ulfius"
+WAKAAMA_DIR="${PROJECT_ROOT_DIR}/third_party/wakaama"
+
+echo_stderr () {
+    echo "$@" >&2
+}
+
+library_error () {
+    echo_stderr "Failed to install $1!"
+    echo_stderr ""
+    echo_stderr "For more information refer to \"${LOG_FILE}\""
+
+    exit 1
+}
 
 update_repositories () {
     if which apt-get; then
         sudo apt-get update -qq
     elif which rpm; then
-        echo "RPM is not supported yet!"
+        echo_stderr "RPM is not supported yet!"
         return 1
     elif which opkg; then
-        echo "OPKG is not supported yet!"
+        echo_stderr "OPKG is not supported yet!"
         return 1
     elif which brew; then
-        echo "BREW is not supported yet!"
+        echo_stderr "BREW is not supported yet!"
         return 1
     else
-        echo "Unknown package manager! (not supported yet)"
+        echo_stderr "Unknown package manager! (not supported yet)"
         return 1
     fi
 
@@ -46,18 +66,21 @@ update_repositories () {
 
 update_submodules () {
     eval "cd ${PROJECT_ROOT_DIR}"
-    git submodule update --init --recursive --remote
-    cd -
-}
+    git submodule update --init --recursive --remote >> ${LOG_FILE} 2>&1 ||
+    (
+        echo_stderr "Failed to update submodules!"
+        return 1
+    )
 
-install_wakaama () {
-    eval "${WAKAAMA_SUBMODULE_DIR}/script/setup"
-    eval "cd ${WAKAAMA_SUBMODULE_DIR}/build"
-    sudo make install
     cd -
 }
 
 install_submodules () {
+    install_libjansson
+    install_gnutls
+    install_libmicrohttpd
+    install_libjwt
+    install_ulfius
     install_wakaama
 }
 
@@ -65,116 +88,132 @@ install_build_tools () {
     if which apt-get; then
         sudo apt-get install -yqq git cmake build-essential automake libtool
     elif which rpm; then
-        echo "RPM is not supported yet!"
+        echo_stderr "RPM is not supported yet!"
         return 1
     elif which opkg; then
-        echo "OPKG is not supported yet!"
+        echo_stderr "OPKG is not supported yet!"
         return 1
     elif which brew; then
-        echo "BREW is not supported yet!"
+        echo_stderr "BREW is not supported yet!"
         return 1
     else
-        echo "Unknown package manager! (not supported yet)"
+        echo_stderr "Unknown package manager! (not supported yet)"
         return 1
     fi
 
     return $?
 }
 
-install_dependencies () {
-    if which apt-get; then
-        sudo apt-get install -yqq libmicrohttpd-dev libjansson-dev libcurl4-gnutls-dev libssl-dev
-    elif which rpm; then
-        echo "RPM is not supported yet!"
-        return 1
-    elif which opkg; then
-        echo "OPKG is not supported yet!"
-        return 1
-    elif which brew; then
-        echo "BREW is not supported yet!"
-        return 1
-    else
-        echo "Unknown package manager! (not supported yet)"
-        return 1
-    fi
+install_wakaama () {
+    echo "    - Installing wakaama..."
 
-    return $?
+    {
+        eval "${WAKAAMA_DIR}/script/setup" &&
+        eval "cd ${WAKAAMA_DIR}/build" &&
+        sudo make install &&
+        cd -
+    } >> ${LOG_FILE} 2>&1 || {
+        library_error "wakaama"
+        return 1
+    }
+}
+
+install_libjansson () {
+    echo "    - Installing libjansson..."
+    eval "cd ${JANSSON_DIR}"
+
+    {
+        autoreconf -i &&
+        ./configure &&
+        make &&
+        sudo make install
+        cd -
+    } >> ${LOG_FILE} 2>&1 || {
+        library_error "libjansson"
+        return 1
+    }
+}
+
+install_gnutls () {
+    echo "    - Installing gnutls..."
+    eval "cd ${GNUTLS_DIR}"
+    configure_args="--with-included-libtasn1 --with-included-unistring --disable-tests --enable-static --disable-doc"
+
+    {
+        ./bootstrap &&
+        eval "./configure ${configure_args}" &&
+        make &&
+        sudo make install &&
+        cd -
+    } >> ${LOG_FILE} 2>&1 || {
+        library_error "gnutls"
+        return 1
+    }
 }
 
 install_libjwt () {
-    LIBJWT_DIR="${TMP_BUILD_DIR}/libjwt"
-    git clone --quiet -b v1.9.0 --recursive --single-branch https://github.com/benmcollins/libjwt ${LIBJWT_DIR}
-    if ! [ $? -eq 0 ]; then
-        echo "Failed to obtain libjwt!"
-        eval "rm -rf ${TMP_BUILD_DIR}"
-        return 1
-    fi
-
+    echo "    - Installing libjwt..."
     eval "cd ${LIBJWT_DIR}"
 
-    autoreconf -i
-    eval "${LIBJWT_DIR}/configure"
-    make
-    sudo make install
-    if ! [ $? -eq 0 ]; then
-        echo "Failed to install JWT library!"
+    {
+        autoreconf -i &&
+        ./configure --without-openssl &&
+        make all &&
+        sudo make install
         cd -
-        eval "rm -rf ${TMP_BUILD_DIR}"
+    } >> ${LOG_FILE} 2>&1 || {
+        library_error "libjwt"
         return 1
-    fi
-
-    status_code=$?
-
-    cd -
-    eval "rm -rf ${LIBJWT_DIR}"
-
-    return ${status_code}
+    }
 }
 
-install_ulfius_orcania_yder () {
-    ULFIUS_DIR="${TMP_BUILD_DIR}/ulfius"
-    git clone --quiet -b v2.5.2 --single-branch https://github.com/babelouest/ulfius.git "${ULFIUS_DIR}"
+install_libmicrohttpd () {
+    echo "    - Installing libmicrohttpd..."
+    eval "cd ${LIBMICROHTTPD_DIR}"
 
-    if ! [ $? -eq 0 ]; then
-        echo "Failed to obtain ulfius project!"
-        return 1
-    fi
-
-    eval "mkdir ${ULFIUS_DIR}/build"
-    eval "cd ${ULFIUS_DIR}/build"
-    cmake ../ -DWITH_YDER=off -DBUILD_UWSC=off
-    make
-    sudo make install
-    if ! [ $? -eq 0 ]; then
-        echo "Failed to install ulfius library!"
+    {
+        autoreconf -i &&
+        ./configure &&
+        make &&
+        sudo make install
         cd -
-        eval "rm -rf ${TMP_BUILD_DIR}"
+    } >> ${LOG_FILE} 2>&1 || {
+        library_error "libmicrohttpd"
         return 1
-    fi
-    cd -
+    }
+}
 
-    eval "rm -rf ${ULFIUS_DIR}"
+install_ulfius () {
+    echo "    - Installing ulfius..."
+    if [ -d "${ULFFIUS_DIR}/build" ]; then
+        eval "cd ${ULFFIUS_DIR}/build"
+        make clear >> ${LOG_FILE} 2>&1 || true
+    else
+        eval "mkdir ${ULFFIUS_DIR}/build"
+        eval "cd ${ULFFIUS_DIR}/build"
+    fi
+
+    {
+        cmake ../ &&
+        make &&
+        sudo make install
+        cd -
+    } >> ${LOG_FILE} 2>&1 || {
+        library_error "ulfius"
+        return 1
+    }
 }
 
 echo "==> Updating package lists..."
-update_repositories
+update_repositories >> ${LOG_FILE}
+
+echo "==> Installing building tools..."
+install_build_tools >> ${LOG_FILE}
 
 echo "==> Updating submodules..."
-update_submodules
+update_submodules >> ${LOG_FILE}
 
 echo "==> Installing submodules..."
 install_submodules
 
-echo "==> Installing building tools..."
-install_build_tools
-
-echo "==> Installing dependencies..."
-install_dependencies
-
-echo "==> Installing libjwt..."
-install_libjwt
-
-echo "==> Installing ulfius..."
-install_ulfius_orcania_yder
-
-eval "rm -r ${TMP_BUILD_DIR}"
+echo "Finished bootstrapping!"

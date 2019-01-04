@@ -22,6 +22,10 @@ set -e
 PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
 SCRIPTS_DIR="${PROJECT_ROOT_DIR}/script"
 
+SCRIPT_NAME=$(basename -- "$0")
+TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
+
 build_punica () {
     cmake_arguments=""
 
@@ -29,19 +33,23 @@ build_punica () {
         cmake_arguments="${cmake_arguments} $1"
     fi
 
-    mkdir -p ${PROJECT_ROOT_DIR}/build/src
-    if ! [ $? -eq 0 ]; then
-        echo "Failed to create build directory!"
-        return 1
-    fi
+    {
+        mkdir -p ${PROJECT_ROOT_DIR}/build/src &&
+        eval "cd ${PROJECT_ROOT_DIR}/build" &&
+        eval "cmake ${cmake_arguments} ${PROJECT_ROOT_DIR}" &&
+        make &&
+        cd -
+    } >> ${LOG_FILE} 2>&1 || {
+        (>&2 echo "Failed to build punica!")
+        (>&2 echo "\nFor more information refer to ${LOG_FILE}")
 
-    eval "cd ${PROJECT_ROOT_DIR}/build"
-    eval "cmake ${cmake_arguments} ${PROJECT_ROOT_DIR}"
-    make
-    cd -
+        return 1
+    }
 }
 
 eval "${SCRIPTS_DIR}/bootstrap"
 
 echo "==> Building punica..."
 build_punica "$@"
+
+echo "Finished setting up punica!"
