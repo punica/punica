@@ -372,7 +372,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
     if(update_list(data->security, jdevice))
     {
         json_decref(jdevice);
-        ulfius_set_empty_body_response(resp, 400);
+        ulfius_set_empty_body_response(resp, 500);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -381,7 +381,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
     {
         // file hasn't been created
         json_decref(jdevice);
-        ulfius_set_empty_body_response(resp, 400);
+        ulfius_set_empty_body_response(resp, 404);
         return U_CALLBACK_COMPLETE;
     }
     else if(!json_is_array(jdatabase_list))
