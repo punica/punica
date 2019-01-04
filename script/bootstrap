@@ -142,7 +142,7 @@ install_ulfius_orcania_yder () {
 
     eval "mkdir ${ULFIUS_DIR}/build"
     eval "cd ${ULFIUS_DIR}/build"
-    cmake ../
+    cmake ../ -DWITH_YDER=off -DBUILD_UWSC=off
     make
     sudo make install
     if ! [ $? -eq 0 ]; then
