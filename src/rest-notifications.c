@@ -91,16 +91,18 @@ bool validate_callback(json_t *jcallback, rest_context_t *rest)
     test_request.timeout = 20;
     test_request.check_server_certificate = 0;
     test_request.client_cert_file = o_strdup(rest->settings->http.security.certificate);
-    if (rest->settings->http.security.certificate != NULL && test_request.client_cert_file == NULL)
-    {
-        log_message(LOG_LEVEL_WARN, "[CALLBACK] Failed to set client certificate\n");
-    }
     test_request.client_key_file = o_strdup(rest->settings->http.security.private_key);
-    if (rest->settings->http.security.private_key != NULL && test_request.client_key_file == NULL)
+    if ((rest->settings->http.security.certificate != NULL && test_request.client_cert_file == NULL) ||
+        (rest->settings->http.security.private_key != NULL && test_request.client_key_file == NULL))
     {
-        log_message(LOG_LEVEL_WARN, "[CALLBACK] Failed to set client private key\n");
-    }
+        log_message(LOG_LEVEL_ERROR, "[CALLBACK] Failed to set client security credentials\n");
 
+        json_decref(jbody);
+        u_map_clean(&headers);
+        ulfius_clean_request(&test_request);
+
+        return -1;
+    }
 
     u_map_copy_into(test_request.map_header, &headers);
     ulfius_set_json_body_request(&test_request, jbody);
