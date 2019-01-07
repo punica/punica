@@ -72,7 +72,7 @@ update_repositories () {
 update_submodules () {
     eval "cd ${PROJECT_ROOT_DIR}"
 
-    git submodule update --init --recursive --remote >> ${LOG_FILE} 2>&1 ||
+    git submodule update --init --recursive --remote --quiet ||
     (
         echo_stderr "Failed to update submodules!"
         return 1
