@@ -3,7 +3,7 @@
 	url = https://github.com/punica/wakaama
 [submodule "third_party/gnutls"]
 	path = third_party/gnutls
-	url = https://gitlab.com/gnutls/gnutls/
+	url = https://github.com/gnutls/gnutls
 [submodule "third_party/jansson"]
 	path = third_party/jansson
 	url = https://github.com/akheron/jansson
