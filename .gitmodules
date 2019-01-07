@@ -16,3 +16,6 @@
 [submodule "third_party/libjwt"]
 	path = third_party/libjwt
 	url = https://github.com/benmcollins/libjwt
+[submodule "third_party/nettle"]
+	path = third_party/nettle
+	url = https://github.com/gnutls/nettle
