@@ -32,6 +32,11 @@ GNUTLS_DIR="${PROJECT_ROOT_DIR}/third_party/gnutls"
 ULFFIUS_DIR="${PROJECT_ROOT_DIR}/third_party/ulfius"
 WAKAAMA_DIR="${PROJECT_ROOT_DIR}/third_party/wakaama"
 
+AUTORECONF_ARGS_BASE="--prepend-include=${PROJECT_ROOT_DIR}"
+CONFIGURE_ARGS_BASE="--enable-silent-rules --disable-dependency-tracking -quiet --prefix ${PROJECT_ROOT_DIR}"
+CMAKE_ARGS_BASE="-DCMAKE_INSTALL_PREFIX:PATH=${PROJECT_ROOT_DIR}"
+MAKE_ARGS_BASE="--quiet"
+
 echo_stderr () {
     echo "$@" >&2
 }
@@ -66,6 +71,7 @@ update_repositories () {
 
 update_submodules () {
     eval "cd ${PROJECT_ROOT_DIR}"
+
     git submodule update --init --recursive --remote >> ${LOG_FILE} 2>&1 ||
     (
         echo_stderr "Failed to update submodules!"
@@ -108,9 +114,9 @@ install_wakaama () {
     echo "    - Installing wakaama..."
 
     {
-        eval "${WAKAAMA_DIR}/script/setup" &&
+        eval "${WAKAAMA_DIR}/script/setup ${CMAKE_ARGS_BASE}" &&
         eval "cd ${WAKAAMA_DIR}/build" &&
-        sudo make install &&
+        eval "make install ${MAKE_ARGS_BASE}" &&
         cd -
     } >> ${LOG_FILE} 2>&1 || {
         library_error "wakaama"
@@ -119,14 +125,18 @@ install_wakaama () {
 }
 
 install_libjansson () {
+    autoreconf_args="${AUTORECONF_ARGS_BASE} -i"
+
     echo "    - Installing libjansson..."
+
     eval "cd ${JANSSON_DIR}"
 
     {
-        autoreconf -i &&
-        ./configure &&
-        make &&
-        sudo make install
+        eval "autoreconf ${autoreconf_args}" &&
+        eval "./configure ${CONFIGURE_ARGS_BASE}" &&
+        eval "make clean ${MAKE_ARGS_BASE}" &&
+        eval "make ${MAKE_ARGS_BASE}" &&
+        eval "make install ${MAKE_ARGS_BASE}" &&
         cd -
     } >> ${LOG_FILE} 2>&1 || {
         library_error "libjansson"
@@ -135,15 +145,18 @@ install_libjansson () {
 }
 
 install_gnutls () {
+    configure_args="${CONFIGURE_ARGS_BASE} --with-included-libtasn1 --with-included-unistring --disable-tests --disable-doc"
+
     echo "    - Installing gnutls..."
+
     eval "cd ${GNUTLS_DIR}"
-    configure_args="--with-included-libtasn1 --with-included-unistring --disable-tests --enable-static --disable-doc"
 
     {
         ./bootstrap &&
         eval "./configure ${configure_args}" &&
-        make &&
-        sudo make install &&
+        eval "make clean ${MAKE_ARGS_BASE}" &&
+        eval "make ${MAKE_ARGS_BASE}" &&
+        eval "make install ${MAKE_ARGS_BASE}" &&
         cd -
     } >> ${LOG_FILE} 2>&1 || {
         library_error "gnutls"
@@ -152,14 +165,19 @@ install_gnutls () {
 }
 
 install_libjwt () {
+    autoreconf_args="${AUTORECONF_ARGS_BASE} -i"
+    configure_args="${CONFIGURE_ARGS_BASE} --disable-doxygen-doc --without-openssl"
+
     echo "    - Installing libjwt..."
+
     eval "cd ${LIBJWT_DIR}"
 
     {
-        autoreconf -i &&
-        ./configure --without-openssl &&
-        make all &&
-        sudo make install
+        eval "autoreconf ${autoreconf_args}" &&
+        eval "./configure ${configure_args}" &&
+        eval "make clean ${MAKE_ARGS_BASE}" &&
+        eval "make all ${MAKE_ARGS_BASE}" &&
+        eval "make install ${MAKE_ARGS_BASE}" &&
         cd -
     } >> ${LOG_FILE} 2>&1 || {
         library_error "libjwt"
@@ -168,14 +186,19 @@ install_libjwt () {
 }
 
 install_libmicrohttpd () {
+    autoreconf_args="${AUTORECONF_ARGS_BASE} -i"
+    configure_args="${CONFIGURE_ARGS_BASE} --disable-curl"
+
     echo "    - Installing libmicrohttpd..."
+
     eval "cd ${LIBMICROHTTPD_DIR}"
 
     {
-        autoreconf -i &&
-        ./configure &&
-        make &&
-        sudo make install
+        eval "autoreconf ${autoreconf_args}" &&
+        eval "./configure ${configure_args}" &&
+        eval "make clean ${MAKE_ARGS_BASE}" &&
+        eval "make ${MAKE_ARGS_BASE}" &&
+        eval "make install ${MAKE_ARGS_BASE}" &&
         cd -
     } >> ${LOG_FILE} 2>&1 || {
         library_error "libmicrohttpd"
@@ -184,19 +207,19 @@ install_libmicrohttpd () {
 }
 
 install_ulfius () {
+    cmake_args="${CMAKE_ARGS_BASE}  -DWITH_YDER=off -DBUILD_UWSC=off"
+
     echo "    - Installing ulfius..."
-    if [ -d "${ULFFIUS_DIR}/build" ]; then
-        eval "cd ${ULFFIUS_DIR}/build"
-        make clear >> ${LOG_FILE} 2>&1 || true
-    else
-        eval "mkdir ${ULFFIUS_DIR}/build"
-        eval "cd ${ULFFIUS_DIR}/build"
-    fi
+
+    eval "rm -rf ${ULFFIUS_DIR}/build"
+    eval "mkdir ${ULFFIUS_DIR}/build"
+    eval "cd ${ULFFIUS_DIR}/build"
 
     {
-        cmake ../ &&
-        make &&
-        sudo make install
+        eval "cmake ../ ${cmake_args}" &&
+        eval "make ${MAKE_ARGS_BASE}" &&
+        eval "make clean ${MAKE_ARGS_BASE}" &&
+        eval "make install ${MAKE_ARGS_BASE}" &&
         cd -
     } >> ${LOG_FILE} 2>&1 || {
         library_error "ulfius"

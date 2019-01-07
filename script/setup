@@ -26,16 +26,18 @@ SCRIPT_NAME=$(basename -- "$0")
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
 
-build_punica () {
-    cmake_arguments=""
+CMAKE_ARGS_BASE="-DCMAKE_INSTALL_PREFIX:PATH=${PROJECT_ROOT_DIR}"
 
+build_punica () {
     if ! [ -z "$1" ]; then
-        cmake_arguments="${cmake_arguments} $1"
+        cmake_arguments="${CMAKE_ARGS_BASE} $1"
     fi
 
+    rm -rf ${PROJECT_ROOT_DIR}/build &&
+    mkdir -p ${PROJECT_ROOT_DIR}/build/src &&
+    eval "cd ${PROJECT_ROOT_DIR}/build" &&
+
     {
-        mkdir -p ${PROJECT_ROOT_DIR}/build/src &&
-        eval "cd ${PROJECT_ROOT_DIR}/build" &&
         eval "cmake ${cmake_arguments} ${PROJECT_ROOT_DIR}" &&
         make &&
         cd -

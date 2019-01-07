@@ -26,11 +26,13 @@ SCRIPT_NAME=$(basename -- "$0")
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
 
-CERTIFICATE_SETTINGS_TEMPLATE="${PROJECT_ROOT_DIR}/certificate_template.cfg"
+CERTIFICATE_SETTINGS_TEMPLATE="${PROJECT_ROOT_DIR}/tests/rest/certificate_template.cfg"
 TEST_PRIVATE_KEY="${PROJECT_ROOT_DIR}/private.key"
 TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/certificate.pem"
 OTHER_TEST_PRIVATE_KEY="${PROJECT_ROOT_DIR}/other_private.key"
 OTHER_TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/other_certificate.pem"
+
+CERTTOOL_BIN="${PROJECT_ROOT_DIR}/bin/certtool"
 
 generate_key_and_certificate () {
     if [ "$#" -ne 3 ]; then
@@ -54,8 +56,8 @@ generate_key_and_certificate () {
     fi
 
     {
-        eval "certtool --generate-privkey --outfile $1" &&
-        certtool --generate-self-signed --load-privkey $1 --outfile $2 --template $3
+        eval "${CERTTOOL_BIN} --generate-privkey --outfile $1" &&
+        eval "${CERTTOOL_BIN} --generate-self-signed --load-privkey $1 --outfile $2 --template $3"
     } >> ${LOG_FILE} 2>&1 || {
         (>&2 echo "Failed to generate private key and certificate!")
         (>&2 echo "\n\nRefer to \"${LOG_FILE}\" for more detailed information")
@@ -116,10 +118,6 @@ if [ ! -x "${PROJECT_ROOT_DIR}/build/punica" ]
 then
     echo "Punica binary not found!"
     exit 1
-fi
-
-if [ ! -f ${CERTIFICATE_SETTINGS_TEMPLATE} ]; then
-    eval "echo 'expiration_days 365' >> ${CERTIFICATE_SETTINGS_TEMPLATE}"
 fi
 
 echo "==> Generating security files..."
