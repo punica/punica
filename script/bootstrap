@@ -25,6 +25,8 @@ SCRIPT_NAME=$(basename -- "$0")
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
 
+BUILD_TOOLS_APT="git cmake build-essential automake libtool gperf autopoint autogen guile-2.0-dev"
+
 NETTLE_DIR="${PROJECT_ROOT_DIR}/third_party/nettle"
 JANSSON_DIR="${PROJECT_ROOT_DIR}/third_party/jansson"
 LIBJWT_DIR="${PROJECT_ROOT_DIR}/third_party/libjwt"
@@ -94,7 +96,7 @@ install_submodules () {
 
 install_build_tools () {
     if which apt-get; then
-        sudo apt-get install -yqq git cmake build-essential automake libtool gperf autopoint autogen
+        eval "sudo apt-get install -yqq ${BUILD_TOOLS_APT}"
     elif which rpm; then
         echo_stderr "RPM is not supported yet!"
         return 1
