@@ -418,7 +418,7 @@ int main(int argc, char *argv[])
     while (!restserver_quit)
     {
         tv.tv_sec = 5;
-        tv.tv_usec = 0;
+        tv.tv_usec = 5000;
 
         rest_lock(&rest);
         res = lwm2m_step(rest.lwm2m, &tv.tv_sec);
@@ -435,7 +435,7 @@ int main(int argc, char *argv[])
         rest_unlock(&rest);
 
 //      should rest_lock be called?
-        mbedtls_step(rest.lwm2m, tv.tv_sec);
+        mbedtls_step(rest.lwm2m, &tv);
     }
 
     ulfius_stop_framework(&instance);
