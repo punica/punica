@@ -33,7 +33,6 @@ build_punica () {
         cmake_arguments="${CMAKE_ARGS_BASE} $1"
     fi
 
-    rm -rf ${PROJECT_ROOT_DIR}/build &&
     mkdir -p ${PROJECT_ROOT_DIR}/build/src &&
     eval "cd ${PROJECT_ROOT_DIR}/build" &&
 

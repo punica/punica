@@ -20,24 +20,25 @@
 set -e
 
 PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
+THIRD_PARTY_DIR="${PROJECT_ROOT_DIR}/third_party"
+PREFIX_PATH_DIR="${PROJECT_ROOT_DIR}/build"
 
 SCRIPT_NAME=$(basename -- "$0")
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
-LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
+# LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
+LOG_FILE="/dev/stdout"
 
-BUILD_TOOLS_APT="git cmake build-essential automake libtool gperf autopoint autogen guile-2.0-dev"
+BUILD_TOOLS_APT="git cmake build-essential automake libtool gnutls-dev"
 
-NETTLE_DIR="${PROJECT_ROOT_DIR}/third_party/nettle"
-JANSSON_DIR="${PROJECT_ROOT_DIR}/third_party/jansson"
-LIBJWT_DIR="${PROJECT_ROOT_DIR}/third_party/libjwt"
-LIBMICROHTTPD_DIR="${PROJECT_ROOT_DIR}/third_party/libmicrohttpd"
-GNUTLS_DIR="${PROJECT_ROOT_DIR}/third_party/gnutls"
-ULFFIUS_DIR="${PROJECT_ROOT_DIR}/third_party/ulfius"
-WAKAAMA_DIR="${PROJECT_ROOT_DIR}/third_party/wakaama"
+JANSSON_DIR="${THIRD_PARTY_DIR}/jansson"
+LIBJWT_DIR="${THIRD_PARTY_DIR}/libjwt"
+LIBMICROHTTPD_DIR="${THIRD_PARTY_DIR}/libmicrohttpd"
+ULFFIUS_DIR="${THIRD_PARTY_DIR}/ulfius"
+WAKAAMA_DIR="${THIRD_PARTY_DIR}/wakaama"
 
-AUTORECONF_ARGS_BASE="--prepend-include=${PROJECT_ROOT_DIR}"
+AUTORECONF_ARGS_BASE="--prepend-include=${PREFIX_PATH_DIR} -i"
 CONFIGURE_ARGS_BASE="--enable-silent-rules --disable-dependency-tracking -quiet --prefix ${PROJECT_ROOT_DIR}"
-CMAKE_ARGS_BASE="-DCMAKE_INSTALL_PREFIX:PATH=${PROJECT_ROOT_DIR}"
+CMAKE_ARGS_BASE="-DCMAKE_INSTALL_PREFIX:PATH=${PREFIX_PATH_DIR}"
 MAKE_ARGS_BASE="--quiet"
 
 echo_stderr () {
@@ -85,9 +86,7 @@ update_submodules () {
 }
 
 install_submodules () {
-    install_nettle
     install_libjansson
-    install_gnutls
     install_libmicrohttpd
     install_libjwt
     install_ulfius
@@ -129,7 +128,6 @@ install_wakaama () {
 }
 
 install_nettle () {
-    autoreconf_args="${AUTORECONF_ARGS_BASE} -i"
     configure_args="${CONFIGURE_ARGS_BASE} --disable-openssl"
 
     echo "    - Installing nettle..."
@@ -137,7 +135,7 @@ install_nettle () {
     eval "cd ${JANSSON_DIR}"
 
     {
-        eval "autoreconf ${autoreconf_args}" &&
+        eval "autoreconf ${AUTORECONF_ARGS_BASE}" &&
         eval "./configure ${configure_args}" &&
         eval "make clean ${MAKE_ARGS_BASE}" &&
         eval "make ${MAKE_ARGS_BASE}" &&
@@ -150,14 +148,12 @@ install_nettle () {
 }
 
 install_libjansson () {
-    autoreconf_args="${AUTORECONF_ARGS_BASE} -i"
-
     echo "    - Installing libjansson..."
 
     eval "cd ${JANSSON_DIR}"
 
     {
-        eval "autoreconf ${autoreconf_args}" &&
+        eval "autoreconf ${AUTORECONF_ARGS_BASE}" &&
         eval "./configure ${CONFIGURE_ARGS_BASE}" &&
         eval "make clean ${MAKE_ARGS_BASE}" &&
         eval "make ${MAKE_ARGS_BASE}" &&
@@ -169,28 +165,7 @@ install_libjansson () {
     }
 }
 
-install_gnutls () {
-    configure_args="${CONFIGURE_ARGS_BASE} --with-included-libtasn1 --with-included-unistring --disable-tests --disable-doc"
-
-    echo "    - Installing gnutls..."
-
-    eval "cd ${GNUTLS_DIR}"
-
-    {
-        ./bootstrap &&
-        eval "./configure ${configure_args}" &&
-        eval "make clean ${MAKE_ARGS_BASE}" &&
-        eval "make ${MAKE_ARGS_BASE}" &&
-        eval "make install ${MAKE_ARGS_BASE}" &&
-        cd -
-    } >> ${LOG_FILE} 2>&1 || {
-        library_error "gnutls"
-        return 1
-    }
-}
-
 install_libjwt () {
-    autoreconf_args="${AUTORECONF_ARGS_BASE} -i"
     configure_args="${CONFIGURE_ARGS_BASE} --disable-doxygen-doc --without-openssl"
 
     echo "    - Installing libjwt..."
@@ -198,7 +173,7 @@ install_libjwt () {
     eval "cd ${LIBJWT_DIR}"
 
     {
-        eval "autoreconf ${autoreconf_args}" &&
+        eval "autoreconf ${AUTORECONF_ARGS_BASE}" &&
         eval "./configure ${configure_args}" &&
         eval "make clean ${MAKE_ARGS_BASE}" &&
         eval "make all ${MAKE_ARGS_BASE}" &&
@@ -211,7 +186,6 @@ install_libjwt () {
 }
 
 install_libmicrohttpd () {
-    autoreconf_args="${AUTORECONF_ARGS_BASE} -i"
     configure_args="${CONFIGURE_ARGS_BASE} --disable-curl"
 
     echo "    - Installing libmicrohttpd..."
@@ -219,7 +193,7 @@ install_libmicrohttpd () {
     eval "cd ${LIBMICROHTTPD_DIR}"
 
     {
-        eval "autoreconf ${autoreconf_args}" &&
+        eval "autoreconf ${AUTORECONF_ARGS_BASE}" &&
         eval "./configure ${configure_args}" &&
         eval "make clean ${MAKE_ARGS_BASE}" &&
         eval "make ${MAKE_ARGS_BASE}" &&
@@ -251,6 +225,9 @@ install_ulfius () {
         return 1
     }
 }
+
+eval "rm -rf ${PREFIX_PATH_DIR}"
+eval "mkdir ${PREFIX_PATH_DIR}"
 
 echo "==> Updating package lists..."
 update_repositories >> ${LOG_FILE}
