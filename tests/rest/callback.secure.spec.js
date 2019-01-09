@@ -38,7 +38,7 @@ describe('Secure notifications interface', function () {
       rejectUnauthorized: true,
     };
     valid_callback_server = https.createServer(valid_cred_options, valid_express_server);
-    valid_callback_server.listen(9998, '0.0.0.0');
+    valid_callback_server.listen(9998, 'localhost');
 
     const invalid_cred_options = {
       key: fs.readFileSync('../../other_private.key'),
@@ -48,7 +48,7 @@ describe('Secure notifications interface', function () {
       rejectUnauthorized: true,
     };
     invalid_callback_server = https.createServer(invalid_cred_options, invalid_express_server);
-    invalid_callback_server.listen(9996, '0.0.0.0');
+    invalid_callback_server.listen(9996, 'localhost');
 
     const options = {
       host: 'localhost',
@@ -91,7 +91,9 @@ describe('Secure notifications interface', function () {
   describe('PUT /notification/callback', function() {
 
     it('should return 400 on self signed certificate', function(done) {
-      const payload = '{"url": "https://localhost:9996/tmp_callback", "headers": {}}';
+      const addr = invalid_callback_server.address().address;
+      const port = invalid_callback_server.address().port;
+      const payload = '{"url": "https://'+addr+':'+port+'/test_callback", "headers": {}}';
       const options = {
         host: 'localhost',
         port: '8889',
@@ -118,7 +120,9 @@ describe('Secure notifications interface', function () {
     });
 
     it('should return 204 (successfully subscribed)', function(done) {
-      const payload = '{"url": "https://localhost:9998/test_callback", "headers": {}}';
+      const addr = valid_callback_server.address().address;
+      const port = valid_callback_server.address().port;
+      const payload = '{"url": "https://'+addr+':'+port+'/test_callback", "headers": {}}';
       const options = {
         host: 'localhost',
         port: '8889',
@@ -177,7 +181,9 @@ describe('Secure notifications interface', function () {
           parsedBody.should.have.property('url');
           parsedBody.should.have.property('headers');
         
-          parsedBody['url'].should.be.equal("https://localhost:9998/test_callback");
+          const addr = valid_callback_server.address().address;
+          const port = valid_callback_server.address().port;
+          parsedBody['url'].should.be.equal("https://"+addr+":"+port+"/test_callback");
           should.not.exist(parsedBody['headers'].length);
         
           done();
