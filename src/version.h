@@ -13,14 +13,14 @@
  * See the GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>. 
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  */
 
 #ifndef VERSION_H
 #define VERSION_H
 
-#define PUNICA_VERSION "1.1.1"
-#define PUNICA_FULL_VERSION "punica 1.1.1"
+#define PUNICA_VERSION "0.0.0"
+#define PUNICA_FULL_VERSION "punica 0.0.0"
 
 #endif // VERSION_H
