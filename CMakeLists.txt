@@ -28,11 +28,11 @@ find_library(ULFIUS_LIB ulfius)
 find_library(JANSSON_LIB jansson)
 find_library(JWT_LIB jwt)
 find_library(WAKAAMA_LIB wakaama)
+find_library(ORCANIA_LIB orcania)
 find_library(MBEDTLS_LIB libmbedtls.a)
 find_library(MBEDX509_LIB mbedx509)
 find_library(MBEDCRYPTO_LIB mbedcrypto)
 target_compile_options(${PROJECT_NAME} PRIVATE "-Wall" "-pthread")
-find_library(ORCANIA_LIB orcania)
 target_link_libraries(${PROJECT_NAME} pthread "${ULFIUS_LIB}" "${JANSSON_LIB}" "${JWT_LIB}" "${WAKAAMA_LIB}" "${ORCANIA_LIB}" "${MBEDTLS_LIB}" "${MBEDX509_LIB}" "${MBEDCRYPTO_LIB}")
 
 
