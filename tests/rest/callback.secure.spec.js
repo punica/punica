@@ -9,23 +9,16 @@ const fs = require('fs');
 const should = chai.should();
 chai.use(chai_http);
 
-const express_server = express();
-express_server.use(parser.json());
-express_server.put('/test_callback', (req, resp) => {
+const valid_express_server = express();
+const invalid_express_server = express();
+
+valid_express_server.use(parser.json());
+valid_express_server.put('/test_callback', (req, resp) => {
   resp.send();
 });
 
-const cred_options = {
-  key: fs.readFileSync('../../private.key'),
-  cert: fs.readFileSync('../../certificate.pem'),
-  ca: fs.readFileSync('../../certificate.pem'),
-  requestCert: true,
-  rejectUnauthorized: true,
-};
-
-const callback_server = https.createServer(cred_options, express_server);
-callback_server.listen(9998, '0.0.0.0');
-
+var valid_callback_server = undefined;
+var invalid_callback_server = undefined;
 
 describe('Secure notifications interface', function () {
 
@@ -36,6 +29,26 @@ describe('Secure notifications interface', function () {
 
   before(function (done) {
     server.start();
+
+    const valid_cred_options = {
+      key: fs.readFileSync('../../other_private.key'),
+      cert: fs.readFileSync('../../other_certificate.pem'),
+      ca: fs.readFileSync('../../certificate.pem'),
+      requestCert: true,
+      rejectUnauthorized: true,
+    };
+    valid_callback_server = https.createServer(valid_cred_options, valid_express_server);
+    valid_callback_server.listen(9998, '0.0.0.0');
+
+    const invalid_cred_options = {
+      key: fs.readFileSync('../../other_private.key'),
+      cert: fs.readFileSync('../../other_certificate.pem'),
+      ca: fs.readFileSync('../../other_certificate.pem'),
+      requestCert: true,
+      rejectUnauthorized: true,
+    };
+    invalid_callback_server = https.createServer(invalid_cred_options, invalid_express_server);
+    invalid_callback_server.listen(9996, '0.0.0.0');
 
     const options = {
       host: 'localhost',
@@ -71,23 +84,13 @@ describe('Secure notifications interface', function () {
   });
 
   after(function () {
-    callback_server.close();
+    valid_callback_server.close();
+    invalid_callback_server.close();
   });
 
   describe('PUT /notification/callback', function() {
 
     it('should return 400 on self signed certificate', function(done) {
-      const test_middleware = express();
-      const test_options = {
-        key: fs.readFileSync('../../private.key'),
-        cert: fs.readFileSync('../../certificate.pem'),
-        ca: fs.readFileSync('../../other_certificate.pem'),
-        requestCert: true,
-        rejectUnauthorized: true,
-      };
-      const test_server = https.createServer(test_options, test_middleware);
-      test_server.listen(9996, '0.0.0.0');
-
       const payload = '{"url": "https://localhost:9996/tmp_callback", "headers": {}}';
       const options = {
         host: 'localhost',
@@ -107,7 +110,6 @@ describe('Secure notifications interface', function () {
 
       const putRequest = https.request(options, (response) => {
         response.statusCode.should.be.equal(400);
-        test_server.close();
         done();
       });
 
