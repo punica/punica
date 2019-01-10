@@ -37,6 +37,8 @@ typedef struct
 typedef struct
 {
     uint16_t port;
+    char *private_key_file;
+    char *certificate_file;
 } coap_settings_t;
 
 typedef struct
