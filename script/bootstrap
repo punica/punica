@@ -21,14 +21,15 @@ set -e
 
 PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
 THIRD_PARTY_DIR="${PROJECT_ROOT_DIR}/third_party"
-PREFIX_PATH_DIR="${PROJECT_ROOT_DIR}/build"
+BUILD_DIR="${PROJECT_ROOT_DIR}/build"
+PREFIX_PATH_DIR="${BUILD_DIR}"
 
 SCRIPT_NAME=$(basename -- "$0")
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 # LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
 LOG_FILE="/dev/stdout"
 
-BUILD_TOOLS_APT="git cmake build-essential automake libtool gnutls-dev"
+BUILD_TOOLS_APT="git cmake build-essential automake libtool libgnutls-dev"
 
 JANSSON_DIR="${THIRD_PARTY_DIR}/jansson"
 LIBJWT_DIR="${THIRD_PARTY_DIR}/libjwt"
@@ -37,7 +38,7 @@ ULFFIUS_DIR="${THIRD_PARTY_DIR}/ulfius"
 WAKAAMA_DIR="${THIRD_PARTY_DIR}/wakaama"
 
 AUTORECONF_ARGS_BASE="--prepend-include=${PREFIX_PATH_DIR} -i"
-CONFIGURE_ARGS_BASE="--enable-silent-rules --disable-dependency-tracking -quiet --prefix ${PROJECT_ROOT_DIR}"
+CONFIGURE_ARGS_BASE="--enable-silent-rules --disable-dependency-tracking --quiet --prefix ${PREFIX_PATH_DIR}"
 CMAKE_ARGS_BASE="-DCMAKE_INSTALL_PREFIX:PATH=${PREFIX_PATH_DIR}"
 MAKE_ARGS_BASE="--quiet"
 
@@ -226,8 +227,10 @@ install_ulfius () {
     }
 }
 
-eval "rm -rf ${PREFIX_PATH_DIR}"
-eval "mkdir ${PREFIX_PATH_DIR}"
+eval "rm -rf ${BUILD_DIR}"
+eval "mkdir ${BUILD_DIR}"
+
+sudo -v
 
 echo "==> Updating package lists..."
 update_repositories >> ${LOG_FILE}
