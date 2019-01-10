@@ -170,7 +170,6 @@ static void set_jwt_settings(json_t *j_section, jwt_settings_t *settings)
         }
         else if (strcasecmp(key, "secret_key") == 0)
         {
-            printf("DEBUG Before segfault!\n");
             if (!json_is_string(j_value))
             {
                 fprintf(stdout, "Token %s must be a string\n", key);
