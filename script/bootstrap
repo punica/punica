@@ -141,7 +141,6 @@ install_ulfius_orcania_yder () {
     fi
 
     eval "cd ${ULFIUS_DIR}"
-    git log > /tmp/out1
     git checkout 78e35168
     mkdir build
     cd build
