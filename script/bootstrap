@@ -133,15 +133,18 @@ install_libjwt () {
 
 install_ulfius_orcania_yder () {
     ULFIUS_DIR="${TMP_BUILD_DIR}/ulfius"
-    git clone --quiet -b pr-separate-gnutls --single-branch https://github.com/punica/ulfius.git "${ULFIUS_DIR}"
+    git clone --quiet --single-branch https://github.com/babelouest/ulfius.git "${ULFIUS_DIR}"
 
     if ! [ $? -eq 0 ]; then
         echo "Failed to obtain ulfius project!"
         return 1
     fi
 
-    eval "mkdir ${ULFIUS_DIR}/build"
-    eval "cd ${ULFIUS_DIR}/build"
+    eval "cd ${ULFIUS_DIR}"
+    git log > /tmp/out1
+    git checkout 78e35168
+    mkdir build
+    cd build
     cmake ../ -DWITH_YDER=off -DBUILD_UWSC=off -DWITH_WEBSOCKET=off -DWITH_GNUTLS=on
     make
     sudo make install
