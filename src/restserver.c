@@ -285,7 +285,7 @@ int main(int argc, char *argv[])
         .server_addr         = "localhost",
         .server_port         = settings.coap.port,
         .debug_level         = settings.logging.level,
-        .auth_mode           = 0,
+        .auth_mode           = 1,
         .ca_file             = settings.coap.certificate_file,
         .crt_file            = settings.coap.certificate_file,
         .key_file            = settings.coap.private_key_file,
