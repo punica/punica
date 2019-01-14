@@ -21,16 +21,26 @@ set -e
 
 PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
 THIRD_PARTY_DIR="${PROJECT_ROOT_DIR}/third_party"
-BUILD_DIR="${PROJECT_ROOT_DIR}/build"
-PREFIX_PATH_DIR="${BUILD_DIR}"
+
+if [ -z "${BUILD_STATIC}" ]; then
+    BUILD_STATIC=true
+fi
+
+if [ -z "${BUILD_DIR}" ]; then
+    BUILD_DIR="${PROJECT_ROOT_DIR}/build"
+fi
+
+if [ -z "${PREFIX_PATH_DIR}" ]; then
+    PREFIX_PATH_DIR="${BUILD_DIR}"
+fi
 
 SCRIPT_NAME=$(basename -- "$0")
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
-# LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
-LOG_FILE="/dev/stdout"
+LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
 
-BUILD_TOOLS_APT="git cmake build-essential automake libtool libgnutls28-dev texinfo"
+BUILD_TOOLS_APT="git cmake build-essential automake libtool libgnutls28-dev libgcrypt20-dev texinfo gnutls-bin"
 
+CURL_DIR="${THIRD_PARTY_DIR}/curl"
 JANSSON_DIR="${THIRD_PARTY_DIR}/jansson"
 LIBJWT_DIR="${THIRD_PARTY_DIR}/libjwt"
 LIBMICROHTTPD_DIR="${THIRD_PARTY_DIR}/libmicrohttpd"
@@ -38,9 +48,15 @@ ULFFIUS_DIR="${THIRD_PARTY_DIR}/ulfius"
 WAKAAMA_DIR="${THIRD_PARTY_DIR}/wakaama"
 
 AUTORECONF_ARGS_BASE="--prepend-include=${PREFIX_PATH_DIR} -i"
-CONFIGURE_ARGS_BASE="--enable-silent-rules --disable-dependency-tracking --quiet --prefix ${PREFIX_PATH_DIR}"
+CONFIGURE_ARGS_BASE="--enable-silent-rules --disable-dependency-tracking --quiet --prefix ${PREFIX_PATH_DIR} PKG_CONFIG_PATH=${PREFIX_PATH_DIR}/lib/pkgconfig"
 CMAKE_ARGS_BASE="-DCMAKE_INSTALL_PREFIX:PATH=${PREFIX_PATH_DIR}"
 MAKE_ARGS_BASE="--quiet"
+
+if [ "${BUILD_STATIC}" = true ]; then
+    CONFIGURE_ARGS_BASE="${CONFIGURE_ARGS_BASE} --enable-static=yes --enable-shared=no"
+else
+    CONFIGURE_ARGS_BASE="${CONFIGURE_ARGS_BASE} --enable-shared=yes --enable-static=yes"
+fi
 
 echo_stderr () {
     echo "$@" >&2
@@ -88,8 +104,9 @@ update_submodules () {
 
 install_submodules () {
     install_libjansson
-    install_libmicrohttpd
     install_libjwt
+    install_libmicrohttpd
+    install_curl
     install_ulfius
     install_wakaama
 }
@@ -149,19 +166,24 @@ install_nettle () {
 }
 
 install_libjansson () {
-    echo "    - Installing libjansson..."
+    cmake_args="${CMAKE_ARGS_BASE}"
+    if [ ! "${BUILD_STATIC}" = true ]; then
+        cmake_args="${cmake_args} -DJANSSON_BUILD_SHARED_LIBS=1"
+    fi
 
-    eval "cd ${JANSSON_DIR}"
+    echo "    - Installing jansson..."
+
+    eval "rm -rf ${JANSSON_DIR}/build"
+    eval "mkdir ${JANSSON_DIR}/build"
+    eval "cd ${JANSSON_DIR}/build"
 
     {
-        eval "autoreconf ${AUTORECONF_ARGS_BASE}" &&
-        eval "./configure ${CONFIGURE_ARGS_BASE}" &&
-        eval "make clean ${MAKE_ARGS_BASE}" &&
+        eval "cmake ../ ${cmake_args}" &&
         eval "make ${MAKE_ARGS_BASE}" &&
         eval "make install ${MAKE_ARGS_BASE}" &&
         cd -
     } >> ${LOG_FILE} 2>&1 || {
-        library_error "libjansson"
+        library_error "jansson"
         return 1
     }
 }
@@ -186,8 +208,28 @@ install_libjwt () {
     }
 }
 
+install_curl () {
+    configure_args="${CONFIGURE_ARGS_BASE} --without-openssl --with-gnutls  --disable-ares --disable-manual --disable-proxy --disable-verbose --disable-versioned-symbols --enable-hidden-symbols --without-libidn --without-librtmp --without-zlib --disable-ldap"
+
+    echo "    - Installing curl..."
+
+    eval "cd ${CURL_DIR}"
+
+    {
+        eval "${CURL_DIR}/buildconf" &&
+        eval "./configure ${configure_args}" &&
+        eval "make clean ${MAKE_ARGS_BASE}" &&
+        eval "make ${MAKE_ARGS_BASE}" &&
+        eval "make install ${MAKE_ARGS_BASE}" &&
+        cd -
+    } >> ${LOG_FILE} 2>&1 || {
+        library_error "curl"
+        return 1
+    }
+}
+
 install_libmicrohttpd () {
-    configure_args="${CONFIGURE_ARGS_BASE} --disable-curl"
+    configure_args="${CONFIGURE_ARGS_BASE} --with-https --disable-curl"
 
     echo "    - Installing libmicrohttpd..."
 
@@ -208,6 +250,9 @@ install_libmicrohttpd () {
 
 install_ulfius () {
     cmake_args="${CMAKE_ARGS_BASE}  -DWITH_YDER=off -DBUILD_UWSC=off"
+    if [ "${BUILD_STATIC}" = true ]; then
+        cmake_args="${cmake_args} -DBUILD_STATIC=on"
+    fi
 
     echo "    - Installing ulfius..."
 

@@ -22,6 +22,10 @@ set -e
 PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
 SCRIPTS_DIR="${PROJECT_ROOT_DIR}/script"
 
+if [ -z "${BUILD_DIR}" ]; then
+    BUILD_DIR="${PROJECT_ROOT_DIR}/build"
+fi
+
 SCRIPT_NAME=$(basename -- "$0")
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
@@ -32,7 +36,7 @@ TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/certificate.pem"
 OTHER_TEST_PRIVATE_KEY="${PROJECT_ROOT_DIR}/other_private.key"
 OTHER_TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/other_certificate.pem"
 
-CERTTOOL_BIN="${PROJECT_ROOT_DIR}/bin/certtool"
+CERTTOOL_BIN="certtool"
 
 generate_key_and_certificate () {
     if [ "$#" -ne 3 ]; then
@@ -88,7 +92,7 @@ get_path_level() {
 
 run_punica () {
     initial_punica_arguments=""
-    punica_command="${PROJECT_ROOT_DIR}/build/punica ${initial_punica_arguments}"
+    punica_command="${BUILD_DIR}/punica ${initial_punica_arguments}"
 
     if ! [ -z "$1" ]; then
         strip_level="$(get_path_level ${PROJECT_ROOT_DIR})"
@@ -114,7 +118,7 @@ stop_punica () {
 echo "==> Checking code style..."
 eval "${SCRIPTS_DIR}/format_style.sh --dry-run" >> ${LOG_FILE} 2>&1
 
-if [ ! -x "${PROJECT_ROOT_DIR}/build/punica" ]
+if [ ! -x "${BUILD_DIR}/punica" ]
 then
     echo "Punica binary not found!"
     exit 1
