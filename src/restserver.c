@@ -27,6 +27,7 @@
 #include <ulfius.h>
 
 #include "connection.h"
+#include "connection-secure.h"
 #include "restserver.h"
 #include "logging.h"
 #include "settings.h"
@@ -34,6 +35,20 @@
 #include "security.h"
 #include "rest-list.h"
 #include "rest-authentication.h"
+
+typedef int (*f_socket_t)(settings_t *, int);
+typedef int (*f_step_t)(void *, struct timeval *);
+typedef void (*f_free_t)(void *);
+
+typedef struct connection_api_t
+{
+    f_socket_t f_socket;
+    f_step_t   f_step;
+    f_free_t   f_free;
+} connection_api_t;
+
+connection_api_t api;
+connection_api_t apiSecure;
 
 static volatile int restserver_quit;
 static void sigint_handler(int signo)
@@ -203,6 +218,9 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
             log_message(LOG_LEVEL_ERROR, "[MONITOR] Failed to allocate deregistration notification!\n");
         }
 
+        api.f_free(client->sessionH);
+        apiSecure.f_free(client->sessionH);
+
         log_message(LOG_LEVEL_INFO, "[MONITOR] Client %d deregistered.\n", clientID);
         break;
     }
@@ -212,51 +230,19 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
     }
 }
 
-int socket_receive(lwm2m_context_t *lwm2m, int sock)
-{
-    int nbytes;
-    uint8_t buf[1500];
-    struct sockaddr_storage addr;
-    socklen_t addrLen = sizeof(addr);
-    connection_t *con;
-    static connection_t *connectionList = NULL;
-
-    memset(buf, 0, sizeof(buf));
-
-    nbytes = recvfrom(sock, buf, sizeof(buf), 0, (struct sockaddr *)&addr, &addrLen);
-
-    if (nbytes < 0)
-    {
-        log_message(LOG_LEVEL_FATAL, "recvfrom() error: %d\n", nbytes);
-        return -1;
-    }
-
-    con = connection_find(connectionList, &addr, addrLen);
-    if (con == NULL)
-    {
-        con = connection_new_incoming(connectionList, sock, (struct sockaddr *)&addr, addrLen);
-        if (con)
-        {
-            connectionList = con;
-        }
-    }
-
-    if (con)
-    {
-        lwm2m_handle_packet(lwm2m, buf, nbytes, con);
-    }
-
-    return 0;
-}
-
 int main(int argc, char *argv[])
 {
-    int sock;
-    fd_set readfds;
     struct timeval tv;
     int res;
     rest_context_t rest;
-    char coap_port[6];
+
+    api.f_socket = connection_create;
+    api.f_step = connection_step;
+    api.f_free = connection_free;
+
+    apiSecure.f_socket = connection_create_secure;
+    apiSecure.f_step = connection_step_secure;
+    apiSecure.f_free = connection_free_secure;
 
     static settings_t settings =
     {
@@ -279,6 +265,9 @@ int main(int argc, char *argv[])
         },
         .coap = {
             .port = 5555,
+            .security = NULL,
+            .private_key_file = NULL,
+            .certificate_file = NULL,
         },
         .logging = {
             .level = LOG_LEVEL_WARN,
@@ -305,12 +294,19 @@ int main(int argc, char *argv[])
     rest_init(&rest);
 
     /* Socket section */
-    snprintf(coap_port, sizeof(coap_port), "%d", settings.coap.port);
-    log_message(LOG_LEVEL_INFO, "Creating coap socket on port %s\n", coap_port);
-    sock = create_socket(coap_port, AF_INET6);
-    if (sock < 0)
+    log_message(LOG_LEVEL_INFO, "Creating coap socket on port %d\n", settings.coap.port);
+
+    res = api.f_socket(&settings, AF_INET6);
+    if (res < 0)
     {
         log_message(LOG_LEVEL_FATAL, "Failed to create socket!\n");
+        return -1;
+    }
+
+    res = apiSecure.f_socket(&settings, AF_INET6);
+    if (res < 0)
+    {
+        log_message(LOG_LEVEL_FATAL, "Failed to create secure socket!\n");
         return -1;
     }
 
@@ -425,11 +421,8 @@ int main(int argc, char *argv[])
     /* Main section */
     while (!restserver_quit)
     {
-        FD_ZERO(&readfds);
-        FD_SET(sock, &readfds);
-
         tv.tv_sec = 5;
-        tv.tv_usec = 0;
+        tv.tv_usec = tv.tv_sec * 1000;
 
         rest_lock(&rest);
         res = lwm2m_step(rest.lwm2m, &tv.tv_sec);
@@ -443,26 +436,19 @@ int main(int argc, char *argv[])
         {
             log_message(LOG_LEVEL_ERROR, "rest_step() error: %d\n", res);
         }
+
+        res = api.f_step(rest.lwm2m, &tv);
+        if (res)
+        {
+            log_message(LOG_LEVEL_ERROR, "api.f_step() error: %d\n", res);
+        }
+
+        res = apiSecure.f_step(rest.lwm2m, &tv);
+        if (res)
+        {
+            log_message(LOG_LEVEL_ERROR, "apiSecure.f_step() error: %d\n", res);
+        }
         rest_unlock(&rest);
-
-        res = select(FD_SETSIZE, &readfds, NULL, NULL, &tv);
-        if (res < 0)
-        {
-            if (errno == EINTR)
-            {
-                continue;
-            }
-
-            log_message(LOG_LEVEL_ERROR, "select() error: %d\n", res);
-        }
-
-        if (FD_ISSET(sock, &readfds))
-        {
-            rest_lock(&rest);
-            socket_receive(rest.lwm2m, sock);
-            rest_unlock(&rest);
-        }
-
     }
 
     ulfius_stop_framework(&instance);

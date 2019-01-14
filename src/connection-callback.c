@@ -17,42 +17,30 @@
  *
  */
 
-#ifndef SETTINGS_H
-#define SETTINGS_H
+#include "settings.h"
 
-#include <stdint.h>
-#include <string.h>
-#include <jansson.h>
-#include <argp.h>
+#include <mbedtls/ssl.h>
 
-#include "logging.h"
-#include "security.h"
-
-typedef struct
+int psk_callback(void *p_cont, mbedtls_ssl_context *ssl, const unsigned char *name, size_t name_len)
 {
-    uint16_t port;
-    http_security_settings_t security;
-} http_settings_t;
+    coap_settings_t *coap = (coap_settings_t *)p_cont;
+    device_database_t *curr = (device_database_t *)(coap->security);
 
-typedef struct
+    while (curr != NULL)
+    {
+        if (memcmp(name, curr->psk_id, name_len) == 0)
+        {
+            return mbedtls_ssl_set_hs_psk(ssl, curr->psk, curr->psk_len);
+        }
+        curr = curr->next;
+    }
+
+    return -1;
+}
+
+
+uint8_t lwm2m_buffer_send(void * sessionH, uint8_t * buffer, size_t length, void * userdata)
 {
-    uint16_t port;
-    char *private_key_file;
-    char *certificate_file;
-} coap_settings_t;
-
-typedef struct
-{
-    http_settings_t http;
-    coap_settings_t coap;
-    logging_settings_t logging;
-} settings_t;
-
-int read_config(char *config_name, settings_t *settings);
-
-error_t parse_opt(int key, char *arg, struct argp_state *state);
-
-int settings_init(int argc, char *argv[], settings_t *settings);
-
-#endif // SETTINGS_H
+    return COAP_NO_ERROR;
+}
 
