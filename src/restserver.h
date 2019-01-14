@@ -26,7 +26,20 @@
 #include "http_codes.h"
 #include "rest-core-types.h"
 #include "rest-utils.h"
+#include "settings.h"
 
+typedef int (*f_socket_t)(settings_t *, int);
+typedef int (*f_step_t)(void *, struct timeval *);
+typedef int (*f_send_t)(void *, uint8_t *, size_t);
+typedef void (*f_free_t)(void *);
+
+typedef struct connection_api_t
+{
+    f_socket_t f_socket;
+    f_step_t   f_step;
+    f_send_t   f_send;
+    f_free_t   f_free;
+} connection_api_t;
 
 typedef struct _u_request ulfius_req_t;
 typedef struct _u_response ulfius_resp_t;

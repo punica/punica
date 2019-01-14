@@ -17,7 +17,7 @@
  *
  */
 
-#include "settings.h"
+#include "restserver.h"
 
 #include <mbedtls/ssl.h>
 
@@ -38,9 +38,26 @@ int psk_callback(void *p_cont, mbedtls_ssl_context *ssl, const unsigned char *na
     return -1;
 }
 
-
-uint8_t lwm2m_buffer_send(void * sessionH, uint8_t * buffer, size_t length, void * userdata)
+uint8_t lwm2m_buffer_send(void *sessionH, uint8_t *buffer, size_t length, void *userData)
 {
+    connection_api_t *connApi = (connection_api_t *)userData;
+
+    if (sessionH == NULL)
+    {
+        fprintf(stderr, "#> failed sending %lu bytes, missing connection\r\n", length);
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
+    if (connApi->f_send(sessionH, buffer, length) < 0)
+    {
+        fprintf(stderr, "#> failed sending %lu bytes\r\n", length);
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
     return COAP_NO_ERROR;
 }
 
+bool lwm2m_session_is_equal(void *session1, void *session2, void *userData)
+{
+    return (session1 == session2);
+}

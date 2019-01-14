@@ -30,25 +30,12 @@
 #include "connection-secure.h"
 #include "restserver.h"
 #include "logging.h"
-#include "settings.h"
 #include "version.h"
 #include "security.h"
 #include "rest-list.h"
 #include "rest-authentication.h"
 
-typedef int (*f_socket_t)(settings_t *, int);
-typedef int (*f_step_t)(void *, struct timeval *);
-typedef void (*f_free_t)(void *);
-
-typedef struct connection_api_t
-{
-    f_socket_t f_socket;
-    f_step_t   f_step;
-    f_free_t   f_free;
-} connection_api_t;
-
-connection_api_t api;
-connection_api_t apiSecure;
+static connection_api_t ConnApi;
 
 static volatile int restserver_quit;
 static void sigint_handler(int signo)
@@ -104,6 +91,30 @@ static void init_signals(void)
     }
 }
 
+static int prv_api_init(connection_api_t *ConnApi, uint16_t mode)
+{
+    if (mode == 0)
+    {
+        ConnApi->f_socket = connection_create;
+        ConnApi->f_step = connection_step;
+        ConnApi->f_send = connection_send;
+        ConnApi->f_free = connection_free;
+        return 0;
+    }
+    else if (mode == 1)
+    {
+        ConnApi->f_socket = connection_create_secure;
+        ConnApi->f_step = connection_step_secure;
+        ConnApi->f_send = connection_send_secure;
+        ConnApi->f_free = connection_free_secure;
+        return 0;
+    }
+    else
+    {
+        log_message(LOG_LEVEL_FATAL, "Found unsupported CoAP mode: %d\n", mode);
+        return -1;
+    }
+}
 
 const char *binding_to_string(lwm2m_binding_t bind)
 {
@@ -218,8 +229,7 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
             log_message(LOG_LEVEL_ERROR, "[MONITOR] Failed to allocate deregistration notification!\n");
         }
 
-        api.f_free(client->sessionH);
-        apiSecure.f_free(client->sessionH);
+        ConnApi.f_free(client->sessionH);
 
         log_message(LOG_LEVEL_INFO, "[MONITOR] Client %d deregistered.\n", clientID);
         break;
@@ -235,14 +245,6 @@ int main(int argc, char *argv[])
     struct timeval tv;
     int res;
     rest_context_t rest;
-
-    api.f_socket = connection_create;
-    api.f_step = connection_step;
-    api.f_free = connection_free;
-
-    apiSecure.f_socket = connection_create_secure;
-    apiSecure.f_step = connection_step_secure;
-    apiSecure.f_free = connection_free_secure;
 
     static settings_t settings =
     {
@@ -293,20 +295,18 @@ int main(int argc, char *argv[])
 
     rest_init(&rest);
 
-    /* Socket section */
-    log_message(LOG_LEVEL_INFO, "Creating coap socket on port %d\n", settings.coap.port);
-
-    res = api.f_socket(&settings, AF_INET6);
-    if (res < 0)
+    if (prv_api_init(&ConnApi, settings.coap.mode) != 0)
     {
-        log_message(LOG_LEVEL_FATAL, "Failed to create socket!\n");
         return -1;
     }
 
-    res = apiSecure.f_socket(&settings, AF_INET6);
+    /* Socket section */
+    log_message(LOG_LEVEL_INFO, "Creating coap socket on port %d\n", settings.coap.port);
+
+    res = ConnApi.f_socket(&settings, AF_INET6);
     if (res < 0)
     {
-        log_message(LOG_LEVEL_FATAL, "Failed to create secure socket!\n");
+        log_message(LOG_LEVEL_FATAL, "Failed to create socket!\n");
         return -1;
     }
 
@@ -317,6 +317,8 @@ int main(int argc, char *argv[])
         log_message(LOG_LEVEL_FATAL, "Failed to create LwM2M server!\n");
         return -1;
     }
+
+    rest.lwm2m->userData = &ConnApi;
 
     lwm2m_set_monitoring_callback(rest.lwm2m, client_monitor_cb, &rest);
 
@@ -437,16 +439,10 @@ int main(int argc, char *argv[])
             log_message(LOG_LEVEL_ERROR, "rest_step() error: %d\n", res);
         }
 
-        res = api.f_step(rest.lwm2m, &tv);
+        res = ConnApi.f_step(rest.lwm2m, &tv);
         if (res)
         {
-            log_message(LOG_LEVEL_ERROR, "api.f_step() error: %d\n", res);
-        }
-
-        res = apiSecure.f_step(rest.lwm2m, &tv);
-        if (res)
-        {
-            log_message(LOG_LEVEL_ERROR, "apiSecure.f_step() error: %d\n", res);
+            log_message(LOG_LEVEL_ERROR, "ConnApi.f_step() error: %d\n", res);
         }
         rest_unlock(&rest);
     }

@@ -52,4 +52,5 @@ void connection_free(void *connP);
 
 int connection_step(void *ctx, struct timeval *tv);
 
+int connection_send(void *sessionH, uint8_t *buffer, size_t length);
 #endif

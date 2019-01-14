@@ -222,4 +222,6 @@ void connection_free_secure(void *connP);
 
 int connection_step_secure(void *ctx, struct timeval *tv);
 
+int connection_send_secure(void *sessionH, uint8_t *buffer, size_t length);
+
 #endif

@@ -47,7 +47,11 @@ static void set_coap_settings(json_t *j_section, coap_settings_t *settings)
 
     json_object_foreach(j_section, key, j_value)
     {
-        if (strcasecmp(key, "port") == 0)
+        if (strcasecmp(key, "mode") == 0)
+        {
+            settings->mode = (uint16_t) json_integer_value(j_value);
+        }
+        else if (strcasecmp(key, "port") == 0)
         {
             settings->port = (uint16_t) json_integer_value(j_value);
         }
