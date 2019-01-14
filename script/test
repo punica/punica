@@ -28,7 +28,8 @@ fi
 
 SCRIPT_NAME=$(basename -- "$0")
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
-LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
+# LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
+LOG_FILE="/dev/stdout"
 
 CERTIFICATE_SETTINGS_TEMPLATE="${PROJECT_ROOT_DIR}/tests/rest/certificate_template.cfg"
 TEST_PRIVATE_KEY="${PROJECT_ROOT_DIR}/private.key"
