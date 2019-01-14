@@ -51,6 +51,14 @@ static void set_coap_settings(json_t *j_section, coap_settings_t *settings)
         {
             settings->port = (uint16_t) json_integer_value(j_value);
         }
+        else if (strcasecmp(key, "private_key_file") == 0)
+        {
+            settings->private_key_file = (char *) json_string_value(j_value);
+        }
+        else if (strcasecmp(key, "certificate_file") == 0)
+        {
+            settings->certificate_file = (char *) json_string_value(j_value);
+        }
         else
         {
             fprintf(stdout, "Unrecognised configuration file key: %s.%s\n",
