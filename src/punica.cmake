@@ -18,6 +18,7 @@ set(PUNICA_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/security.c
     ${CMAKE_CURRENT_LIST_DIR}/connection.c
     ${CMAKE_CURRENT_LIST_DIR}/connection-secure.c
+    ${CMAKE_CURRENT_LIST_DIR}/temp-func.c
     )
 
 add_definitions(-DLWM2M_SERVER_MODE)
