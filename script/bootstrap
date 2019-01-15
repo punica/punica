@@ -39,7 +39,7 @@ TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 # LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
 LOG_FILE="/dev/stdout"
 
-BUILD_TOOLS_APT="git cmake build-essential automake libtool libgnutls28-dev libgcrypt20-dev texinfo gnutls-bin"
+BUILD_TOOLS_APT="git cmake build-essential automake libtool libgnutls28-dev libgcrypt20-dev texinfo gnutls-bin libssl-dev"
 
 CURL_DIR="${THIRD_PARTY_DIR}/curl"
 JANSSON_DIR="${THIRD_PARTY_DIR}/jansson"
