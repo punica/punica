@@ -438,13 +438,13 @@ int main(int argc, char *argv[])
         {
             log_message(LOG_LEVEL_ERROR, "rest_step() error: %d\n", res);
         }
+        rest_unlock(&rest);
 
         res = ConnApi.f_step(rest.lwm2m, &tv);
         if (res)
         {
             log_message(LOG_LEVEL_ERROR, "ConnApi.f_step() error: %d\n", res);
         }
-        rest_unlock(&rest);
     }
 
     ulfius_stop_framework(&instance);
