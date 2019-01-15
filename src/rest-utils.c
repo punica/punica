@@ -87,31 +87,33 @@ device_database_t *alloc_device_list(size_t size)
     return head;
 }
 
-int remove_device_list(device_database_t **list, const char *id)
+int remove_device_list(device_database_t *head, device_database_t *device)
 {
-    if (*list == NULL || id == NULL)
-    {
-        return -1;
-    }
+    device_database_t *curr = head;
 
-    device_database_t *prev = NULL, *curr;
-    curr = *list;
-
-    while (curr != NULL)
+    while (curr->next != NULL)
     {
-        if (strcmp(id, curr->uuid) == 0)
+        if (curr->next == device)
         {
-            if (curr == *list)
+            curr->next = device->next;
+
+            if (device->uuid)
             {
-                *list = curr->next;
-                return 0;
+                free(device->uuid);
             }
-            prev->next = curr->next;
+            if (device->psk)
+            {
+                free(device->psk);
+            }
+            if (device->psk_id)
+            {
+                free(device->psk_id);
+            }
+
+            free(device);
             return 0;
         }
-        prev = curr;
         curr = curr->next;
     }
-
     return -1;
 }

@@ -409,6 +409,7 @@ static int read_database(char *database_name, settings_t *settings)
         }
     }
 
+    device_database_t *temp;
     device_database_t *curr = device_list;
     const char *json_string;
     json_array_foreach(j_database, index, j_entry)
@@ -421,7 +422,7 @@ static int read_database(char *database_name, settings_t *settings)
             {
                 fprintf(stderr, "%s:%d - \'%s\' must be a string\r\n",
                         __FILE__, __LINE__, section);
-                goto exit;
+                goto free_device;
             }
             if (strcasecmp(section, "uuid") == 0)
             {
@@ -431,7 +432,7 @@ static int read_database(char *database_name, settings_t *settings)
                 {
                     fprintf(stderr, "%s:%d - failed to allocate string\r\n",
                             __FILE__, __LINE__);
-                    goto exit;
+                    goto free_device;
                 }
                 key_check |= DATABASE_UUID_KEY_BIT;
             }
@@ -441,20 +442,20 @@ static int read_database(char *database_name, settings_t *settings)
                 {
                     fprintf(stderr, "%s:%d base64_decode failed with status %d\r\n",
                             __FILE__, __LINE__, ret);
-                    goto exit;
+                    goto free_device;
                 }
                 curr->psk = (uint8_t *)calloc(1, curr->psk_len);
                 if (curr->psk == NULL)
                 {
                     fprintf(stderr, "%s:%d - failed to allocate buffer\r\n",
                             __FILE__, __LINE__);
-                    goto exit;
+                    goto free_device;
                 }
                 if ((ret = base64_decode(json_string_value(j_value), curr->psk, &curr->psk_len)))
                 {
                     fprintf(stderr, "%s:%d base64_decode failed with status %d\r\n",
                             __FILE__, __LINE__, ret);
-                    goto exit;
+                    goto free_device;
                 }
                 key_check |= DATABASE_PSK_KEY_BIT;
             }
@@ -464,20 +465,20 @@ static int read_database(char *database_name, settings_t *settings)
                 {
                     fprintf(stderr, "%s:%d base64_decode failed with status %d\r\n",
                             __FILE__, __LINE__, ret);
-                    goto exit;
+                    goto free_device;
                 }
                 curr->psk_id = (uint8_t *)calloc(1, curr->psk_id_len);
                 if (curr->psk_id == NULL)
                 {
                     fprintf(stderr, "%s:%d - failed to allocate buffer\r\n",
                             __FILE__, __LINE__);
-                    goto exit;
+                    goto free_device;
                 }
                 if ((ret = base64_decode(json_string_value(j_value), curr->psk_id, &curr->psk_id_len)))
                 {
                     fprintf(stderr, "%s:%d base64_decode failed with status %d\r\n",
                             __FILE__, __LINE__, ret);
-                    goto exit;
+                    goto free_device;
                 }
                 key_check |= DATABASE_PSK_ID_KEY_BIT;
             }
@@ -491,9 +492,16 @@ static int read_database(char *database_name, settings_t *settings)
         {
             fprintf(stderr, "%s:%d - missing \'key:value\' pair\r\n",
                     __FILE__, __LINE__);
-            goto exit;
+            goto free_device;
         }
+
         curr = curr->next;
+        continue;
+
+free_device:
+        temp = curr;
+        curr = curr->next;
+        remove_device_list(device_list, temp);
     }
 
 no_file:
