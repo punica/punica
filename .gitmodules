@@ -1,9 +1,6 @@
 [submodule "third_party/wakaama"]
 	path = third_party/wakaama
 	url = https://github.com/punica/wakaama
-[submodule "third_party/gnutls"]
-	path = third_party/gnutls
-	url = https://github.com/gnutls/gnutls
 [submodule "third_party/jansson"]
 	path = third_party/jansson
 	url = https://github.com/akheron/jansson
@@ -16,9 +13,6 @@
 [submodule "third_party/libjwt"]
 	path = third_party/libjwt
 	url = https://github.com/benmcollins/libjwt
-[submodule "third_party/nettle"]
-	path = third_party/nettle
-	url = https://github.com/gnutls/nettle
 [submodule "third_party/curl"]
 	path = third_party/curl
 	url = https://github.com/curl/curl.git
