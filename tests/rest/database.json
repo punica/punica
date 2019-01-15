@@ -2,8 +2,10 @@
     {"psk":"cHNrMw==","psk_id":"cHNraWQz","uuid":"invalid-key","invalid":"value"},
     {"psk":1234,"psk_id":"cHNraWQz","uuid":"value-not-string"},
     {"psk":"cHNrMQ==","uuid":"missing-key"},
+    {"psk":"cHNrMw==","psk_id":"cHNraWQz"},
     {"psk":"string-not-base64"},
-    {},
+    {"psk_id":"string-not-base64"},
     {"psk":"cHNrMQ==","psk_id":"cHNraWQx","uuid":"ABC"},
-    {"psk":"cHNrMg==","psk_id":"cHNraWQy","uuid":"DEF"}
+    {"psk":"cHNrMg==","psk_id":"cHNraWQy","uuid":"DEF"},
+    {}
 ]
