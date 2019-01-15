@@ -43,7 +43,6 @@ BUILD_TOOLS_APT="git cmake build-essential automake libtool libgnutls28-dev libg
 
 CURL_DIR="${THIRD_PARTY_DIR}/curl"
 JANSSON_DIR="${THIRD_PARTY_DIR}/jansson"
-LIBJWT_DIR="${THIRD_PARTY_DIR}/libjwt"
 LIBMICROHTTPD_DIR="${THIRD_PARTY_DIR}/libmicrohttpd"
 ULFFIUS_DIR="${THIRD_PARTY_DIR}/ulfius"
 WAKAAMA_DIR="${THIRD_PARTY_DIR}/wakaama"
@@ -105,7 +104,6 @@ update_submodules () {
 
 install_submodules () {
     install_libjansson
-    install_libjwt
     install_libmicrohttpd
     install_curl
     install_ulfius
@@ -185,26 +183,6 @@ install_libjansson () {
         cd -
     } >> ${LOG_FILE} 2>&1 || {
         library_error "jansson"
-        return 1
-    }
-}
-
-install_libjwt () {
-    configure_args="${CONFIGURE_ARGS_BASE} --disable-doxygen-doc --without-openssl"
-
-    echo "    - Installing libjwt..."
-
-    eval "cd ${LIBJWT_DIR}"
-
-    {
-        eval "autoreconf ${AUTORECONF_ARGS_BASE}" &&
-        eval "./configure ${configure_args}" &&
-        eval "make clean ${MAKE_ARGS_BASE}" &&
-        eval "make all ${MAKE_ARGS_BASE}" &&
-        eval "make install ${MAKE_ARGS_BASE}" &&
-        cd -
-    } >> ${LOG_FILE} 2>&1 || {
-        library_error "libjwt"
         return 1
     }
 }
