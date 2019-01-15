@@ -34,27 +34,27 @@ endif()
 
 add_executable(${PROJECT_NAME} ${PUNICA_SOURCES})
 
-find_library(PTHREAD_LIB pthread)
-find_library(GNUTLS_LIB gnutls)
-find_library(MICROHTTPD_LIB microhttpd)
-find_library(JANSSON_LIB jansson)
-find_library(JWT_LIB jwt)
-find_library(CURL_LIB curl)
+find_library(ULFIUS_LIB ulfius) # depends on orcania
 find_library(ORCANIA_LIB orcania)
-find_library(ULFIUS_LIB ulfius)
+find_library(MICROHTTPD_LIB microhttpd) # depends on gnutls, libcurl
+find_library(JWT_LIB jwt) # depends on jansson, openssl (or gnutls v3.5.8)
+find_library(CURL_LIB curl) # depends on gnutls
+find_library(GNUTLS_LIB gnutls) # depends on nettle 
+find_library(JANSSON_LIB jansson)
+find_library(PTHREAD_LIB pthread)
 find_library(WAKAAMA_LIB wakaama)
 
 target_compile_options(${PROJECT_NAME} PRIVATE "-Wall" "-pthread")
 
 target_link_libraries(${PROJECT_NAME}
-                      "${PTHREAD_LIB}"
-                      "${GNUTLS_LIB}"
+                      "${ULFIUS_LIB}"
+                      "${ORCANIA_LIB}"
                       "${MICROHTTPD_LIB}"
-                      "${JANSSON_LIB}"
                       "${JWT_LIB}"
                       "${CURL_LIB}"
-                      "${ORCANIA_LIB}"
-                      "${ULFIUS_LIB}"
+                      "${GNUTLS_LIB}"
+                      "${JANSSON_LIB}"
+                      "${PTHREAD_LIB}"
                       "${WAKAAMA_LIB}"
                      )
 
