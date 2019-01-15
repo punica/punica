@@ -65,7 +65,6 @@ build_punica () {
     }
 }
 
-eval "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PREFIX_PATH_DIR}/lib"
 export BUILD_STATIC
 export BUILD_DIR
 export PREFIX_PATH_DIR
