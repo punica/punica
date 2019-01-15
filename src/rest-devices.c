@@ -22,7 +22,7 @@
 #include "restserver.h"
 #include "settings.h"
 
-static device_database_t * prepare_list(json_t *array)
+static device_database_t * rest_devices_prepare_list(json_t *array)
 {
     const char* string;
     int count;
@@ -115,7 +115,7 @@ abort:
     return head;
 }
 
-static int update_list(device_database_t *list, json_t *jdevice)
+static int rest_devices_update_list(device_database_t *list, json_t *jdevice)
 {
     if(list == NULL || jdevice == NULL)
     {
@@ -181,6 +181,35 @@ static int update_list(device_database_t *list, json_t *jdevice)
     }
 
     return 0;
+}
+
+static int rest_devices_remove_list(device_database_t **list, const char *id)
+{
+    if (*list == NULL || id == NULL)
+    {
+        return -1;
+    }
+
+    device_database_t *prev = NULL, *curr;
+    curr = *list;
+
+    while (curr != NULL)
+    {
+        if (strcmp(id, curr->uuid) == 0)
+        {
+            if (curr == *list)
+            {
+                *list = curr->next;
+                return 0;
+            }
+            prev->next = curr->next;
+            return 0;
+        }
+        prev = curr;
+        curr = curr->next;
+    }
+
+    return -1;
 }
 
 int rest_devices_get_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
@@ -275,7 +304,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     }
 
     device_database_t *device_list;
-    if((device_list = prepare_list(jdevice_list)) == NULL)
+    if((device_list = rest_devices_prepare_list(jdevice_list)) == NULL)
     {
         json_decref(jdevice_list);
         ulfius_set_empty_body_response(resp, 400);
@@ -369,7 +398,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
 
     // if later stages fail, global list will be updated, but database file not
     // consider updating list at the end
-    if(update_list(data->security, jdevice))
+    if(rest_devices_update_list(data->security, jdevice))
     {
         json_decref(jdevice);
         ulfius_set_empty_body_response(resp, 500);
@@ -434,7 +463,7 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
         return U_CALLBACK_COMPLETE;
     }
 
-    if(remove_device_list(&data->security, id))
+    if(rest_devices_remove_list(&data->security, id))
     {
         //  device not found
         ulfius_set_empty_body_response(resp, 404);
