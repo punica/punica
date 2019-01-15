@@ -147,7 +147,7 @@ install_wakaama () {
 }
 
 install_libjwt () {
-    configure_args="${CONFIGURE_ARGS_BASE} --disable-doxygen-doc --without-openssl"
+    configure_args="${CONFIGURE_ARGS_BASE} --disable-doxygen-doc"
 
     echo "    - Installing libjwt..."
 
