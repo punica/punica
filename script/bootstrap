@@ -1,0 +1,180 @@
+#!/bin/sh
+#
+# Punica - LwM2M server with REST API
+# Copyright (C) 2018 8devices
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+
+set -e
+
+TMP_BUILD_DIR="$(mktemp -d)"
+PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
+
+WAKAAMA_SUBMODULE_DIR="${PROJECT_ROOT_DIR}/third_party/wakaama"
+
+update_repositories () {
+    if which apt-get; then
+        sudo apt-get update -qq
+    elif which rpm; then
+        echo "RPM is not supported yet!"
+        return 1
+    elif which opkg; then
+        echo "OPKG is not supported yet!"
+        return 1
+    elif which brew; then
+        echo "BREW is not supported yet!"
+        return 1
+    else
+        echo "Unknown package manager! (not supported yet)"
+        return 1
+    fi
+
+    return 0
+}
+
+update_submodules () {
+    eval "cd ${PROJECT_ROOT_DIR}"
+    git submodule update --init --recursive --remote
+    cd -
+}
+
+install_wakaama () {
+    eval "${WAKAAMA_SUBMODULE_DIR}/script/setup"
+    eval "cd ${WAKAAMA_SUBMODULE_DIR}/build"
+    sudo make install
+    cd -
+}
+
+install_submodules () {
+    install_wakaama
+}
+
+install_build_tools () {
+    if which apt-get; then
+        sudo apt-get install -yqq git cmake build-essential automake libtool
+    elif which rpm; then
+        echo "RPM is not supported yet!"
+        return 1
+    elif which opkg; then
+        echo "OPKG is not supported yet!"
+        return 1
+    elif which brew; then
+        echo "BREW is not supported yet!"
+        return 1
+    else
+        echo "Unknown package manager! (not supported yet)"
+        return 1
+    fi
+
+    return $?
+}
+
+install_dependencies () {
+    if which apt-get; then
+        sudo apt-get install -yqq libmicrohttpd-dev libjansson-dev libcurl4-gnutls-dev libssl-dev
+    elif which rpm; then
+        echo "RPM is not supported yet!"
+        return 1
+    elif which opkg; then
+        echo "OPKG is not supported yet!"
+        return 1
+    elif which brew; then
+        echo "BREW is not supported yet!"
+        return 1
+    else
+        echo "Unknown package manager! (not supported yet)"
+        return 1
+    fi
+
+    return $?
+}
+
+install_libjwt () {
+    LIBJWT_DIR="${TMP_BUILD_DIR}/libjwt"
+    git clone --quiet -b v1.9.0 --recursive --single-branch https://github.com/benmcollins/libjwt ${LIBJWT_DIR}
+    if ! [ $? -eq 0 ]; then
+        echo "Failed to obtain libjwt!"
+        eval "rm -rf ${TMP_BUILD_DIR}"
+        return 1
+    fi
+
+    eval "cd ${LIBJWT_DIR}"
+
+    autoreconf -i
+    eval "${LIBJWT_DIR}/configure"
+    make
+    sudo make install
+    if ! [ $? -eq 0 ]; then
+        echo "Failed to install JWT library!"
+        cd -
+        eval "rm -rf ${TMP_BUILD_DIR}"
+        return 1
+    fi
+
+    status_code=$?
+
+    cd -
+    eval "rm -rf ${LIBJWT_DIR}"
+
+    return ${status_code}
+}
+
+install_ulfius_orcania_yder () {
+    ULFIUS_DIR="${TMP_BUILD_DIR}/ulfius"
+    git clone --quiet -b v2.5.2 --single-branch https://github.com/babelouest/ulfius.git "${ULFIUS_DIR}"
+
+    if ! [ $? -eq 0 ]; then
+        echo "Failed to obtain ulfius project!"
+        return 1
+    fi
+
+    eval "mkdir ${ULFIUS_DIR}/build"
+    eval "cd ${ULFIUS_DIR}/build"
+    cmake ../ -DWITH_YDER=off -DBUILD_UWSC=off
+    make
+    sudo make install
+    if ! [ $? -eq 0 ]; then
+        echo "Failed to install ulfius library!"
+        cd -
+        eval "rm -rf ${TMP_BUILD_DIR}"
+        return 1
+    fi
+    cd -
+
+    eval "rm -rf ${ULFIUS_DIR}"
+}
+
+echo "==> Updating package lists..."
+update_repositories
+
+echo "==> Updating submodules..."
+update_submodules
+
+echo "==> Installing submodules..."
+install_submodules
+
+echo "==> Installing building tools..."
+install_build_tools
+
+echo "==> Installing dependencies..."
+install_dependencies
+
+echo "==> Installing libjwt..."
+install_libjwt
+
+echo "==> Installing ulfius..."
+install_ulfius_orcania_yder
+
+eval "rm -r ${TMP_BUILD_DIR}"
