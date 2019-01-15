@@ -385,7 +385,8 @@ static int read_database(char *database_name, settings_t *settings)
     j_database = json_load_file(database_name, 0, &error);
     if (j_database == NULL)
     {
-        // no file found, will be created with /devices REST API
+        fprintf(stdout, "%s:%d - database file not found, must be created with /devices REST API\r\n",
+                __FILE__, __LINE__);
         goto no_file;
     }
 
@@ -482,7 +483,7 @@ static int read_database(char *database_name, settings_t *settings)
             }
             else
             {
-                fprintf(stdout, "Unrecognised configuration file section: %s\n", section);
+                fprintf(stdout, "Unrecognised database file key: %s\n", section);
             }
         }
 

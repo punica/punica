@@ -1,0 +1,5 @@
+[
+    {"psk":"cHNrMQ==","psk_id":"cHNraWQx","uuid":"ABC"},
+    {"psk":"cHNrMg==","psk_id":"cHNraWQy","uuid":"DEF"},
+    {"psk":"cHNrMw==","psk_id":"cHNraWQz","uuid":"GHI","not-existing-key":"value"}
+]
