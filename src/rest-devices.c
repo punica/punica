@@ -451,7 +451,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
 
 int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
-    int ret = 500;
+    int ret = 404;
     coap_settings_t *data = (coap_settings_t *)context;
     json_t *jdatabase_list;
 
@@ -473,6 +473,7 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
     jdatabase_list = json_load_file(data->database_file, 0, NULL);
     if(json_is_array(jdatabase_list) == 0)
     {
+        ret = 400;
         goto exit;
     }
 
@@ -481,16 +482,17 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
     const char* j_string;
     json_array_foreach(jdatabase_list, index, j_value)
     {
+//      if error continue in case there are errors in database file
         j_entry = json_object_get(j_value, "uuid");
         if(j_entry == NULL)
         {
-            goto exit;
+            continue;
         }
 
         j_string = json_string_value(j_entry);
         if(j_string == NULL)
         {
-            goto exit;
+            continue;
         }
 
         if(strcmp(j_string, id) != 0)
