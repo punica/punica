@@ -176,11 +176,11 @@ static int rest_devices_update_list(device_database_t *list, json_t *jdevice)
             free(oldpsk);
             free(oldid);
 
-            break;
+            return 0;
         }
     }
 
-    return 0;
+    return -1;
 }
 
 static int rest_devices_remove_list(device_database_t **list, const char *id)
@@ -272,11 +272,14 @@ int rest_devices_get_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void 
 
             json_t *jstring = json_string(string);
             json_object_set_new(jdevice, "psk_id", jstring);
-            break;
+            ulfius_set_json_body_response(resp, 200, jdevice);
+            json_decref(jdevice);
+
+            return U_CALLBACK_COMPLETE;
         }
     }
 
-    ulfius_set_json_body_response(resp, 200, jdevice);
+    ulfius_set_empty_body_response(resp, 404);
     json_decref(jdevice);
 
     return U_CALLBACK_COMPLETE;
@@ -427,6 +430,13 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
     json_array_foreach(jdatabase_list, index, jobject)
     {
         jkey = json_object_get(jobject, "uuid");
+
+//      continue in case database file contains errors
+        if(jkey == NULL)
+        {
+            continue;
+        }
+
         if(strcmp(json_string_value(jkey), id) == 0)
         {
             json_array_set(jdatabase_list, index, jdevice);
