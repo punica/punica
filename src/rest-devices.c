@@ -336,7 +336,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
         if (json_is_array(jdatabase_list) != 0)
         {
             json_array_extend(jdatabase_list, jdevice_list);
- 
+
             if (json_dump_file(jdatabase_list, data->database_file, 0) != 0)
             {
                 free(device_list);
