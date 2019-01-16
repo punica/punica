@@ -279,6 +279,8 @@ int main(int argc, char *argv[])
         },
         .coap = {
             .port = 5555,
+            .security = NULL,
+            .database_file = NULL,
         },
         .logging = {
             .level = LOG_LEVEL_WARN,

@@ -122,7 +122,12 @@ int base64_decode(const char *base64_string, uint8_t *data, size_t *length)
             break;
         }
     }
+
     buffer_length = (string_length / 4) * 3 - padding;
+    if (buffer_length <= 0)
+    {
+        return BASE64_ERR_ARG;
+    }
 
     if (data == NULL)
     {
