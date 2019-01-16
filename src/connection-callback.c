@@ -18,8 +18,10 @@
  */
 
 #include "restserver.h"
+#include "connection-secure.h"
 
 #include <mbedtls/ssl.h>
+#include <mbedtls/oid.h>
 
 int psk_callback(void *p_cont, mbedtls_ssl_context *ssl, const unsigned char *name, size_t name_len)
 {
@@ -60,4 +62,40 @@ uint8_t lwm2m_buffer_send(void *sessionH, uint8_t *buffer, size_t length, void *
 bool lwm2m_session_is_equal(void *session1, void *session2, void *userData)
 {
     return (session1 == session2);
+}
+
+int lwm2m_client_validate(char *name, void *fromSessionH)
+{
+    mbedtls_connection_t * conn = (mbedtls_connection_t *)fromSessionH;
+    const char * short_name;
+    int ret;
+
+    //check if using cipher with certificate
+    if ((conn->ssl->session->ciphersuite != MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8) && (conn->ssl->session->ciphersuite != MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256))
+    {
+        return 0;
+    }
+
+    mbedtls_x509_name * subject = &conn->ssl->session->peer_cert->subject;
+    while (subject != NULL)
+    {
+        ret = mbedtls_oid_get_attr_short_name(&subject->oid, &short_name);
+
+        if (ret == 0)
+        {
+            if (strcmp(short_name, "CN") == 0)
+            {
+                if (strncmp((const char *)subject->val.p, name, subject->val.len) == 0)
+                {
+                    return 0;
+                }
+
+                return COAP_400_BAD_REQUEST;
+            }
+        }
+
+        subject = subject->next;
+    }
+
+    return COAP_500_INTERNAL_SERVER_ERROR;
 }
