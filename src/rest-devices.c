@@ -22,9 +22,9 @@
 #include "restserver.h"
 #include "settings.h"
 
-static device_database_t * rest_devices_prepare_list(json_t *array)
+static device_database_t *rest_devices_prepare_list(json_t *array)
 {
-    const char* string;
+    const char *string;
     int count;
     size_t index;
     json_t *value, *key;
@@ -33,7 +33,7 @@ static device_database_t * rest_devices_prepare_list(json_t *array)
     size_t length;
 
     entry = alloc_device_list(json_array_size(array));
-    if(entry == NULL)
+    if (entry == NULL)
     {
         return NULL;
     }
@@ -42,14 +42,16 @@ static device_database_t * rest_devices_prepare_list(json_t *array)
     json_array_foreach(array, index, value)
     {
         count = 0;
-        if((key = json_object_get(value, "uuid")) != NULL)
+        if ((key = json_object_get(value, "uuid")) != NULL)
         {
             string = json_string_value(key);
-            if(string == NULL)
+            if (string == NULL)
+            {
                 goto abort;
+            }
 
-            entry->uuid = (char*)malloc(strlen(string) + 1);
-            if(entry->uuid == NULL)
+            entry->uuid = (char *)malloc(strlen(string) + 1);
+            if (entry->uuid == NULL)
             {
                 goto abort;
             }
@@ -57,20 +59,26 @@ static device_database_t * rest_devices_prepare_list(json_t *array)
             memcpy(entry->uuid, string, strlen(string) + 1);
             count++;
         }
-        if((key = json_object_get(value, "psk")) != NULL)
+        if ((key = json_object_get(value, "psk")) != NULL)
         {
             string = json_string_value(key);
-            if(string == NULL)
-                goto abort;
-
-            base64_decode(string, NULL, &length);
-            if(base64_decode(string, binary_buffer, &length))
+            if (string == NULL)
             {
                 goto abort;
             }
 
-            entry->psk = (uint8_t*)malloc(length);
-            if(entry->psk == NULL)
+            if (base64_decode(string, NULL, &length))
+            {
+                goto abort;
+            }
+
+            if (base64_decode(string, binary_buffer, &length))
+            {
+                goto abort;
+            }
+
+            entry->psk = (uint8_t *)malloc(length);
+            if (entry->psk == NULL)
             {
                 goto abort;
             }
@@ -79,20 +87,26 @@ static device_database_t * rest_devices_prepare_list(json_t *array)
             entry->psk_len = length;
             count++;
         }
-        if((key = json_object_get(value, "psk_id")) != NULL)
+        if ((key = json_object_get(value, "psk_id")) != NULL)
         {
             string = json_string_value(key);
-            if(string == NULL)
-                goto abort;
-
-            base64_decode(string, NULL, &length);
-            if(base64_decode(string, binary_buffer, &length))
+            if (string == NULL)
             {
                 goto abort;
             }
 
-            entry->psk_id = (uint8_t*)malloc(length);
-            if(entry->psk_id == NULL)
+            if (base64_decode(string, NULL, &length))
+            {
+                goto abort;
+            }
+
+            if (base64_decode(string, binary_buffer, &length))
+            {
+                goto abort;
+            }
+
+            entry->psk_id = (uint8_t *)malloc(length);
+            if (entry->psk_id == NULL)
             {
                 goto abort;
             }
@@ -105,7 +119,7 @@ static device_database_t * rest_devices_prepare_list(json_t *array)
 abort:
         entry = entry->next;
 
-        if(count != 3)
+        if (count != 3)
         {
             free_device_list(head);
             return NULL;
@@ -117,7 +131,7 @@ abort:
 
 static int rest_devices_update_list(device_database_t *list, json_t *jdevice)
 {
-    if(list == NULL || jdevice == NULL)
+    if (list == NULL || jdevice == NULL)
     {
         return -1;
     }
@@ -132,22 +146,22 @@ static int rest_devices_update_list(device_database_t *list, json_t *jdevice)
     jstring = json_object_get(jdevice, "uuid");
     string = json_string_value(jstring);
 
-    for(device = list; device != NULL; device = device->next)
+    for (device = list; device != NULL; device = device->next)
     {
-        if(strcmp(device->uuid, string) == 0)
+        if (strcmp(device->uuid, string) == 0)
         {
             jstring = json_object_get(jdevice, "psk");
             string = json_string_value(jstring);
 
             base64_decode(string, NULL, &length);
-            if(base64_decode(string, binary_buffer, &length))
+            if (base64_decode(string, binary_buffer, &length))
             {
                 return -1;
             }
 
             oldpsk = device->psk;
             device->psk = malloc(length);
-            if(device->psk == NULL)
+            if (device->psk == NULL)
             {
                 device->psk = oldpsk;
                 return -1;
@@ -158,14 +172,14 @@ static int rest_devices_update_list(device_database_t *list, json_t *jdevice)
             string = json_string_value(jstring);
 
             base64_decode(string, NULL, &length);
-            if(base64_decode(string, binary_buffer, &length))
+            if (base64_decode(string, binary_buffer, &length))
             {
                 return -1;
             }
 
             oldid = device->psk_id;
             device->psk_id = malloc(length);
-            if(device->psk_id == NULL)
+            if (device->psk_id == NULL)
             {
                 free(device->psk);
                 device->psk = oldpsk;
@@ -217,14 +231,15 @@ int rest_devices_get_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     coap_settings_t *data = (coap_settings_t *)context;
     device_database_t *device;
     char string[512];
-    size_t length = sizeof(string);
+    size_t length;
 
     json_t *jdevices = json_array();
     for (device = data->security; device != NULL; device = device->next)
     {
+        length = sizeof(string);
         memset(string, 0, length);
 
-        if(base64_encode(device->psk_id, device->psk_id_len, string, &length))
+        if (base64_encode(device->psk_id, device->psk_id_len, string, &length))
         {
             json_decref(jdevices);
             ulfius_set_empty_body_response(resp, 500);
@@ -248,9 +263,9 @@ int rest_devices_get_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void 
     char string[512];
     size_t length = sizeof(string);
 
-    const char* id;
+    const char *id;
     id = u_map_get(req->map_url, "id");
-    if(id == NULL)
+    if (id == NULL)
     {
         ulfius_set_empty_body_response(resp, 400);
         return U_CALLBACK_COMPLETE;
@@ -259,11 +274,11 @@ int rest_devices_get_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void 
     json_t *jdevice = json_object();
     for (device = data->security; device != NULL; device = device->next)
     {
-        if(strcmp(id, device->uuid) == 0)
+        if (strcmp(id, device->uuid) == 0)
         {
             memset(string, 0, length);
 
-            if(base64_encode(device->psk_id, device->psk_id_len, string, &length))
+            if (base64_encode(device->psk_id, device->psk_id_len, string, &length))
             {
                 json_decref(jdevice);
                 ulfius_set_empty_body_response(resp, 500);
@@ -307,47 +322,52 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     }
 
     device_database_t *device_list;
-    if((device_list = rest_devices_prepare_list(jdevice_list)) == NULL)
+    if ((device_list = rest_devices_prepare_list(jdevice_list)) == NULL)
     {
         json_decref(jdevice_list);
         ulfius_set_empty_body_response(resp, 400);
         return U_CALLBACK_COMPLETE;
     }
 
-    jdatabase_list = json_load_file(data->database_file, 0, NULL);
-    if(json_is_array(jdatabase_list) != 0)
+//  if database file not specified then only save locally
+    if (data->database_file)
     {
-        json_array_extend(jdatabase_list, jdevice_list);
-
-        if(json_dump_file(jdatabase_list, data->database_file, 0) != 0)
+        jdatabase_list = json_load_file(data->database_file, 0, NULL);
+        if (json_is_array(jdatabase_list) != 0)
         {
-            free(device_list);
-            json_decref(jdevice_list);
-            json_decref(jdatabase_list);
-            ulfius_set_empty_body_response(resp, 500);
-            return U_CALLBACK_COMPLETE;
+            json_array_extend(jdatabase_list, jdevice_list);
+ 
+            if (json_dump_file(jdatabase_list, data->database_file, 0) != 0)
+            {
+                free(device_list);
+                json_decref(jdevice_list);
+                json_decref(jdatabase_list);
+                ulfius_set_empty_body_response(resp, 500);
+                return U_CALLBACK_COMPLETE;
+            }
+        }
+        else
+        {
+//          file does not exist
+            if (json_dump_file(jdevice_list, data->database_file, 0) != 0)
+            {
+                free(device_list);
+                json_decref(jdevice_list);
+                json_decref(jdatabase_list);
+                ulfius_set_empty_body_response(resp, 500);
+                return U_CALLBACK_COMPLETE;
+            }
         }
     }
-    else
-    {
-        if(json_dump_file(jdevice_list, data->database_file, 0) != 0)
-        {
-            free(device_list);
-            json_decref(jdevice_list);
-            json_decref(jdatabase_list);
-            ulfius_set_empty_body_response(resp, 500);
-            return U_CALLBACK_COMPLETE;
-        }
-    }
 
-    if(data->security == NULL)
+    if (data->security == NULL)
     {
         data->security = device_list;
     }
     else
     {
         device_database_t *entry = data->security;
-        while(entry->next != NULL)
+        while (entry->next != NULL)
         {
             entry = entry->next;
         }
@@ -374,9 +394,9 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         return U_CALLBACK_COMPLETE;
     }
 
-    const char* id;
+    const char *id;
     id = u_map_get(req->map_url, "id");
-    if(id == NULL)
+    if (id == NULL)
     {
         ulfius_set_empty_body_response(resp, 400);
         return U_CALLBACK_COMPLETE;
@@ -389,7 +409,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         ulfius_set_empty_body_response(resp, 400);
         return U_CALLBACK_COMPLETE;
     }
-    if((json_object_get(jdevice, "psk") == NULL) || (json_object_get(jdevice, "psk_id") == NULL))
+    if ((json_object_get(jdevice, "psk") == NULL) || (json_object_get(jdevice, "psk_id") == NULL))
     {
         json_decref(jdevice);
         ulfius_set_empty_body_response(resp, 400);
@@ -401,22 +421,30 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
 
     // if later stages fail, global list will be updated, but database file not
     // consider updating list at the end
-    if(rest_devices_update_list(data->security, jdevice))
+    if (rest_devices_update_list(data->security, jdevice))
     {
         json_decref(jdevice);
         ulfius_set_empty_body_response(resp, 500);
         return U_CALLBACK_COMPLETE;
     }
 
+//  if database file does not exit then only save locally
+    if (data->database_file)
+    {
+        json_decref(jdevice);
+        ulfius_set_empty_body_response(resp, 201);
+        return U_CALLBACK_COMPLETE;
+    }
+
     jdatabase_list = json_load_file(data->database_file, 0, NULL);
-    if(jdatabase_list == NULL)
+    if (jdatabase_list == NULL)
     {
         // file hasn't been created
         json_decref(jdevice);
         ulfius_set_empty_body_response(resp, 404);
         return U_CALLBACK_COMPLETE;
     }
-    else if(!json_is_array(jdatabase_list))
+    else if (!json_is_array(jdatabase_list))
     {
         // file exists, but is not an array
         json_decref(jdevice);
@@ -432,19 +460,19 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         jkey = json_object_get(jobject, "uuid");
 
 //      continue in case database file contains errors
-        if(jkey == NULL)
+        if (jkey == NULL)
         {
             continue;
         }
 
-        if(strcmp(json_string_value(jkey), id) == 0)
+        if (strcmp(json_string_value(jkey), id) == 0)
         {
             json_array_set(jdatabase_list, index, jdevice);
             break;
         }
     }
 
-    if(json_dump_file(jdatabase_list, data->database_file, 0) != 0)
+    if (json_dump_file(jdatabase_list, data->database_file, 0) != 0)
     {
         json_decref(jdevice);
         json_decref(jdatabase_list);
@@ -465,15 +493,15 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
     coap_settings_t *data = (coap_settings_t *)context;
     json_t *jdatabase_list;
 
-    const char* id;
+    const char *id;
     id = u_map_get(req->map_url, "id");
-    if(id == NULL)
+    if (id == NULL)
     {
         ulfius_set_empty_body_response(resp, 400);
         return U_CALLBACK_COMPLETE;
     }
 
-    if(rest_devices_remove_list(&data->security, id))
+    if (rest_devices_remove_list(&data->security, id))
     {
         //  device not found
         ulfius_set_empty_body_response(resp, 404);
@@ -481,7 +509,7 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
     }
 
     jdatabase_list = json_load_file(data->database_file, 0, NULL);
-    if(json_is_array(jdatabase_list) == 0)
+    if (json_is_array(jdatabase_list) == 0)
     {
         ret = 400;
         goto exit;
@@ -489,23 +517,23 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
 
     size_t index;
     json_t *j_value, *j_entry;
-    const char* j_string;
+    const char *j_string;
     json_array_foreach(jdatabase_list, index, j_value)
     {
 //      if error continue in case there are errors in database file
         j_entry = json_object_get(j_value, "uuid");
-        if(j_entry == NULL)
+        if (j_entry == NULL)
         {
             continue;
         }
 
         j_string = json_string_value(j_entry);
-        if(j_string == NULL)
+        if (j_string == NULL)
         {
             continue;
         }
 
-        if(strcmp(j_string, id) != 0)
+        if (strcmp(j_string, id) != 0)
         {
             continue;
         }
