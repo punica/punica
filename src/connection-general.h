@@ -17,40 +17,10 @@
  *
  */
 
-#ifndef CONNECTION_H_
-#define CONNECTION_H_
+#include "restserver.h"
 
-#include <stdio.h>
-#include <unistd.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
 #include <liblwm2m.h>
 
-#include "settings.h"
-
-#define LWM2M_STANDARD_PORT_STR "5683"
-#define LWM2M_STANDARD_PORT      5683
-#define LWM2M_DTLS_PORT_STR     "5684"
-#define LWM2M_DTLS_PORT          5684
-#define LWM2M_BSSERVER_PORT_STR "5685"
-#define LWM2M_BSSERVER_PORT      5685
-
-typedef struct _connection_t
-{
-    struct _connection_t   *next;
-    int                     sock;
-    struct sockaddr_in6     addr;
-    size_t                  addrLen;
-} connection_t;
-
-int connection_create(settings_t *options, int addressFamily);
-
-void connection_free(void *connP);
+#include <mbedtls/ssl.h>
 
 int connection_step(void *ctx, struct timeval *tv);
-
-int connection_send(void *sessionH, uint8_t *buffer, size_t length);
-#endif

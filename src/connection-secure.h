@@ -163,12 +163,13 @@ struct u_mbedtls_options
 #if defined(SNI_OPTION)
 typedef struct _sni_entry sni_entry;
 
-struct _sni_entry {
+struct _sni_entry
+{
     const char *name;
     mbedtls_x509_crt *cert;
     mbedtls_pk_context *key;
-    mbedtls_x509_crt* ca;
-    mbedtls_x509_crl* crl;
+    mbedtls_x509_crt *ca;
+    mbedtls_x509_crl *crl;
     int authmode;
     sni_entry *next;
 };
@@ -196,24 +197,26 @@ struct _psk_entry
 };
 #endif /* MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED */
 
-void my_debug( void *ctx, int level, const char *file, int line, const char *str );
-int my_recv( void *ctx, unsigned char *buf, size_t len );
-int my_send( void *ctx, const unsigned char *buf, size_t len );
-int get_auth_mode( const char *s );
-void sni_free( sni_entry *head );
-sni_entry *sni_parse( char *sni_string );
-int sni_callback( void *p_info, mbedtls_ssl_context *ssl, const unsigned char *name, size_t name_len );
-int unhexify( unsigned char *output, const char *input, size_t *olen );
-void psk_free( psk_entry *head );
-psk_entry *psk_parse( char *psk_string );
-int psk_callback( void *p_info, mbedtls_ssl_context *ssl, const unsigned char *name, size_t name_len );
-int mbedtls_status_is_ssl_in_progress( int ret );
+void my_debug(void *ctx, int level, const char *file, int line, const char *str);
+int my_recv(void *ctx, unsigned char *buf, size_t len);
+int my_send(void *ctx, const unsigned char *buf, size_t len);
+int get_auth_mode(const char *s);
+void sni_free(sni_entry *head);
+sni_entry *sni_parse(char *sni_string);
+int sni_callback(void *p_info, mbedtls_ssl_context *ssl, const unsigned char *name,
+                 size_t name_len);
+int unhexify(unsigned char *output, const char *input, size_t *olen);
+void psk_free(psk_entry *head);
+psk_entry *psk_parse(char *psk_string);
+int psk_callback(void *p_info, mbedtls_ssl_context *ssl, const unsigned char *name,
+                 size_t name_len);
+int mbedtls_status_is_ssl_in_progress(int ret);
 
 typedef struct _mbedtls_connection_t
 {
-    struct _mbedtls_connection_t *  next;
-    mbedtls_net_context *   sock;
-    mbedtls_ssl_context *   ssl;
+    struct _mbedtls_connection_t   *next;
+    mbedtls_net_context    *sock;
+    mbedtls_ssl_context    *ssl;
 } mbedtls_connection_t;
 
 int connection_create_secure(settings_t *options, int addressFamily);

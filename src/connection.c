@@ -26,17 +26,17 @@
 
 static int sock = -1;
 
-static connection_t * connection_find(connection_t * connList,
-                               struct sockaddr_storage * addr,
-                               size_t addrLen)
+static connection_t *connection_find(connection_t *connList,
+                                     struct sockaddr_storage *addr,
+                                     size_t addrLen)
 {
-    connection_t * connP;
+    connection_t *connP;
 
     connP = connList;
     while (connP != NULL)
     {
         if ((connP->addrLen == addrLen)
-         && (memcmp(&(connP->addr), addr, addrLen) == 0))
+            && (memcmp(&(connP->addr), addr, addrLen) == 0))
         {
             return connP;
         }
@@ -46,11 +46,11 @@ static connection_t * connection_find(connection_t * connList,
     return connP;
 }
 
-static connection_t * connection_new_incoming(connection_t * connList,
-                                       struct sockaddr * addr,
-                                       size_t addrLen)
+static connection_t *connection_new_incoming(connection_t *connList,
+                                             struct sockaddr *addr,
+                                             size_t addrLen)
 {
-    connection_t * connP;
+    connection_t *connP;
 
     connP = (connection_t *)malloc(sizeof(connection_t));
     if (connP != NULL)
@@ -120,7 +120,7 @@ int connection_create(settings_t *options, int addressFamily)
         return -1;
     }
 
-    for(p = res ; p != NULL && sock == -1 ; p = p->ai_next)
+    for (p = res ; p != NULL && sock == -1 ; p = p->ai_next)
     {
         sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
         if (sock >= 0)
@@ -139,13 +139,13 @@ int connection_create(settings_t *options, int addressFamily)
 }
 
 //  TODO: free single device
-void connection_free(void * connP)
+void connection_free(void *connP)
 {
     connection_t *connList = (connection_t *)connP;
 
     while (connList != NULL)
     {
-        connection_t * nextP;
+        connection_t *nextP;
 
         nextP = connList->next;
         free(connList);
@@ -154,7 +154,7 @@ void connection_free(void * connP)
     }
 }
 
-int connection_send(void *sessionH, uint8_t * buffer, size_t length)
+int connection_send(void *sessionH, uint8_t *buffer, size_t length)
 {
     connection_t *connP = (connection_t *)sessionH;
     int nbSent;
@@ -185,8 +185,9 @@ int connection_send(void *sessionH, uint8_t * buffer, size_t length)
     offset = 0;
     while (offset != length)
     {
-        nbSent = sendto(connP->sock, buffer + offset, length - offset, 0, (struct sockaddr *)&(connP->addr), connP->addrLen);
-        if (nbSent == -1) return -1;
+        nbSent = sendto(connP->sock, buffer + offset, length - offset, 0,
+                        (struct sockaddr *) & (connP->addr), connP->addrLen);
+        if (nbSent == -1) { return -1; }
         offset += nbSent;
     }
     return 0;
