@@ -107,7 +107,7 @@ generate_key_and_certificate ${TEST_PRIVATE_KEY} ${TEST_CERTIFICATE}
 generate_key_and_certificate ${OTHER_TEST_PRIVATE_KEY} ${OTHER_TEST_CERTIFICATE}
 
 echo "==> Starting punica(-s)..."
-REGULAR_PUNICA_PID=$(run_punica "regular")
+REGULAR_PUNICA_PID=$(run_punica "regular" "-d ${PROJECT_ROOT_DIR}/tests/rest/tmp.json")
 SECURE_PUNICA_PID=$(run_punica "secure" "-c ${PROJECT_ROOT_DIR}/tests/rest/secure.cfg")
 
 echo "==> Running coverage tests..."
@@ -122,5 +122,6 @@ cd -
 echo "==> Stopping punica(-s)..."
 stop_punica $REGULAR_PUNICA_PID
 stop_punica $SECURE_PUNICA_PID
+eval "rm ${PROJECT_ROOT_DIR}/tests/rest/tmp.json"
 
 exit $coverage_tests_status
