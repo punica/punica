@@ -122,6 +122,6 @@ cd -
 echo "==> Stopping punica(-s)..."
 stop_punica $REGULAR_PUNICA_PID
 stop_punica $SECURE_PUNICA_PID
-eval "rm ${PROJECT_ROOT_DIR}/tests/rest/tmp.json"
+eval "rm -f ${PROJECT_ROOT_DIR}/tests/rest/tmp.json"
 
 exit $coverage_tests_status
