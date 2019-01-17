@@ -7,7 +7,7 @@ let client_port = 5000;
 class ClientInterface extends Client {
 
   constructor() {
-    super(600, '8devices', '8dev_test', false, 'test', '::1', client_port++);
+    super(600, '8devices', '8dev_test', false, 'test', '::1', client_port++, 5555);
 
     this.createObject(3303, 0);
     this.objects['3303/0'].addResource(5700, 'R', RESOURCE_TYPE.FLOAT, 20.0, undefined, true);

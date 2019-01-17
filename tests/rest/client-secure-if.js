@@ -24,7 +24,7 @@ class ClientSecureInterface {
       this.client.ssl_config.ciphersuites([0xC0AE, ]);
 
       this.agent = new coap.Agent({ socket: this.client });
-      this.sens = new sensors.Sensor3700(60, this.name, 'localhost', this.agent);
+      this.sens = new sensors.Sensor3700(60, this.name, 'localhost', this.agent, 5556);
   }
 
   connect(callback) {
