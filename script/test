@@ -26,6 +26,8 @@ TEST_PRIVATE_KEY="${PROJECT_ROOT_DIR}/private.key"
 TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/certificate.pem"
 OTHER_TEST_PRIVATE_KEY="${PROJECT_ROOT_DIR}/other_private.key"
 OTHER_TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/other_certificate.pem"
+ECDSA_TEST_PRIVATE_KEY="${PROJECT_ROOT_DIR}/ecdsa.key"
+ECDSA_TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/ecdsa.pem"
 
 generate_key_and_certificate () {
     if [ "$#" -ne 2 ]; then
@@ -37,7 +39,7 @@ generate_key_and_certificate () {
         echo "Private key file name argument is missing or is invalid"
         return 1
     fi
-    
+
     if [ -z "$2" ]; then
         echo "Certificate file name argument is missing or is invalid"
         return 1
@@ -46,6 +48,29 @@ generate_key_and_certificate () {
     openssl genrsa -out $1 2048
 
     openssl req -days 365 -out $2 -new -x509 -key $1 -subj '/CN=localhost'
+
+    return 0
+}
+
+generate_key_and_certificate_ecdsa () {
+    if [ "$#" -ne 2 ]; then
+        echo "Illegal number of parameters"
+        return 1
+    fi
+
+    if [ -z "$1" ]; then
+        echo "Private key file name argument is missing or is invalid"
+        return 1
+    fi
+
+    if [ -z "$2" ]; then
+        echo "Certificate file name argument is missing or is invalid"
+        return 1
+    fi
+
+    openssl ecparam -name prime256v1 -genkey -out $1
+
+    openssl req -new -x509 -key $1 -out $2 -days 365 -subj '/CN=localhost'
 
     return 0
 }
@@ -105,6 +130,7 @@ fi
 echo "==> Generating security files..."
 generate_key_and_certificate ${TEST_PRIVATE_KEY} ${TEST_CERTIFICATE}
 generate_key_and_certificate ${OTHER_TEST_PRIVATE_KEY} ${OTHER_TEST_CERTIFICATE}
+generate_key_and_certificate_ecdsa ${ECDSA_TEST_PRIVATE_KEY} ${ECDSA_TEST_CERTIFICATE}
 
 echo "==> Starting punica(-s)..."
 REGULAR_PUNICA_PID=$(run_punica "regular")
