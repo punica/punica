@@ -1,6 +1,8 @@
 const chai = require('chai');
 const chai_http = require('chai-http');
 const should = chai.should();
+const https = require('https');
+const fs = require('fs');
 var server = require('./server-if');
 var ClientInterface = require('./client-secure-if');
 
@@ -10,10 +12,43 @@ describe('Secure endpoints interface', () => {
 
   let client = undefined;
 
+  const jwt = {
+    credentials: '{"name":"admin","secret":"not-same-as-name"}',
+    access_token: undefined,
+  };
+
   before((done) => {
     client = new ClientInterface();
     client.connect(() => {
-      done();
+      const options = {
+        host: 'localhost',
+        port: '8889',
+        ca: [
+          fs.readFileSync('../../certificate.pem'),
+        ],
+      };
+      options.path = '/authenticate';
+      options.method = 'POST';
+      options.agent = new https.Agent(options);
+      options.headers = {
+        'Content-Type': 'application/json',
+      };
+
+      const authenticationRequest = https.request(options, (authenticationResponse) => {
+        let data = '';
+
+        authenticationResponse.on('data', (chunk) => {
+          data = data + chunk;
+        });
+
+        authenticationResponse.on('end', () => {
+          const parsedBody = JSON.parse(data);
+          jwt.access_token = parsedBody['access_token'];
+          done();
+        });
+      });
+      authenticationRequest.write(jwt.credentials);
+      authenticationRequest.end();
     });
   });
 
@@ -21,57 +56,104 @@ describe('Secure endpoints interface', () => {
   });
 
   it('should list all endpoints on /endpoints', (done) => {
-    chai.request(server)
-      .get('/endpoints')
-      .end((err, res) => {
-        should.not.exist(err);
-        res.should.have.status(200);
-        res.should.have.header('content-type', 'application/json');
+    const options = {
+      host: 'localhost',
+      port: '8889',
+      ca: [
+        fs.readFileSync('../../certificate.pem'),
+      ],
+      path: '/endpoints',
+      method: 'GET',
+      headers: {
+        'Authorization': 'Bearer ' + jwt.access_token,
+      },
+    };
+    options.agent = new https.Agent(options);
 
-        res.body.should.be.a('array');
-        res.body.length.should.be.eql(1);
+    https.request(options, (res) => {
+      let data = '';
 
-        res.body[0].should.be.a('object');
-        res.body[0].should.have.property('name');
-        //res.body[0].should.have.property('type');
-        res.body[0].should.have.property('status');
-        res.body[0].should.have.property('q');
-
-        res.body[0].name.should.be.eql(client.name);
-        res.body[0].status.should.be.eql('ACTIVE');
-        res.body[0].q.should.be.a('boolean');
-        done();
+      res.statusCode.should.be.equal(200);
+      res.on('data', (chunk) => {
+        data = data + chunk;
       });
+
+      res.on('end', () => {
+        const parsedBody = JSON.parse(data);
+
+        res.should.have.header('content-type', 'application/json');
+        parsedBody.should.be.a('array');
+        parsedBody.length.should.be.eql(1);
+        parsedBody[0].should.be.a('object');
+        parsedBody[0].should.have.property('name');
+        parsedBody[0].should.have.property('status');
+        parsedBody[0].should.have.property('q');
+        parsedBody[0].name.should.be.eql(client.name);
+        parsedBody[0].status.should.be.eql('ACTIVE');
+        parsedBody[0].q.should.be.a('boolean');
+
+        done()
+      });
+    }).end();
   });
 
   it('should list all resources on /endpoints/{endpoint-name}', (done) => {
-    chai.request(server)
-      .get('/endpoints/' + client.name)
-      .end( (err, res) => {
-        should.not.exist(err);
-        res.should.have.status(200);
+    const options = {
+      host: 'localhost',
+      port: '8889',
+      ca: [
+        fs.readFileSync('../../certificate.pem'),
+      ],
+      path: '/endpoints/' + client.name,
+      method: 'GET',
+      headers: {
+        'Authorization': 'Bearer ' + jwt.access_token,
+      },
+    };
+    options.agent = new https.Agent(options);
+
+    https.request(options, (res) => {
+      let data = '';
+
+      res.statusCode.should.be.equal(200);
+      res.on('data', (chunk) => {
+        data = data + chunk;
+      });
+
+      res.on('end', () => {
+        const parsedBody = JSON.parse(data);
+
         res.should.have.header('content-type', 'application/json');
-
-        res.body.should.be.a('array');
-        res.body.length.should.be.above(0);
-
-        for (var i=0; i<res.body.length; i++) {
-          res.body[i].should.be.a('object');
-          res.body[i].should.have.property('uri');
+        parsedBody.should.be.a('array');
+        parsedBody.length.should.be.above(0);
+        for (var i=0; i<parsedBody.length; i++) {
+          parsedBody[i].should.be.a('object');
+          parsedBody[i].should.have.property('uri');
         }
 
-        done();
+        done()
       });
+    }).end();
   });
 
   it('should return 404 when endpoint not found', (done) => {
-    chai.request(server)
-      .get('/endpoints/not-found')
-      .end((err, res) => {
-        should.exist(res);
-        res.should.have.status(404);
-        done();
-      });
+    const options = {
+      host: 'localhost',
+      port: '8889',
+      ca: [
+        fs.readFileSync('../../certificate.pem'),
+      ],
+      path: '/endpoints/not-found',
+      method: 'GET',
+      headers: {
+        'Authorization': 'Bearer ' + jwt.access_token,
+      },
+    };
+    options.agent = new https.Agent(options);
+
+    https.request(options, (res) => {
+      res.statusCode.should.be.equal(404);
+      done();
+    }).end();
   });
 });
-
