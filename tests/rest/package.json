@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "jsonwebtoken": "^8.3.0",
-    "restserver-api": "git+https://github.com/8devices/restserver-api.git#dev-secure-client-tests",
+    "restserver-api": "git+https://github.com/8devices/restserver-api.git#dev-client-tests-secure",
     "node-mbedtls": "git+https://github.com/GiedriusM/node-mbedtls.git"
   }
 }

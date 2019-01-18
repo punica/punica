@@ -7,7 +7,17 @@ let client_port = 5000;
 class ClientInterface extends Client {
 
   constructor() {
-    super(600, '8devices', '8dev_test', false, 'test', '::1', client_port++, 5555);
+    const options = {
+      lifetime: 600,
+      manufacturer: '8devices',
+      model: '8dev_test',
+      queueMode: false,
+      endpointClientName: 'test',
+      serverURI: '::1',
+      clientPort: client_port++,
+      serverPort: 5555,
+    };
+    super(options);
 
     this.createObject(3303, 0);
     this.objects['3303/0'].addResource(5700, 'R', RESOURCE_TYPE.FLOAT, 20.0, undefined, true);
