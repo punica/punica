@@ -25,6 +25,7 @@
 #include "logging.h"
 
 static int sock = -1;
+static connection_t *connectionList = NULL;
 
 static connection_t *connection_find(connection_t *connList,
                                      struct sockaddr_storage *addr,
@@ -71,7 +72,6 @@ static int socket_receive(void *ctx)
     struct sockaddr_storage addr;
     socklen_t addrLen = sizeof(addr);
     connection_t *con;
-    static connection_t *connectionList = NULL;
 
     memset(buf, 0, sizeof(buf));
 
@@ -138,20 +138,31 @@ int connection_create(settings_t *options, int addressFamily)
     return sock;
 }
 
-//  TODO: free single device
-void connection_free(void *connP)
+void connection_free(void *fromSessionH)
 {
-    connection_t *connList = (connection_t *)connP;
+    connection_t *connP = (connection_t *)fromSessionH;
+    connection_t *connCurr = connectionList;
+    connection_t *next;
 
-    while (connList != NULL)
+    if (connectionList == NULL)
     {
-        connection_t *nextP;
-
-        nextP = connList->next;
-        free(connList);
-
-        connList = nextP;
+        return;
     }
+    else if (connP == connectionList)
+    {
+        next = connectionList->next;
+        free(connP);
+        connectionList = next;
+        return;
+    }
+
+    while (connCurr->next != connP)
+    {
+        connCurr = connCurr->next;
+    }
+
+    connCurr->next = connP->next;
+    free(connP);
 }
 
 int connection_send(void *sessionH, uint8_t *buffer, size_t length)
