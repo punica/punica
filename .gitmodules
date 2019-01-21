@@ -16,3 +16,6 @@
 [submodule "third_party/curl"]
 	path = third_party/curl
 	url = https://github.com/curl/curl.git
+[submodule "third_party/gnutls"]
+	path = third_party/gnutls
+	url = https://gitlab.com/gnutls/gnutls/
