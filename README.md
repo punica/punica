@@ -168,4 +168,12 @@ Example of database file:
 ]
 ```
 
-The file consists of a json array of device entries, each specifying a device ID, pre-shared key, and a pre-shared key ID. 'psk' and 'psk_id' are binary arrays and must be encoded in base64. If an error exists in one of the entries, such as a wrong key type, invalid base64 string etc., the said entry will be ignored, but others will be used. The database file **MUST NOT** be edited during runtime.
+The file consists of a json array of device entries, each specifying the following keys:
+
+- **`psk`** - pre-shared key known only by the server and the device. Used to authorize a device. Must be encoded in base64.
+
+- **`psk_id`** - pre-shared key id used to map a device to it's pre-shared key. Must be encoded in base64.
+
+- **`uuid`** - universaly unique identifier. Device name used in the application layer.
+
+If an error exists in one of the entries, such as a wrong key type, invalid base64 string etc., the said entry will be ignored, but others will be used. The database file **MUST NOT** be edited during runtime.
