@@ -216,10 +216,7 @@ int connection_step(void *ctx, struct timeval *tv)
     res = select(FD_SETSIZE, &readfds, NULL, NULL, tv);
     if (res < 0)
     {
-        if (errno != EINTR)
-        {
-            return res;
-        }
+        return res;
     }
 
     if (FD_ISSET(sock, &readfds))

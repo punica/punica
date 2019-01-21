@@ -443,6 +443,10 @@ int main(int argc, char *argv[])
         res = ConnApi.f_step(rest.lwm2m, &tv);
         if (res)
         {
+            if (errno == EINTR)
+            {
+                continue;
+            }
             log_message(LOG_LEVEL_ERROR, "ConnApi.f_step() error: %d\n", res);
         }
     }
