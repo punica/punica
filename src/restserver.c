@@ -34,6 +34,7 @@
 #include "security.h"
 #include "rest-list.h"
 #include "rest-authentication.h"
+#include "database.h"
 
 static volatile int restserver_quit;
 static void sigint_handler(int signo)
@@ -298,6 +299,14 @@ int main(int argc, char *argv[])
     if (settings_init(argc, argv, &settings) != 0)
     {
         return -1;
+    }
+
+    if (settings.coap.database_file)
+    {
+        if (database_init(&settings.coap) != 0)
+        {
+            return -1;
+        }
     }
 
     logging_init(&settings.logging);

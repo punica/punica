@@ -58,6 +58,18 @@ static void set_coap_settings(json_t *j_section, coap_settings_t *settings)
         {
             settings->port = (uint16_t) json_integer_value(j_value);
         }
+        else if (strcasecmp(key, "database_file") == 0)
+        {
+            if (json_is_string(j_value))
+            {
+                settings->database_file = (char *) json_string_value(j_value);
+            }
+            else
+            {
+                fprintf(stdout, "value at key %s:%s must be a string",
+                        section_name, key);
+            }
+        }
         else
         {
             fprintf(stdout, "Unrecognised configuration file key: %s.%s\n",
@@ -370,161 +382,6 @@ static int read_config(char *config_name, settings_t *settings)
     return 0;
 }
 
-static int read_database(char *database_name, settings_t *settings)
-{
-    json_error_t error;
-    const char *section;
-    size_t index;
-    json_t *j_value;
-    json_t *j_entry;
-    json_t *j_database;
-    int key_check;
-    int ret = 1;
-    device_database_t *device_list = NULL;
-
-    j_database = json_load_file(database_name, 0, &error);
-    if (j_database == NULL)
-    {
-        fprintf(stdout, "%s:%d - database file not found, must be created with /devices REST API\r\n",
-                __FILE__, __LINE__);
-        goto no_file;
-    }
-
-    if (!json_is_array(j_database))
-    {
-        fprintf(stderr, "%s:%d - database file must contain a json array\r\n",
-                __FILE__, __LINE__);
-        return ret;
-    }
-
-    int array_size = json_array_size(j_database);
-    if (array_size > 0)
-    {
-        device_list = alloc_device_list(array_size);
-        if (device_list == NULL)
-        {
-            fprintf(stderr, "%s:%d - failed to allocate device list\r\n",
-                    __FILE__, __LINE__);
-            return ret;
-        }
-    }
-
-    device_database_t *temp;
-    device_database_t *curr = device_list;
-    const char *json_string;
-    json_array_foreach(j_database, index, j_entry)
-    {
-        key_check = 0;
-
-        json_object_foreach(j_entry, section, j_value)
-        {
-            if (!json_is_string(j_value))
-            {
-                fprintf(stderr, "%s:%d - \'%s\' must be a string\r\n",
-                        __FILE__, __LINE__, section);
-                goto free_device;
-            }
-            if (strcasecmp(section, "uuid") == 0)
-            {
-                json_string = json_string_value(j_value);
-                curr->uuid = strdup(json_string);
-                if (curr->uuid == NULL)
-                {
-                    fprintf(stderr, "%s:%d - failed to allocate string\r\n",
-                            __FILE__, __LINE__);
-                    goto free_device;
-                }
-                key_check |= DATABASE_UUID_KEY_BIT;
-            }
-            else if (strcasecmp(section, "psk") == 0)
-            {
-                if ((ret = base64_decode(json_string_value(j_value), NULL, &curr->psk_len)))
-                {
-                    fprintf(stderr, "%s:%d base64_decode failed with status %d\r\n",
-                            __FILE__, __LINE__, ret);
-                    goto free_device;
-                }
-                curr->psk = (uint8_t *)calloc(1, curr->psk_len);
-                if (curr->psk == NULL)
-                {
-                    fprintf(stderr, "%s:%d - failed to allocate buffer\r\n",
-                            __FILE__, __LINE__);
-                    goto free_device;
-                }
-                if ((ret = base64_decode(json_string_value(j_value), curr->psk, &curr->psk_len)))
-                {
-                    fprintf(stderr, "%s:%d base64_decode failed with status %d\r\n",
-                            __FILE__, __LINE__, ret);
-                    goto free_device;
-                }
-                key_check |= DATABASE_PSK_KEY_BIT;
-            }
-            else if (strcasecmp(section, "psk_id") == 0)
-            {
-                if ((ret = base64_decode(json_string_value(j_value), NULL, &curr->psk_id_len)))
-                {
-                    fprintf(stderr, "%s:%d base64_decode failed with status %d\r\n",
-                            __FILE__, __LINE__, ret);
-                    goto free_device;
-                }
-                curr->psk_id = (uint8_t *)calloc(1, curr->psk_id_len);
-                if (curr->psk_id == NULL)
-                {
-                    fprintf(stderr, "%s:%d - failed to allocate buffer\r\n",
-                            __FILE__, __LINE__);
-                    goto free_device;
-                }
-                if ((ret = base64_decode(json_string_value(j_value), curr->psk_id, &curr->psk_id_len)))
-                {
-                    fprintf(stderr, "%s:%d base64_decode failed with status %d\r\n",
-                            __FILE__, __LINE__, ret);
-                    goto free_device;
-                }
-                key_check |= DATABASE_PSK_ID_KEY_BIT;
-            }
-            else
-            {
-                fprintf(stdout, "Unrecognised database file key: %s\n", section);
-            }
-        }
-
-        if (key_check != DATABASE_ALL_KEYS_SET)
-        {
-            fprintf(stderr, "%s:%d - missing \'key:value\' pair\r\n",
-                    __FILE__, __LINE__);
-            goto free_device;
-        }
-
-        curr = curr->next;
-        continue;
-
-free_device:
-        temp = curr;
-        curr = curr->next;
-        remove_device_list(device_list, temp);
-    }
-
-no_file:
-    settings->coap.database_file = (char *)calloc(1, strlen(database_name) + 1);
-    if (settings->coap.database_file == NULL)
-    {
-        fprintf(stderr, "%s:%d - failed to allocate string\r\n",
-                __FILE__, __LINE__);
-        goto exit;
-    }
-    memcpy(settings->coap.database_file, database_name, strlen(database_name) + 1);
-    settings->coap.security = device_list;
-    ret = 0;
-
-exit:
-    if (ret)
-    {
-        free_device_list(device_list);
-    }
-    json_decref(j_database);
-    return ret;
-}
-
 error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
     settings_t *settings = state->input;
@@ -544,7 +401,8 @@ error_t parse_opt(int key, char *arg, struct argp_state *state)
         break;
 
     case 'd':
-        if (read_database(arg, settings) != 0)
+        settings->coap.database_file = strdup(arg);
+        if (settings->coap.database_file == NULL)
         {
             argp_usage(state);
             return 1;
