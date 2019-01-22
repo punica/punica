@@ -18,7 +18,7 @@
  */
 
 #include "rest_core_types.h"
-#include "rest_utils.h"
+#include "utils.h"
 
 #include <liblwm2m.h>
 
@@ -40,7 +40,7 @@ rest_async_response_t *rest_async_response_new(void)
     memset(response, 0, sizeof(rest_async_response_t));
 
     ts = time(NULL);
-    if (rest_get_random(r, sizeof(r)) != sizeof(r))
+    if (utils_get_random(r, sizeof(r)) != sizeof(r))
     {
         return NULL;
     }
@@ -89,7 +89,7 @@ int rest_async_response_set(rest_async_response_t *response, int status,
         response->payload = NULL;
     }
 
-    response->payload = base64_encode(payload, length);
+    response->payload = utils_base64_encode(payload, length);
     if (response->payload == NULL)
     {
         return -1;

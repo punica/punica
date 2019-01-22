@@ -11,8 +11,8 @@ set(PUNICA_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/rest_notifications.c
     ${CMAKE_CURRENT_LIST_DIR}/rest_subscriptions.c
     ${CMAKE_CURRENT_LIST_DIR}/linked_list.c
-    ${CMAKE_CURRENT_LIST_DIR}/rest_utils.c
     ${CMAKE_CURRENT_LIST_DIR}/rest_authentication.c
+    ${CMAKE_CURRENT_LIST_DIR}/utils.c
     ${CMAKE_CURRENT_LIST_DIR}/logging.c
     ${CMAKE_CURRENT_LIST_DIR}/settings.c
     ${CMAKE_CURRENT_LIST_DIR}/security.c

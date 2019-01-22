@@ -47,7 +47,7 @@ static void rest_observe_cb(uint16_t clientID, lwm2m_uri_t *uriP, int count,
 
     // Where data is NULL, the count parameter represents CoAP error code
     rest_async_response_set(response,
-                            (data == NULL) ? coap_to_http_status(count) : HTTP_200_OK,
+                            (data == NULL) ? utils_coap_to_http_status(count) : HTTP_200_OK,
                             data, dataLength);
 
     rest_notify_async_response(ctx->punica, response);

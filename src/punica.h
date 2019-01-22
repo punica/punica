@@ -22,7 +22,7 @@
 
 #include "http_codes.h"
 #include "rest_core_types.h"
-#include "rest_utils.h"
+#include "utils.h"
 #include "settings.h"
 
 #include <liblwm2m.h>

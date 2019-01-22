@@ -17,17 +17,17 @@
  *
  */
 
-#ifndef REST_UTILS_H
-#define REST_UTILS_H
+#ifndef UTILS_H
+#define UTILS_H
 
 #include <stdint.h>
 #include <stdio.h>
 
-const char *base64_encode(const uint8_t *data, size_t length);
+const char *utils_base64_encode(const uint8_t *data, size_t length);
 
-int coap_to_http_status(int status);
+int utils_coap_to_http_status(int status);
 
-size_t rest_get_random(void *buf, size_t buflen);
+size_t utils_get_random(void *buf, size_t buflen);
 
-#endif // REST_UTILS_H
+#endif // UTILS_H
 

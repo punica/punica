@@ -17,7 +17,7 @@
  *
  */
 
-#include "rest_utils.h"
+#include "utils.h"
 #include "punica.h"
 
 #include <assert.h>
@@ -25,7 +25,7 @@
 static const char *base64_table =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-const char *base64_encode(const uint8_t *data, size_t length)
+const char *utils_base64_encode(const uint8_t *data, size_t length)
 {
     size_t buffer_length = ((length + 2) / 3) * 4 + 1; // +1 for null-terminator
     char *buffer;
@@ -80,7 +80,7 @@ const char *base64_encode(const uint8_t *data, size_t length)
     return buffer;
 }
 
-int coap_to_http_status(int status)
+int utils_coap_to_http_status(int status)
 {
     switch (status)
     {
@@ -96,7 +96,7 @@ int coap_to_http_status(int status)
     }
 }
 
-size_t rest_get_random(void *buf, size_t buflen)
+size_t utils_get_random(void *buf, size_t buflen)
 {
     FILE *f;
     size_t len;

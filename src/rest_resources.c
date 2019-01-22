@@ -67,11 +67,11 @@ static void rest_async_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
     int err;
 
     log_message(LOG_LEVEL_INFO, "[ASYNC-RESPONSE] id=%s status=%d\n",
-                ctx->response->id, coap_to_http_status(status));
+                ctx->response->id, utils_coap_to_http_status(status));
 
     linked_list_remove(ctx->punica->pendingResponseList, ctx->response);
 
-    err = rest_async_response_set(ctx->response, coap_to_http_status(status), data, dataLength);
+    err = rest_async_response_set(ctx->response, utils_coap_to_http_status(status), data, dataLength);
     assert(err == 0);
 
     rest_notify_async_response(ctx->punica, ctx->response);
