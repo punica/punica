@@ -118,7 +118,7 @@ lwm2m_client_t *utils_find_client(lwm2m_client_t *list, const char *name)
 
     if (name == NULL)
     {
-    return NULL;
+        return NULL;
     }
 
     for (client = list; client != NULL; client = client->next)
