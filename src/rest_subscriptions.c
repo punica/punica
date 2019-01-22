@@ -287,7 +287,6 @@ static int rest_subscriptions_delete_cb_unsafe(punica_context_t *punica,
      */
     const int err = U_CALLBACK_ERROR;
 
-    // using dummy callback (rest_unobserve_cb), because NULL callback causes segmentation fault
     res = lwm2m_observe_cancel(
               punica->lwm2m, client->internalID, &uri,
               rest_unobserve_cb, observe_context

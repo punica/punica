@@ -28,7 +28,7 @@ bool valid_callback_url(const char *url)
     return true;
 }
 
-bool validate_callback(json_t *jcallback, rest_context_t *rest)
+bool validate_callback(json_t *jcallback, punica_context_t *punica)
 {
     json_t *url, *jheaders;
     const char *header;
@@ -89,10 +89,10 @@ bool validate_callback(json_t *jcallback, rest_context_t *rest)
     test_request.http_url = strdup(callback_url);
     test_request.timeout = 20;
     test_request.check_server_certificate = 0;
-    test_request.client_cert_file = o_strdup(rest->settings->http.security.certificate);
-    test_request.client_key_file = o_strdup(rest->settings->http.security.private_key);
-    if ((rest->settings->http.security.certificate != NULL && test_request.client_cert_file == NULL) ||
-        (rest->settings->http.security.private_key != NULL && test_request.client_key_file == NULL))
+    test_request.client_cert_file = o_strdup(punica->settings->http.security.certificate);
+    test_request.client_key_file = o_strdup(punica->settings->http.security.private_key);
+    if ((punica->settings->http.security.certificate != NULL && test_request.client_cert_file == NULL) ||
+        (punica->settings->http.security.private_key != NULL && test_request.client_key_file == NULL))
     {
         log_message(LOG_LEVEL_ERROR, "[CALLBACK] Failed to set client security credentials\n");
 
@@ -161,7 +161,7 @@ int rest_notifications_put_callback_cb(const ulfius_req_t *req, ulfius_resp_t *r
     }
 
     jcallback = json_loadb(req->binary_body, req->binary_body_length, 0, NULL);
-    if (!validate_callback(jcallback, rest))
+    if (!validate_callback(jcallback, punica))
     {
         if (jcallback != NULL)
         {

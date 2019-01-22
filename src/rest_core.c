@@ -93,10 +93,10 @@ int punica_step(punica_context_t *punica, struct timeval *tv)
         request.http_url = strdup(url);
         request.timeout = 20;
         request.check_server_certificate = 0;
-        request.client_cert_file = o_strdup(rest->settings->http.security.certificate);
-        request.client_key_file = o_strdup(rest->settings->http.security.private_key);
-        if ((rest->settings->http.security.certificate != NULL && request.client_cert_file == NULL) ||
-            (rest->settings->http.security.private_key != NULL && request.client_key_file == NULL))
+        request.client_cert_file = o_strdup(punica->settings->http.security.certificate);
+        request.client_key_file = o_strdup(punica->settings->http.security.private_key);
+        if ((punica->settings->http.security.certificate != NULL && request.client_cert_file == NULL) ||
+            (punica->settings->http.security.private_key != NULL && request.client_key_file == NULL))
         {
             log_message(LOG_LEVEL_ERROR, "[CALLBACK] Failed to set client security credentials\n");
 
