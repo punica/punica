@@ -111,3 +111,23 @@ size_t utils_get_random(void *buf, size_t buflen)
     fclose(f);
     return len;
 }
+
+lwm2m_client_t *utils_find_client(lwm2m_client_t *list, const char *name)
+{
+    lwm2m_client_t *client;
+
+    if (name == NULL)
+    {
+    return NULL;
+    }
+
+    for (client = list; client != NULL; client = client->next)
+    {
+        if (strcmp(client->name, name) == 0)
+        {
+            return client;
+        }
+    }
+
+    return NULL;
+}

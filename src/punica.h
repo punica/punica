@@ -56,7 +56,7 @@ typedef struct
     settings_t *settings;
 } punica_context_t;
 
-lwm2m_client_t *punica_endpoints_find_client(lwm2m_client_t *list, const char *name);
+lwm2m_client_t *utils_find_client(lwm2m_client_t *list, const char *name);
 
 int rest_endpoints_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context);
 

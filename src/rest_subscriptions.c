@@ -92,7 +92,7 @@ static int rest_subscriptions_put_cb_unsafe(punica_context_t *punica,
 
     /* Find requested client */
     name = u_map_get(req->map_url, "name");
-    client = punica_endpoints_find_client(punica->lwm2m->clientList, name);
+    client = utils_find_client(punica->lwm2m->clientList, name);
     if (client == NULL)
     {
         ulfius_set_empty_body_response(resp, 404);
@@ -230,7 +230,7 @@ static int rest_subscriptions_delete_cb_unsafe(punica_context_t *punica,
 
     /* Find requested client */
     name = u_map_get(req->map_url, "name");
-    client = punica_endpoints_find_client(punica->lwm2m->clientList, name);
+    client = utils_find_client(punica->lwm2m->clientList, name);
     if (client == NULL)
     {
         ulfius_set_empty_body_response(resp, 404);

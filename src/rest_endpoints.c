@@ -83,26 +83,6 @@ static json_t *endpoint_resources_to_json(lwm2m_client_t *client)
     return jobjects;
 }
 
-lwm2m_client_t *punica_endpoints_find_client(lwm2m_client_t *list, const char *name)
-{
-    lwm2m_client_t *client;
-
-    if (name == NULL)
-    {
-        return NULL;
-    }
-
-    for (client = list; client != NULL; client = client->next)
-    {
-        if (strcmp(client->name, name) == 0)
-        {
-            return client;
-        }
-    }
-
-    return NULL;
-}
-
 int rest_endpoints_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
     punica_context_t *punica = (punica_context_t *)context;
@@ -133,7 +113,7 @@ int rest_endpoints_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
 
     punica_lock(punica);
 
-    client = punica_endpoints_find_client(punica->lwm2m->clientList, name);
+    client = utils_find_client(punica->lwm2m->clientList, name);
 
     if (client == NULL)
     {
