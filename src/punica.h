@@ -23,6 +23,7 @@
 #include "http_codes.h"
 #include "rest_core_types.h"
 #include "rest_utils.h"
+#include "settings.h"
 
 #include <liblwm2m.h>
 #include <ulfius.h>
@@ -51,6 +52,8 @@ typedef struct
 
     // punica-subsciptions
     linked_list_t *observeList;
+
+    settings_t *settings;
 } punica_context_t;
 
 lwm2m_client_t *punica_endpoints_find_client(lwm2m_client_t *list, const char *name);
@@ -83,7 +86,7 @@ int rest_subscriptions_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, v
 
 int punica_version_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context);
 
-void punica_init(punica_context_t *punica);
+void punica_init(punica_context_t *punica, settings_t *settings);
 void punica_cleanup(punica_context_t *punica);
 int punica_step(punica_context_t *punica, struct timeval *tv);
 

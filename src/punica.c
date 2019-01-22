@@ -297,7 +297,7 @@ int main(int argc, char *argv[])
 
     init_signals();
 
-    punica_init(&punica);
+    punica_init(&punica, &settings);
 
     /* Socket section */
     snprintf(coap_port, sizeof(coap_port), "%d", settings.coap.port);
@@ -388,8 +388,6 @@ int main(int argc, char *argv[])
         {
             log_message(LOG_LEVEL_WARN, "Encryption without authentication is unadvisable!\n");
         }
-
-        security_unload(&(settings.http.security));
     }
     else
     {
