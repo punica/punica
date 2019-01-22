@@ -23,43 +23,7 @@
 #include <assert.h>
 #include <string.h>
 
-void punica_init(punica_context_t *punica, settings_t *settings)
-{
-    memset(punica, 0, sizeof(punica_context_t));
-
-    punica->registrationList = linked_list_new();
-    punica->updateList = linked_list_new();
-    punica->deregistrationList = linked_list_new();
-    punica->timeoutList = linked_list_new();
-    punica->asyncResponseList = linked_list_new();
-    punica->pendingResponseList = linked_list_new();
-    punica->observeList = linked_list_new();
-    punica->settings = settings;
-
-    assert(pthread_mutex_init(&punica->mutex, NULL) == 0);
-}
-
-void punica_cleanup(punica_context_t *punica)
-{
-    if (punica->callback)
-    {
-        json_decref(punica->callback);
-        punica->callback = NULL;
-    }
-
-    rest_notifications_clear(punica);
-    linked_list_delete(punica->registrationList);
-    linked_list_delete(punica->updateList);
-    linked_list_delete(punica->deregistrationList);
-    linked_list_delete(punica->timeoutList);
-    linked_list_delete(punica->asyncResponseList);
-    linked_list_delete(punica->pendingResponseList);
-    linked_list_delete(punica->observeList);
-
-    assert(pthread_mutex_destroy(&punica->mutex) == 0);
-}
-
-int punica_step(punica_context_t *punica, struct timeval *tv)
+int rest_step(punica_context_t *punica, struct timeval *tv)
 {
     ulfius_req_t request;
     ulfius_resp_t response;
@@ -126,14 +90,3 @@ int punica_step(punica_context_t *punica, struct timeval *tv)
 
     return 0;
 }
-
-void punica_lock(punica_context_t *punica)
-{
-    assert(pthread_mutex_lock(&punica->mutex) == 0);
-}
-
-void punica_unlock(punica_context_t *punica)
-{
-    assert(pthread_mutex_unlock(&punica->mutex) == 0);
-}
-

@@ -431,7 +431,7 @@ int main(int argc, char *argv[])
             log_message(LOG_LEVEL_ERROR, "lwm2m_step() error: %d\n", res);
         }
 
-        res = punica_step(&punica, &tv);
+        res = rest_step(&punica, &tv);
         if (res)
         {
             log_message(LOG_LEVEL_ERROR, "punica_step() error: %d\n", res);

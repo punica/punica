@@ -86,7 +86,7 @@ int punica_version_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *contex
 
 void punica_init(punica_context_t *punica, settings_t *settings);
 void punica_cleanup(punica_context_t *punica);
-int punica_step(punica_context_t *punica, struct timeval *tv);
+int rest_step(punica_context_t *punica, struct timeval *tv);
 
 void punica_lock(punica_context_t *punica);
 void punica_unlock(punica_context_t *punica);
