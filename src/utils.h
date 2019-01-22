@@ -23,11 +23,15 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include <liblwm2m.h>
+
 const char *utils_base64_encode(const uint8_t *data, size_t length);
 
 int utils_coap_to_http_status(int status);
 
 size_t utils_get_random(void *buf, size_t buflen);
+
+lwm2m_client_t *utils_find_client(lwm2m_client_t *list, const char *name);
 
 #endif // UTILS_H
 
