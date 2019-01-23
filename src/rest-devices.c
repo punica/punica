@@ -247,7 +247,9 @@ int rest_devices_get_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
         }
 
         json_t *jstring = json_string(string);
-        json_array_append_new(jdevices, jstring);
+        json_t *jobject = json_object();
+        json_object_set_new(jobject, "psk_id", jstring);
+        json_array_append_new(jdevices, jobject);
     }
 
     ulfius_set_json_body_response(resp, 200, jdevices);

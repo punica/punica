@@ -120,8 +120,9 @@ describe('Devices interface', () => {
         res.body.should.be.a('array');
         res.body.length.should.be.eql(3);
 
-        res.body[2].should.be.a('string');
-        res.body[2].should.be.eql('cHNraWQz');
+        res.body[2].should.be.a('object');
+        res.body[2].should.have.property('psk_id');
+        res.body[2].psk_id.should.be.eql('cHNraWQz');
 
         done();
       });

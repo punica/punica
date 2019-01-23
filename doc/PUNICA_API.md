@@ -488,7 +488,7 @@ The code in this directory is licensed under the MIT license, however please not
 * **Success Response:**
 
   * **Code:** 200 <br />
-    **Content:** `[{"cHNraWQx"}, {"cHNraWQy"}, {"cHNraWQz"}]`
+    **Content:** `[{"psk_id": "cHNraWQx"}, {"psk_id": "cHNraWQy"}, {"psk_id": "cHNraWQz"}]`
     
 * **Error Response:**
 
@@ -516,7 +516,7 @@ The code in this directory is licensed under the MIT license, however please not
 * **Success Response:**
 
   * **Code:** 200 <br />
-    **Content:** `{"cHNraWQy"}`
+    **Content:** `{"psk_id": "cHNraWQy"}`
     
 * **Error Response:**
 
