@@ -431,7 +431,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
     }
 
 //  if database file does not exit then only save locally
-    if (data->database_file)
+    if (data->database_file == NULL)
     {
         json_decref(jdevice);
         ulfius_set_empty_body_response(resp, 201);
@@ -508,6 +508,12 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
         //  device not found
         ulfius_set_empty_body_response(resp, 404);
         return U_CALLBACK_COMPLETE;
+    }
+//  if database file not specified then only save locally
+    if (data->database_file == NULL)
+    {
+        ret = 200;
+        goto exit;
     }
 
     jdatabase_list = json_load_file(data->database_file, 0, NULL);
