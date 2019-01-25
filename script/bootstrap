@@ -141,7 +141,7 @@ install_build_tools () {
 }
 
 install_wakaama () {
-    echo "    - Installing wakaama..."
+    echo "    - Installing Wakaama..."
 
     {
         eval "${WAKAAMA_DIR}/script/setup ${CMAKE_ARGS_BASE}" &&
@@ -149,7 +149,7 @@ install_wakaama () {
         eval "make install ${MAKE_ARGS_BASE}" &&
         cd -
     } >> ${LOG_FILE} 2>&1 || {
-        library_error "wakaama"
+        library_error "Wakaama"
         return 1
     }
 }
@@ -157,7 +157,7 @@ install_wakaama () {
 install_libjwt () {
     configure_args="${CONFIGURE_ARGS_BASE} --disable-doxygen-doc --without-openssl"
 
-    echo "    - Installing libjwt..."
+    echo "    - Installing JWT..."
 
     eval "cd ${LIBJWT_DIR}"
 
@@ -169,7 +169,7 @@ install_libjwt () {
         eval "make install ${MAKE_ARGS_BASE}" &&
         cd -
     } >> ${LOG_FILE} 2>&1 || {
-        library_error "libjwt"
+        library_error "JWT"
         return 1
     }
 }
@@ -180,7 +180,7 @@ install_jansson () {
         cmake_args="${cmake_args} -DJANSSON_BUILD_SHARED_LIBS=1"
     fi
 
-    echo "    - Installing jansson..."
+    echo "    - Installing Jansson..."
 
     eval "rm -rf ${JANSSON_DIR}/build"
     eval "mkdir ${JANSSON_DIR}/build"
@@ -192,7 +192,7 @@ install_jansson () {
         eval "make install ${MAKE_ARGS_BASE}" &&
         cd -
     } >> ${LOG_FILE} 2>&1 || {
-        library_error "jansson"
+        library_error "Jansson"
         return 1
     }
 }
@@ -200,7 +200,7 @@ install_jansson () {
 install_curl () {
     configure_args="${CONFIGURE_ARGS_BASE} --without-ssl --with-gnutls  --disable-ares --disable-manual --disable-proxy --disable-verbose --disable-versioned-symbols --enable-hidden-symbols --without-libidn2 --without-librtmp --disable-ldap"
 
-    echo "    - Installing curl..."
+    echo "    - Installing Curl..."
 
     eval "cd ${CURL_DIR}"
 
@@ -212,7 +212,7 @@ install_curl () {
         eval "make install ${MAKE_ARGS_BASE}" &&
         cd -
     } >> ${LOG_FILE} 2>&1 || {
-        library_error "curl"
+        library_error "Curl"
         return 1
     }
 }
@@ -240,7 +240,7 @@ install_nettle () {
 install_gnutls () {
     configure_args="${CONFIGURE_ARGS_BASE} --disable-tests --disable-doc --without-p11-kit --without-idn --without-tpm --disable-libdane --disable-nls --disable-openssl-compatibility --disable-guile"
 
-    echo "    - Installing gnutls..."
+    echo "    - Installing GnuTLS..."
 
     eval "cd ${GNUTLS_DIR}"
 
@@ -252,7 +252,7 @@ install_gnutls () {
         eval "make install ${MAKE_ARGS_BASE}" &&
         cd -
     } >> ${LOG_FILE} 2>&1 || {
-        library_error "gnutls"
+        library_error "GnuTLS"
         return 1
     }
 }
@@ -283,7 +283,7 @@ install_ulfius () {
         cmake_args="${cmake_args} -DBUILD_STATIC=on"
     fi
 
-    echo "    - Installing ulfius..."
+    echo "    - Installing Ulfius..."
 
     eval "rm -rf ${ULFFIUS_DIR}/build"
     eval "mkdir ${ULFFIUS_DIR}/build"
@@ -296,7 +296,7 @@ install_ulfius () {
         eval "make install ${MAKE_ARGS_BASE}" &&
         cd -
     } >> ${LOG_FILE} 2>&1 || {
-        library_error "ulfius"
+        library_error "Ulfius"
         return 1
     }
 }
