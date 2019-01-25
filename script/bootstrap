@@ -39,8 +39,9 @@ TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 # LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
 LOG_FILE="/dev/stdout"
 
-BUILD_TOOLS_APT="git cmake build-essential automake libtool libgnutls28-dev libgcrypt20-dev texinfo gnutls-bin libssl-dev"
+BUILD_TOOLS_APT="git cmake build-essential automake libgmp-dev gperf bison texinfo libtool nettle-dev libtasn1-6-dev libgcrypt20-dev libunistring-dev"
 
+GNUTLS_DIR="${THIRD_PARTY_DIR}/gnutls"
 CURL_DIR="${THIRD_PARTY_DIR}/curl"
 JANSSON_DIR="${THIRD_PARTY_DIR}/jansson"
 LIBJWT_DIR="${THIRD_PARTY_DIR}/libjwt"
@@ -105,6 +106,7 @@ update_submodules () {
 
 install_submodules () {
     install_jansson
+    install_gnutls
     install_libjwt
     install_libmicrohttpd
     install_curl
@@ -147,7 +149,7 @@ install_wakaama () {
 }
 
 install_libjwt () {
-    configure_args="${CONFIGURE_ARGS_BASE} --disable-doxygen-doc"
+    configure_args="${CONFIGURE_ARGS_BASE} --disable-doxygen-doc --without-openssl"
 
     echo "    - Installing libjwt..."
 
@@ -167,7 +169,7 @@ install_libjwt () {
 }
 
 install_jansson () {
-    cmake_args="${CMAKE_ARGS_BASE}"
+    cmake_args="${CMAKE_ARGS_BASE} -DJANSSON_WITHOUT_TESTS=on -DJANSSON_BUILD_DOCS=off -DJANSSON_EXAMPLES=off -DJANSSON_BUILD_MAN=off"
     if [ ! "${BUILD_STATIC}" = true ]; then
         cmake_args="${cmake_args} -DJANSSON_BUILD_SHARED_LIBS=1"
     fi
@@ -190,7 +192,7 @@ install_jansson () {
 }
 
 install_curl () {
-    configure_args="${CONFIGURE_ARGS_BASE} --without-openssl --with-gnutls  --disable-ares --disable-manual --disable-proxy --disable-verbose --disable-versioned-symbols --enable-hidden-symbols --without-libidn --without-librtmp --without-zlib --disable-ldap"
+    configure_args="${CONFIGURE_ARGS_BASE} --without-ssl --with-gnutls  --disable-ares --disable-manual --disable-proxy --disable-verbose --disable-versioned-symbols --enable-hidden-symbols --without-libidn --without-librtmp --disable-ldap"
 
     echo "    - Installing curl..."
 
@@ -209,8 +211,29 @@ install_curl () {
     }
 }
 
+install_gnutls () {
+    configure_args="${CONFIGURE_ARGS_BASE} --disable-tests --disable-doc --without-p11-kit --without-idn --without-tpm --disable-libdane --disable-nls --enable-openssl-compatibility"
+
+    echo "    - Installing gnutls..."
+
+    eval "cd ${GNUTLS_DIR}"
+
+    {
+        eval "autoreconf ${AUTORECONF_ARGS_BASE}" &&
+        eval "./configure ${configure_args}" &&
+        eval "make clean ${MAKE_ARGS_BASE}" &&
+        eval "make ${MAKE_ARGS_BASE}" &&
+        eval "make install ${MAKE_ARGS_BASE}" &&
+        cd -
+    } >> ${LOG_FILE} 2>&1 || {
+        library_error "gnutls"
+        return 1
+    }
+}
+
 install_libmicrohttpd () {
-    configure_args="${CONFIGURE_ARGS_BASE} --with-https --disable-curl"
+    set -x
+    configure_args="${CONFIGURE_ARGS_BASE} --enable-shared=yes --disable-curl --with-gnutls=yes"
 
     echo "    - Installing libmicrohttpd..."
 
@@ -230,7 +253,7 @@ install_libmicrohttpd () {
 }
 
 install_ulfius () {
-    cmake_args="${CMAKE_ARGS_BASE}  -DWITH_YDER=off -DBUILD_UWSC=off"
+    cmake_args="${CMAKE_ARGS_BASE} -DWITH_YDER=off -DBUILD_UWSC=off  -DWITH_WEBSOCKET=off -DWITH_CURL=on"
     if [ "${BUILD_STATIC}" = true ]; then
         cmake_args="${cmake_args} -DBUILD_STATIC=on"
     fi
@@ -253,10 +276,10 @@ install_ulfius () {
     }
 }
 
+sudo -v
+
 eval "rm -rf ${BUILD_DIR}"
 eval "mkdir ${BUILD_DIR}"
-
-sudo -v
 
 echo "==> Updating package lists..."
 update_repositories >> ${LOG_FILE}

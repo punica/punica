@@ -26,6 +26,10 @@ if [ -z "${BUILD_DIR}" ]; then
     BUILD_DIR="${PROJECT_ROOT_DIR}/build"
 fi
 
+if [ -z "${PREFIX_PATH_DIR}" ]; then
+    PREFIX_PATH_DIR="${BUILD_DIR}"
+fi
+
 SCRIPT_NAME=$(basename -- "$0")
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 # LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
@@ -37,7 +41,8 @@ TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/certificate.pem"
 OTHER_TEST_PRIVATE_KEY="${PROJECT_ROOT_DIR}/other_private.key"
 OTHER_TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/other_certificate.pem"
 
-CERTTOOL_BIN="certtool"
+# CERTTOOL_BIN="certtool"
+CERTTOOL_BIN="${PREFIX_PATH_DIR}/bin/certtool"
 
 generate_key_and_certificate () {
     if [ "$#" -ne 3 ]; then
