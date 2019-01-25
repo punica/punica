@@ -43,7 +43,7 @@ else
     export LOG_FILE
 fi
 
-BUILD_TOOLS_APT="git cmake build-essential automake libgmp-dev gperf bison texinfo libtool nettle-dev libtasn1-6-dev libgcrypt20-dev libunistring-dev zlib1g-dev"
+BUILD_TOOLS_APT="git cmake build-essential autopoint autogen automake gperf bison texinfo libtool nettle-dev libtasn1-6-dev libgcrypt20-dev libunistring-dev zlib1g-dev libgmp-dev"
 
 GNUTLS_DIR="${THIRD_PARTY_DIR}/gnutls"
 CURL_DIR="${THIRD_PARTY_DIR}/curl"
