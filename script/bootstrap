@@ -278,7 +278,7 @@ install_libmicrohttpd () {
 }
 
 install_ulfius () {
-    cmake_args="${CMAKE_ARGS_BASE} -DWITH_YDER=off -DBUILD_UWSC=off  -DWITH_WEBSOCKET=off -DWITH_CURL=on"
+    cmake_args="${CMAKE_ARGS_BASE} -DWITH_YDER=off -DBUILD_UWSC=off -DWITH_WEBSOCKET=on -DWITH_CURL=on"
     if [ "${BUILD_STATIC}" = true ]; then
         cmake_args="${cmake_args} -DBUILD_STATIC=on"
     fi
