@@ -218,7 +218,7 @@ install_curl () {
 }
 
 install_nettle () {
-    configure_args="${CONFIGURE_ARGS_BASE} --disable-documentation"
+    configure_args="${CONFIGURE_ARGS_BASE} --disable-documentation --libdir=${PREFIX_PATH_DIR}/lib"
 
     echo "    - Installing Nettle..."
 
