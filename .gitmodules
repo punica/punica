@@ -6,7 +6,7 @@
 	url = https://github.com/akheron/jansson
 [submodule "third_party/libmicrohttpd"]
 	path = third_party/libmicrohttpd
-	url = https://github.com/rboulton/libmicrohttpd
+	url = https://gnunet.org/git/libmicrohttpd.git
 [submodule "third_party/ulfius"]
 	path = third_party/ulfius
 	url = https://github.com/babelouest/ulfius
