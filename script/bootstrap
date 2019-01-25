@@ -43,7 +43,7 @@ else
     export LOG_FILE
 fi
 
-BUILD_TOOLS_APT="git cmake build-essential autopoint autogen automake gperf bison texinfo libtool nettle-dev libtasn1-6-dev libgcrypt20-dev libunistring-dev zlib1g-dev libgmp-dev"
+BUILD_TOOLS_APT="git cmake build-essential autopoint autogen automake gperf bison texinfo libtool libtasn1-6-dev libgcrypt20-dev libunistring-dev zlib1g-dev libgmp-dev"
 
 NETTLE_DIR="${THIRD_PARTY_DIR}/nettle"
 GNUTLS_DIR="${THIRD_PARTY_DIR}/gnutls"
@@ -238,7 +238,7 @@ install_nettle () {
 }
 
 install_gnutls () {
-    configure_args="${CONFIGURE_ARGS_BASE} --disable-tests --disable-doc --without-p11-kit --without-idn --without-tpm --disable-libdane --disable-nls --disable-openssl-compatibility --disable-guile"
+    configure_args="${CONFIGURE_ARGS_BASE} --enable-shared=yes --disable-tests --disable-doc --without-p11-kit --without-idn --without-tpm --disable-libdane --disable-nls --disable-openssl-compatibility --disable-guile"
 
     echo "    - Installing GnuTLS..."
 
