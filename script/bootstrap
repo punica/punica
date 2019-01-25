@@ -258,7 +258,6 @@ install_gnutls () {
 }
 
 install_libmicrohttpd () {
-    set -x
     configure_args="${CONFIGURE_ARGS_BASE} --enable-shared=yes --disable-curl --with-gnutls=yes"
 
     echo "    - Installing libmicrohttpd..."
