@@ -38,82 +38,24 @@ int coap_to_http_status(int status)
     }
 }
 
-void free_device_list(device_database_t *head)
+void free_database_entry(database_entry_t *device)
 {
-    device_database_t *curr, *next;
-    curr = head;
 
-    while (curr != NULL)
+    if (device)
     {
-        next = curr->next;
-        if (curr->uuid)
+        if (device->uuid)
         {
-            free(curr->uuid);
+            free(device->uuid);
         }
-        if (curr->psk)
+        if (device->psk)
         {
-            free(curr->psk);
+            free(device->psk);
         }
-        if (curr->psk_id)
+        if (device->psk_id)
         {
-            free(curr->psk_id);
+            free(device->psk_id);
         }
-        free(curr);
-        curr = next;
+
+        free(device);
     }
-}
-
-device_database_t *alloc_device_list(size_t size)
-{
-    if (size < 1)
-    {
-        return NULL;
-    }
-    device_database_t *head, *next = NULL;
-    int i;
-
-    for (i = 0; i < size; i++)
-    {
-        head = calloc(1, sizeof(device_database_t));
-        if (head == NULL)
-        {
-            free_device_list(next);
-            return NULL;
-        }
-        head->next = next;
-        next = head;
-    }
-
-    return head;
-}
-
-int remove_device_list(device_database_t *head, device_database_t *device)
-{
-    device_database_t *curr = head;
-
-    while (curr->next != NULL)
-    {
-        if (curr->next == device)
-        {
-            curr->next = device->next;
-
-            if (device->uuid)
-            {
-                free(device->uuid);
-            }
-            if (device->psk)
-            {
-                free(device->psk);
-            }
-            if (device->psk_id)
-            {
-                free(device->psk_id);
-            }
-
-            free(device);
-            return 0;
-        }
-        curr = curr->next;
-    }
-    return -1;
 }

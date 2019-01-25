@@ -19,6 +19,7 @@
 
 #include "settings.h"
 #include "rest-core-types.h"
+#include "rest-list.h"
 
 #define DATABASE_UUID_KEY_BIT       0x1
 #define DATABASE_PSK_KEY_BIT        0x2
@@ -35,7 +36,22 @@ int database_init(coap_settings_t *coap)
     json_t *j_database;
     int key_check;
     int ret = 1;
-    device_database_t *device_list = NULL;
+
+    rest_list_t *device_list = rest_list_new();
+    if (device_list == 0)
+    {
+        fprintf(stderr, "%s:%d - failed to allocate device list\r\n",
+                __FILE__, __LINE__);
+        goto exit;
+    }
+
+    coap->security = device_list;
+    if (coap->database_file == NULL)
+    {
+//      internal list created, nothing more to do here
+        ret = 0;
+        goto exit;
+    }
 
     j_database = json_load_file(coap->database_file, 0, &error);
     if (j_database == NULL)
@@ -50,26 +66,23 @@ int database_init(coap_settings_t *coap)
     {
         fprintf(stderr, "%s:%d - database file must contain a json array\r\n",
                 __FILE__, __LINE__);
+        rest_list_delete(device_list);
         goto exit;
     }
 
     int array_size = json_array_size(j_database);
-    if (array_size > 0)
+    if (array_size == 0)
     {
-        device_list = alloc_device_list(array_size);
-        if (device_list == NULL)
-        {
-            fprintf(stderr, "%s:%d - failed to allocate device list\r\n",
-                    __FILE__, __LINE__);
-            goto exit;
-        }
+//      empty array, must be populated with /devices REST API
+        ret = 0;
+        goto exit;
     }
 
-    device_database_t *temp;
-    device_database_t *curr = device_list;
+    database_entry_t *curr;
     const char *json_string;
     json_array_foreach(j_database, index, j_entry)
     {
+        curr = calloc(1, sizeof(database_entry_t));
         key_check = 0;
 
         json_object_foreach(j_entry, section, j_value)
@@ -151,22 +164,15 @@ int database_init(coap_settings_t *coap)
             goto free_device;
         }
 
-        curr = curr->next;
+        rest_list_add(device_list, (void *)curr);
         continue;
 
 free_device:
-        temp = curr;
-        curr = curr->next;
-        remove_device_list(device_list, temp);
+        free_database_entry(curr);
     }
-    coap->security = device_list;
     ret = 0;
 
 exit:
-    if (ret)
-    {
-        free_device_list(device_list);
-    }
     json_decref(j_database);
     return ret;
 }
