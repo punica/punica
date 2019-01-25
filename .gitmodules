@@ -19,3 +19,6 @@
 [submodule "third_party/gnutls"]
 	path = third_party/gnutls
 	url = https://gitlab.com/gnutls/gnutls
+[submodule "third_party/nettle"]
+	path = third_party/nettle
+	url = https://git.lysator.liu.se/nettle/nettle

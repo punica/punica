@@ -45,6 +45,7 @@ fi
 
 BUILD_TOOLS_APT="git cmake build-essential autopoint autogen automake gperf bison texinfo libtool nettle-dev libtasn1-6-dev libgcrypt20-dev libunistring-dev zlib1g-dev libgmp-dev"
 
+NETTLE_DIR="${THIRD_PARTY_DIR}/nettle"
 GNUTLS_DIR="${THIRD_PARTY_DIR}/gnutls"
 CURL_DIR="${THIRD_PARTY_DIR}/curl"
 JANSSON_DIR="${THIRD_PARTY_DIR}/jansson"
@@ -54,7 +55,7 @@ ULFFIUS_DIR="${THIRD_PARTY_DIR}/ulfius"
 WAKAAMA_DIR="${THIRD_PARTY_DIR}/wakaama"
 
 AUTORECONF_ARGS_BASE="--prepend-include=${PREFIX_PATH_DIR} -i"
-CONFIGURE_ARGS_BASE="--enable-silent-rules --disable-dependency-tracking --prefix ${PREFIX_PATH_DIR}" #  PKG_CONFIG_PATH=${PREFIX_PATH_DIR}/lib/pkgconfig"
+CONFIGURE_ARGS_BASE="--enable-silent-rules --disable-dependency-tracking --prefix ${PREFIX_PATH_DIR}"
 CMAKE_ARGS_BASE="-DCMAKE_INSTALL_PREFIX:PATH=${PREFIX_PATH_DIR} -DCMAKE_PREFIX_PATH=${PREFIX_PATH_DIR}"
 MAKE_ARGS_BASE="--quiet"
 
@@ -110,6 +111,7 @@ update_submodules () {
 
 install_submodules () {
     install_jansson
+    install_nettle
     install_gnutls
     install_libjwt
     install_libmicrohttpd
@@ -211,6 +213,26 @@ install_curl () {
         cd -
     } >> ${LOG_FILE} 2>&1 || {
         library_error "curl"
+        return 1
+    }
+}
+
+install_nettle () {
+    configure_args="${CONFIGURE_ARGS_BASE} --disable-documentation"
+
+    echo "    - Installing Nettle..."
+
+    eval "cd ${NETTLE_DIR}"
+
+    {
+        eval "./.bootstrap" &&
+        eval "./configure ${configure_args}" &&
+        eval "make clean ${MAKE_ARGS_BASE}" &&
+        eval "make ${MAKE_ARGS_BASE}" &&
+        eval "make install ${MAKE_ARGS_BASE}" &&
+        cd -
+    } >> ${LOG_FILE} 2>&1 || {
+        library_error "Nettle"
         return 1
     }
 }
