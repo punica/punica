@@ -22,9 +22,22 @@ set -e
 PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
 SCRIPTS_DIR="${PROJECT_ROOT_DIR}/script"
 
+SCRIPT_NAME=$(basename -- "$0")
+TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+
+if [ -z "${LOG_FILE}" ]; then
+    LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
+else
+    export LOG_FILE
+fi
+
 eval "${SCRIPTS_DIR}/bootstrap"
 
 echo "==> Recompiling punica..."
 eval "cd ${PROJECT_ROOT_DIR}/build"
-make
+make >> ${LOG_FILE} 2>&1 || {
+    (>&2 echo "Failed to generate private key and certificate!")
+    (>&2 echo "\n\nRefer to \"${LOG_FILE}\" for more detailed information")
+    return 1
+}
 cd -

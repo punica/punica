@@ -30,74 +30,84 @@ include(${CMAKE_CURRENT_LIST_DIR}/src/punica.cmake)
 add_executable(${PROJECT_NAME} ${PUNICA_SOURCES})
 
 if(BUILD_STATIC)
-    message("WARNING: static builds are experimental!")
     set(CMAKE_FIND_LIBRARY_SUFFIXES
         ${CMAKE_STATIC_LIBRARY_SUFFIX}
         ${CMAKE_SHARED_LIBRARY_SUFFIX}
         ${CMAKE_SHARED_MODULE_SUFFIX})
 endif()
-message("Suffixes: ${CMAKE_FIND_LIBRARY_SUFFIXES}")
 
-LIST(APPEND CMAKE_MODULE_PATH ${ULFIUS_CMAKE_MODULES_DIR})
+list(APPEND CMAKE_MODULE_PATH ${ULFIUS_CMAKE_MODULES_DIR})
 
-message("${CMAKE_MODULE_PATH}")
+# Find and link Threads package libraries (pthread on linux)
+find_package(Threads REQUIRED)
+# Inform about libraries linked to define Threads and its symbols
+message("Threads: ${CMAKE_THREAD_LIBS_INIT}")
+set(LIBRARIES ${LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
-# GnuTLS depends on nettle (libtasn1, p11-kit, hogweed if not built manually),
-# find_package doesn't add those libraries, it must be done manually. 
+# Jansson
+find_package(Jansson REQUIRED)
+set(LIBRARIES ${LIBRARIES} ${JANSSON_LIBRARIES})
+
+# Nettle depends on gmp
 find_library(GMP_LIBRARY gmp)
-find_library(Z_LIBRARY z)
-find_library(HOGWEED_LIBRARY hogweed)
 find_library(NETTLE_LIBRARY nettle)
-find_library(ASN1_LIBRARY tasn1)
-find_library(UNISTRING_LIBRARY unistring)
-find_library(GNUTLS-OPENSSL_LIBRARY gnutls-openssl)
-find_package(GnuTLS REQUIRED)
-set(GNUTLS_LIBRARIES ${GNUTLS-OPENSSL_LIBRARY} ${GNUTLS_LIBRARIES} ${HOGWEED_LIBRARY} ${NETTLE_LIBRARY} ${GMP_LIBRARY} ${ASN1_LIBRARY} ${UNISTRING_LIBRARY} ${Z_LIBRARY})
+set(NETTLE_LIBRARIES ${NETTLE_LIBRARY} ${GMP_LIBRARY})
 
-# CURL_LIBRARY depends on gnutls, libidn2
+# GnuTLS depends on nettle, libtasn1, hogweed, z, unistring (p11-kit if not built manually),
+# if find_package doesn't add those libraries, it must be done manually.
+find_library(ASN1_LIBRARY tasn1)
+find_library(HOGWEED_LIBRARY hogweed)
+find_library(UNISTRING_LIBRARY unistring)
+find_library(Z_LIBRARY z)
+find_package(GnuTLS REQUIRED)
+set(GNUTLS_LIBRARIES ${GNUTLS_LIBRARIES} ${HOGWEED_LIBRARY} ${NETTLE_LIBRARIES} ${ASN1_LIBRARY} ${UNISTRING_LIBRARY} ${Z_LIBRARY})
+
+# curl depends on gnutls, (idn2, rtmp, ares, ldap if not built manually)
 find_package(CURL REQUIRED)
 set(CURL_LIBRARIES ${CURL_LIBRARIES} ${GNUTLS_LIBRARIES})
 
-# MICROHTTPD_LIBRARY depends on gnutls, libgcrypt, pthread (libcurl, libidn2 if not built manually)
+# gcrypt depends on gpg-error
+find_library(GPG-ERROR_LIBRARY gpg-error)
 find_library(GCRYPT_LIBRARY gcrypt)
-find_package(MHD REQUIRED)
-set(MHD_LIBRARIES ${MHD_LIBRARIES} ${GNUTLS_LIBRARIES} ${CURL_LIBRARIES} ${GCRYPT_LIBRARY})
+set(GCRYPT_LIBRARIES ${GCRYPT_LIBRARY} ${GPG-ERROR_LIBRARY})
 
-# ULFIUS_LIBRARY depends on liborcania, libcurl, jansson, libmicrohttpd > 0.9.51 (libyder if not built manually)
-# ORCANIA_LIBARY depends on jansson
-find_package(Jansson REQUIRED)
+# MicroHTTPD depends on gnutls, gcrypt, pthread (libcurl if not built manually)
+find_package(MHD REQUIRED)
+set(MHD_LIBRARIES ${MHD_LIBRARIES} ${GNUTLS_LIBRARIES} ${CURL_LIBRARIES} ${GCRYPT_LIBRARIES}  ${CMAKE_THREAD_LIBS_INIT})
+
+# Orcania depends on jansson
 find_package(Orcania REQUIRED)
+set(ORCANIA_LIBRARIES ${ORCANIA_LIBRARIES} ${ORCANIA_LIBRARIES} ${JANSSON_LIBRARIES})
 find_library(ULFIUS_LIBRARY ulfius)
-set(ULFIUS_LIBRARIES ${ULFIUS_LIBRARY} ${ORCANIA_LIBRARIES} ${MHD_LIBRARIES} ${JANSSON_LIBRARIES})
+
+# Ulfius depends on liborcania, libcurl, jansson, libmicrohttpd > 0.9.51 (libyder if not built manually)
+set(ULFIUS_LIBRARIES ${ULFIUS_LIBRARY} ${ORCANIA_LIBRARIES} ${MHD_LIBRARIES})
 # Inform about libraries linked to define Ulfius and its symbols
 message("Ulfius: ${ULFIUS_LIBRARIES}")
 set(LIBRARIES ${LIBRARIES} ${ULFIUS_LIBRARIES})
 
-# "${JWT_LIB}" # depends on jansson, openssl (if gnutls v3.5.8 or higher not built manually)
+# JWT_LIBRARY depends on jansson, openssl or gnutls >=3.6.0
+# NOTE: cheks for gnutls v3.5.8, but all sybols are defined in v3.6.0 or higher
 find_library(JWT_LIBRARY jwt)
 set(JWT_LIBRARIES ${JWT_LIBRARY} ${GNUTLS_LIBRARIES} ${JANSSON_LIBRARIES})
 # Inform about libraries linked to define JWT and its symbols
 message("JWT: ${JWT_LIBRARIES}")
 set(LIBRARIES ${LIBRARIES} ${JWT_LIBRARIES})
 
-# "${WAKAAMA_LIB}"
+# WAKAAMA_LIBRARY
 find_library(WAKAAMA_LIBRARY wakaama)
 # Inform about libraries linked to define Wakaama and its symbols
 message("Wakaama: ${WAKAAMA_LIBRARY}")
 set(LIBRARIES ${LIBRARIES} ${WAKAAMA_LIBRARY})
 
-find_package(Threads REQUIRED)
-# Inform about libraries linked to define Threads (pthread on linux) and its symbols
-message("Threads: ${CMAKE_THREAD_LIBS_INIT}")
-set(LIBRARIES ${LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-
 message("ALL libraries: ${LIBRARIES}")
 target_link_libraries(${PROJECT_NAME} ${LIBRARIES})
 
-target_compile_options(${PROJECT_NAME} PRIVATE "-Wall" "-pthread")
+target_compile_options(${PROJECT_NAME} PRIVATE "-Wall")
 
 if(CODE_COVERAGE)
+set(GCRYPT_LIBRARIES ${GCRYPT_LIBRARY} ${GPG-ERROR_LIBRARY})
+set(GCRYPT_LIBRARIES ${GCRYPT_LIBRARY} ${GPG-ERROR_LIBRARY})
     target_compile_options(${PROJECT_NAME} PRIVATE "-coverage")
     target_link_libraries(${PROJECT_NAME} "gcov")
 endif()
-

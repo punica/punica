@@ -36,9 +36,14 @@ fi
 
 SCRIPT_NAME=$(basename -- "$0")
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
-LOG_FILE="/dev/stdout"
 
-CMAKE_ARGS_BASE="-DCMAKE_INSTALL_PREFIX:PATH=${PREFIX_PATH_DIR}"
+if [ -z "${LOG_FILE}" ]; then
+    LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
+else
+    export LOG_FILE
+fi
+
+CMAKE_ARGS_BASE="-DCMAKE_INSTALL_PREFIX:PATH=${PREFIX_PATH_DIR} -DCMAKE_PREFIX_PATH=${PREFIX_PATH_DIR}"
 if [ "${BUILD_STATIC}" = true ]; then
     CMAKE_ARGS_BASE="${CMAKE_ARGS_BASE} -DBUILD_STATIC=on"
 fi
@@ -64,12 +69,15 @@ build_punica () {
     }
 }
 
-export BUILD_STATIC
-export BUILD_DIR
-export PREFIX_PATH_DIR
-eval "${SCRIPTS_DIR}/bootstrap"
+if [ ! "${DO_NOT_BOOTSTRAP}" = "true" ]; then
+    export BUILD_STATIC
+    export BUILD_DIR
+    export PREFIX_PATH_DIR
+    eval "${SCRIPTS_DIR}/bootstrap"
+fi
 
 echo "==> Building punica..."
 build_punica "$@"
+eval "strip -s ${BUILD_DIR}/punica"
 
 echo "Finished setting up punica!"
