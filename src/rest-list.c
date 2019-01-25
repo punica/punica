@@ -45,15 +45,16 @@ rest_list_t *rest_list_new(void)
 void rest_list_delete(rest_list_t *list)
 {
     rest_list_entry_t *entry;
+    rest_list_entry_t *next;
 
     pthread_mutex_lock(&list->mutex);
 
-    while (list->head != NULL)
+    entry = list->head;
+    while (entry != NULL)
     {
-        entry = list->head;
-        list->head = entry->next;
-        entry->next = NULL;
+        next = entry->next;
         free(entry);
+        entry = next;
     }
 
     pthread_mutex_unlock(&list->mutex);
@@ -112,3 +113,26 @@ void rest_list_remove(rest_list_t *list, void *data)
     assert(false);
 }
 
+void rest_list_extend(rest_list_t *list, rest_list_t *extension)
+{
+    rest_list_entry_t *entry;
+
+    pthread_mutex_lock(&list->mutex);
+
+    if (list->head == NULL)
+    {
+        list->head = extension->head;
+        goto exit;
+    }
+
+    for (entry = list->head; entry->next != NULL; entry = entry->next)
+    {
+    }
+    entry->next = extension->head;
+
+exit:
+    pthread_mutex_destroy(&extension->mutex);
+    free(extension);
+
+    pthread_mutex_unlock(&list->mutex);
+}
