@@ -55,12 +55,11 @@ set(NETTLE_LIBRARIES ${NETTLE_LIBRARY} ${GMP_LIBRARY})
 
 # GnuTLS depends on nettle, libtasn1, hogweed, z, unistring (p11-kit if not built manually),
 # if find_package doesn't add those libraries, it must be done manually.
-find_library(ASN1_LIBRARY tasn1)
 find_library(HOGWEED_LIBRARY hogweed)
 find_library(UNISTRING_LIBRARY unistring)
 find_library(Z_LIBRARY z)
 find_package(GnuTLS REQUIRED)
-set(GNUTLS_LIBRARIES ${GNUTLS_LIBRARIES} ${HOGWEED_LIBRARY} ${NETTLE_LIBRARIES} ${ASN1_LIBRARY} ${UNISTRING_LIBRARY} ${Z_LIBRARY})
+set(GNUTLS_LIBRARIES ${GNUTLS_LIBRARIES} ${HOGWEED_LIBRARY} ${NETTLE_LIBRARIES} ${UNISTRING_LIBRARY} ${Z_LIBRARY})
 
 # curl depends on gnutls, (idn2, rtmp, ares, ldap if not built manually)
 find_package(CURL REQUIRED)
