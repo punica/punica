@@ -22,3 +22,6 @@
 [submodule "third_party/nettle"]
 	path = third_party/nettle
 	url = https://git.lysator.liu.se/nettle/nettle
+[submodule "third_party/libtasn1"]
+	path = third_party/libtasn1
+	url = git@gitlab.com:gnutls/libtasn1.git
