@@ -155,7 +155,7 @@ install_wakaama () {
 }
 
 install_libjwt () {
-    configure_args="${CONFIGURE_ARGS_BASE} --disable-doxygen-doc --without-openssl"
+    configure_args="${CONFIGURE_ARGS_BASE} --disable-doxygen-doc --without-openssl PKG_CONFIG_PATH=${PREFIX_PATH_DIR}/lib/pkgconfig"
 
     echo "    - Installing JWT..."
 
@@ -218,7 +218,7 @@ install_curl () {
 }
 
 install_nettle () {
-    configure_args="${CONFIGURE_ARGS_BASE} --disable-documentation --libdir=${PREFIX_PATH_DIR}/lib"
+    configure_args="${CONFIGURE_ARGS_BASE} --enable-shared=yes --disable-documentation --disable-openssl --libdir=${PREFIX_PATH_DIR}/lib"
 
     echo "    - Installing Nettle..."
 
@@ -238,7 +238,7 @@ install_nettle () {
 }
 
 install_gnutls () {
-    configure_args="${CONFIGURE_ARGS_BASE} --enable-shared=yes --disable-tests --disable-doc --without-p11-kit --without-idn --without-tpm --disable-libdane --disable-nls --disable-openssl-compatibility --disable-guile"
+    configure_args="${CONFIGURE_ARGS_BASE} --enable-shared=yes --disable-tests --disable-doc --without-p11-kit --without-idn --without-tpm --disable-libdane --disable-nls --disable-openssl-compatibility --disable-guile PKG_CONFIG_PATH=${PREFIX_PATH_DIR}/lib/pkgconfig"
 
     echo "    - Installing GnuTLS..."
 
@@ -258,7 +258,7 @@ install_gnutls () {
 }
 
 install_libmicrohttpd () {
-    configure_args="${CONFIGURE_ARGS_BASE} --enable-shared=yes --disable-curl --with-gnutls=yes"
+    configure_args="${CONFIGURE_ARGS_BASE} --enable-shared=yes --disable-curl --with-gnutls=yes PKG_CONFIG_PATH=${PREFIX_PATH_DIR}/lib/pkgconfig"
 
     echo "    - Installing libmicrohttpd..."
 
