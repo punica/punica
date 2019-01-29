@@ -34,7 +34,7 @@ int database_load_file(rest_context_t *rest)
     size_t index;
     json_t *j_value;
     json_t *j_entry;
-    json_t *j_database;
+    json_t *j_database = NULL;
     int key_check;
     int ret = 1;
 
