@@ -1,4 +1,5 @@
 # Punica
+[![Build Status](https://travis-ci.com/punica/punica.svg?branch=master)](https://travis-ci.com/punica/punica) [![codecov.io](http://codecov.io/github/punica/punica/coverage.svg?branch=master)](http://codecov.io/github/punica/punica?branch=master)
 
 **Introduction**
 ----
