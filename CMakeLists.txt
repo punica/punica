@@ -49,6 +49,7 @@ find_package(Jansson REQUIRED)
 set(LIBRARIES ${LIBRARIES} ${JANSSON_LIBRARIES})
 
 # Nettle and Hogweed comes together, it depends on gmp
+find_library(GMP_LIBRARY gmp)
 find_library(NETTLE_LIBRARY nettle)
 find_library(HOGWEED_LIBRARY hogweed)
 set(NETTLE_LIBRARIES ${HOGWEED_LIBRARY} ${NETTLE_LIBRARY} ${GMP_LIBRARY})

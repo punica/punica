@@ -43,7 +43,7 @@ else
     export LOG_FILE
 fi
 
-BUILD_TOOLS_APT="git cmake build-essential autopoint autogen automake gperf bison texinfo libtool libgcrypt20-dev libunistring-dev zlib1g-dev"
+BUILD_TOOLS_APT="git cmake build-essential autopoint autogen automake gperf bison texinfo libtool libgcrypt20-dev libunistring-dev zlib1g-dev libgmp-dev"
 
 NETTLE_DIR="${THIRD_PARTY_DIR}/nettle"
 GNUTLS_DIR="${THIRD_PARTY_DIR}/gnutls"
@@ -218,7 +218,7 @@ install_curl () {
 }
 
 install_nettle () {
-    configure_args="${CONFIGURE_ARGS_BASE} --enable-shared=yes --disable-documentation --disable-openssl --enable-mini-gmp --libdir=${PREFIX_PATH_DIR}/lib"
+    configure_args="${CONFIGURE_ARGS_BASE} --enable-shared=yes --disable-documentation --disable-openssl --libdir=${PREFIX_PATH_DIR}/lib"
 
     echo "    - Installing Nettle..."
 
