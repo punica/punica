@@ -252,8 +252,8 @@ static int rest_devices_remove_list(rest_list_t *list, const char *id)
 
 int rest_devices_get_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
-    coap_settings_t *data = (coap_settings_t *)context;
-    rest_list_t *device_list = data->security;
+    rest_context_t *rest = (rest_context_t *)context;
+    rest_list_t *device_list = rest->devicesList;
     char string[512];
     size_t length;
     database_entry_t *device_data;
@@ -287,8 +287,8 @@ int rest_devices_get_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
 
 int rest_devices_get_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
-    coap_settings_t *data = (coap_settings_t *)context;
-    rest_list_t *device_list = data->security;
+    rest_context_t *rest = (rest_context_t *)context;
+    rest_list_t *device_list = rest->devicesList;
     char string[512];
     size_t length = sizeof(string);
     database_entry_t *device_data;
@@ -334,7 +334,7 @@ int rest_devices_get_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void 
 
 int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
-    coap_settings_t *data = (coap_settings_t *)context;
+    rest_context_t *rest = (rest_context_t *)context;
     const char *ct;
     json_t *jdevice_list, *jdatabase_list;
 
@@ -354,14 +354,14 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     }
 
 //  if database file not specified then only save locally
-    if (data->database_file)
+    if (rest->settings->coap.database_file)
     {
-        jdatabase_list = json_load_file(data->database_file, 0, NULL);
+        jdatabase_list = json_load_file(rest->settings->coap.database_file, 0, NULL);
         if (json_is_array(jdatabase_list) != 0)
         {
             json_array_extend(jdatabase_list, jdevice_list);
 
-            if (json_dump_file(jdatabase_list, data->database_file, 0) != 0)
+            if (json_dump_file(jdatabase_list, rest->settings->coap.database_file, 0) != 0)
             {
                 json_decref(jdevice_list);
                 json_decref(jdatabase_list);
@@ -372,7 +372,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
         else
         {
 //          file does not exist
-            if (json_dump_file(jdevice_list, data->database_file, 0) != 0)
+            if (json_dump_file(jdevice_list, rest->settings->coap.database_file, 0) != 0)
             {
                 json_decref(jdevice_list);
                 json_decref(jdatabase_list);
@@ -382,7 +382,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
         }
     }
 
-    if (rest_devices_extend_list(data->security, jdevice_list))
+    if (rest_devices_extend_list(rest->devicesList, jdevice_list))
     {
         json_decref(jdevice_list);
         ulfius_set_empty_body_response(resp, 400);
@@ -398,7 +398,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
 
 int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
-    coap_settings_t *data = (coap_settings_t *)context;
+    rest_context_t *rest = (rest_context_t *)context;
     json_t *jdevice, *jdatabase_list;
 
     const char *ct;
@@ -436,7 +436,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
 
     // if later stages fail, global list will be updated, but database file not
     // consider updating list at the end
-    if (rest_devices_update_list(data->security, jdevice))
+    if (rest_devices_update_list(rest->devicesList, jdevice))
     {
         json_decref(jdevice);
         ulfius_set_empty_body_response(resp, 400);
@@ -444,14 +444,14 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
     }
 
 //  if database file does not exist then only save locally
-    if (data->database_file == NULL)
+    if (rest->settings->coap.database_file == NULL)
     {
         json_decref(jdevice);
         ulfius_set_empty_body_response(resp, 201);
         return U_CALLBACK_COMPLETE;
     }
 
-    jdatabase_list = json_load_file(data->database_file, 0, NULL);
+    jdatabase_list = json_load_file(rest->settings->coap.database_file, 0, NULL);
     if (jdatabase_list == NULL)
     {
         // file hasn't been created
@@ -487,7 +487,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         }
     }
 
-    if (json_dump_file(jdatabase_list, data->database_file, 0) != 0)
+    if (json_dump_file(jdatabase_list, rest->settings->coap.database_file, 0) != 0)
     {
         json_decref(jdevice);
         json_decref(jdatabase_list);
@@ -505,7 +505,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
 int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
     int ret = 404;
-    coap_settings_t *data = (coap_settings_t *)context;
+    rest_context_t *rest = (rest_context_t *)context;
     json_t *jdatabase_list;
 
     const char *id;
@@ -516,20 +516,20 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
         return U_CALLBACK_COMPLETE;
     }
 
-    if (rest_devices_remove_list(data->security, id))
+    if (rest_devices_remove_list(rest->devicesList, id))
     {
         //  device not found
         ulfius_set_empty_body_response(resp, 404);
         return U_CALLBACK_COMPLETE;
     }
 //  if database file not specified then only save locally
-    if (data->database_file == NULL)
+    if (rest->settings->coap.database_file == NULL)
     {
         ret = 200;
         goto exit;
     }
 
-    jdatabase_list = json_load_file(data->database_file, 0, NULL);
+    jdatabase_list = json_load_file(rest->settings->coap.database_file, 0, NULL);
     if (json_is_array(jdatabase_list) == 0)
     {
         ret = 400;
@@ -560,7 +560,7 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
         }
 
         json_array_remove(jdatabase_list, index);
-        json_dump_file(jdatabase_list, data->database_file, 0);
+        json_dump_file(jdatabase_list, rest->settings->coap.database_file, 0);
         ret = 200;
         goto exit;
     }
