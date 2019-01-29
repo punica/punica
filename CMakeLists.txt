@@ -48,18 +48,17 @@ set(LIBRARIES ${LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 find_package(Jansson REQUIRED)
 set(LIBRARIES ${LIBRARIES} ${JANSSON_LIBRARIES})
 
-# Nettle depends on gmp
-find_library(GMP_LIBRARY gmp)
+# Nettle and Hogweed comes together, it depends on gmp
 find_library(NETTLE_LIBRARY nettle)
-set(NETTLE_LIBRARIES ${NETTLE_LIBRARY} ${GMP_LIBRARY})
+find_library(HOGWEED_LIBRARY hogweed)
+set(NETTLE_LIBRARIES ${HOGWEED_LIBRARY} ${NETTLE_LIBRARY} ${GMP_LIBRARY})
 
 # GnuTLS depends on nettle, libtasn1, hogweed, z, unistring (p11-kit if not built manually),
 # if find_package doesn't add those libraries, it must be done manually.
-find_library(HOGWEED_LIBRARY hogweed)
 find_library(UNISTRING_LIBRARY unistring)
 find_library(Z_LIBRARY z)
 find_package(GnuTLS REQUIRED)
-set(GNUTLS_LIBRARIES ${GNUTLS_LIBRARIES} ${HOGWEED_LIBRARY} ${NETTLE_LIBRARIES} ${UNISTRING_LIBRARY} ${Z_LIBRARY})
+set(GNUTLS_LIBRARIES ${GNUTLS_LIBRARIES} ${NETTLE_LIBRARIES} ${UNISTRING_LIBRARY} ${Z_LIBRARY})
 
 # curl depends on gnutls, (idn2, rtmp, ares, ldap if not built manually)
 find_package(CURL REQUIRED)
