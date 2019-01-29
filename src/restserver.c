@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
 
     init_signals();
 
-    rest_init(&rest);
+    rest_init(&rest, &settings);
 
     /* Socket section */
     snprintf(coap_port, sizeof(coap_port), "%d", settings.coap.port);
@@ -401,8 +401,6 @@ int main(int argc, char *argv[])
         {
             log_message(LOG_LEVEL_WARN, "Encryption without authentication is unadvisable!\n");
         }
-
-        security_unload(&(settings.http.security));
     }
     else
     {

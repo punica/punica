@@ -23,7 +23,7 @@
 #include "logging.h"
 #include "restserver.h"
 
-void rest_init(rest_context_t *rest)
+void rest_init(rest_context_t *rest, settings_t *settings)
 {
     memset(rest, 0, sizeof(rest_context_t));
 
@@ -34,6 +34,7 @@ void rest_init(rest_context_t *rest)
     rest->asyncResponseList = rest_list_new();
     rest->pendingResponseList = rest_list_new();
     rest->observeList = rest_list_new();
+    rest->settings = settings;
 
     assert(pthread_mutex_init(&rest->mutex, NULL) == 0);
 }
@@ -91,6 +92,21 @@ int rest_step(rest_context_t *rest, struct timeval *tv)
         request.http_verb = strdup("PUT");
         request.http_url = strdup(url);
         request.timeout = 20;
+        request.check_server_certificate = 0;
+        request.client_cert_file = o_strdup(rest->settings->http.security.certificate);
+        request.client_key_file = o_strdup(rest->settings->http.security.private_key);
+        if ((rest->settings->http.security.certificate != NULL && request.client_cert_file == NULL) ||
+            (rest->settings->http.security.private_key != NULL && request.client_key_file == NULL))
+        {
+            log_message(LOG_LEVEL_ERROR, "[CALLBACK] Failed to set client security credentials\n");
+
+            json_decref(jbody);
+            u_map_clean(&headers);
+            ulfius_clean_request(&request);
+
+            return -1;
+        }
+
         u_map_copy_into(request.map_header, &headers);
 
         ulfius_set_json_body_request(&request, jbody);
