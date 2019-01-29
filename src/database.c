@@ -20,13 +20,14 @@
 #include "settings.h"
 #include "rest-core-types.h"
 #include "rest-list.h"
+#include "restserver.h"
 
 #define DATABASE_UUID_KEY_BIT       0x1
 #define DATABASE_PSK_KEY_BIT        0x2
 #define DATABASE_PSK_ID_KEY_BIT     0x4
 #define DATABASE_ALL_KEYS_SET       0x7
 
-int database_init(coap_settings_t *coap)
+int database_load_file(rest_context_t *rest)
 {
     json_error_t error;
     const char *section;
@@ -45,15 +46,15 @@ int database_init(coap_settings_t *coap)
         goto exit;
     }
 
-    coap->security = device_list;
-    if (coap->database_file == NULL)
+    rest->devicesList = device_list;
+    if (rest->settings->coap.database_file == NULL)
     {
 //      internal list created, nothing more to do here
         ret = 0;
         goto exit;
     }
 
-    j_database = json_load_file(coap->database_file, 0, &error);
+    j_database = json_load_file(rest->settings->coap.database_file, 0, &error);
     if (j_database == NULL)
     {
         fprintf(stdout, "%s:%d - database file not found, must be created with /devices REST API\r\n",

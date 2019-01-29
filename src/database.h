@@ -17,5 +17,9 @@
  *
  */
 
-int database_init(coap_settings_t *coap);
+#ifndef DATABASE_H
+#define DATABASE_H
 
+int database_load_file(rest_context_t *rest);
+
+#endif //DATABASE_H

@@ -22,6 +22,7 @@
 
 #include "logging.h"
 #include "restserver.h"
+#include "database.h"
 
 void rest_init(rest_context_t *rest, settings_t *settings)
 {
@@ -37,6 +38,8 @@ void rest_init(rest_context_t *rest, settings_t *settings)
     rest->settings = settings;
 
     assert(pthread_mutex_init(&rest->mutex, NULL) == 0);
+
+    database_load_file(rest);
 }
 
 void rest_cleanup(rest_context_t *rest)

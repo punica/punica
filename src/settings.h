@@ -39,7 +39,6 @@ typedef struct
 {
     uint16_t port;
     char *database_file;
-    rest_list_t *security;
 } coap_settings_t;
 
 typedef struct

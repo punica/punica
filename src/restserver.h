@@ -54,6 +54,9 @@ typedef struct
     // rest-subsciptions
     rest_list_t *observeList;
 
+    // rest-devices
+    rest_list_t *devicesList;
+
     settings_t *settings;
 } rest_context_t;
 

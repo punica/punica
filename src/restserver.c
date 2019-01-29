@@ -34,7 +34,6 @@
 #include "security.h"
 #include "rest-list.h"
 #include "rest-authentication.h"
-#include "database.h"
 
 static volatile int restserver_quit;
 static void sigint_handler(int signo)
@@ -280,7 +279,6 @@ int main(int argc, char *argv[])
         },
         .coap = {
             .port = 5555,
-            .security = NULL,
             .database_file = NULL,
         },
         .logging = {
@@ -297,11 +295,6 @@ int main(int argc, char *argv[])
                     settings.http.security.jwt.secret_key_length);
 
     if (settings_init(argc, argv, &settings) != 0)
-    {
-        return -1;
-    }
-
-    if (database_init(&settings.coap))
     {
         return -1;
     }
