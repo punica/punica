@@ -121,7 +121,8 @@ Example of configuration file:
     }
   },
   "coap": {
-    "port": 5555
+    "port": 5555,
+    "database_file": "./database.json"
   },
   "logging": {
     "level": 5
@@ -151,6 +152,7 @@ Example of configuration file:
 
 - **`coap`**
   - `port` _(integer)_ - COAP port to create socket on (is mentioned in arguments list). _**Optional**, default value is 5555._
+  - `database_file` _(string)_ - Location of database file on system. Can also be passed by command line arguments. _**Optional**, default value is NULL._
 
 - **`logging`**
   - `level` _(integer)_ - visible messages logging level requirement (is mentioned in arguments list).  _**Optional**, default value is 2 (LOG_LEVEL_WARN)._
