@@ -16,11 +16,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  */
+#include <string.h>
 
 #include "rest-utils.h"
 
 #include "restserver.h"
-
 
 int coap_to_http_status(int status)
 {
@@ -38,3 +38,24 @@ int coap_to_http_status(int status)
     }
 }
 
+void free_database_entry(database_entry_t *device)
+{
+
+    if (device)
+    {
+        if (device->uuid)
+        {
+            free(device->uuid);
+        }
+        if (device->psk)
+        {
+            free(device->psk);
+        }
+        if (device->psk_id)
+        {
+            free(device->psk_id);
+        }
+
+        free(device);
+    }
+}

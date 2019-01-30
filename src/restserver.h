@@ -26,6 +26,7 @@
 #include "http_codes.h"
 #include "rest-core-types.h"
 #include "rest-utils.h"
+#include "settings.h"
 
 
 typedef struct _u_request ulfius_req_t;
@@ -52,6 +53,11 @@ typedef struct
 
     // rest-subsciptions
     rest_list_t *observeList;
+
+    // rest-devices
+    rest_list_t *devicesList;
+
+    settings_t *settings;
 } rest_context_t;
 
 lwm2m_client_t *rest_endpoints_find_client(lwm2m_client_t *list, const char *name);
@@ -86,7 +92,7 @@ int rest_subscriptions_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, v
 
 int rest_version_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context);
 
-void rest_init(rest_context_t *rest);
+void rest_init(rest_context_t *rest, settings_t *settings);
 void rest_cleanup(rest_context_t *rest);
 int rest_step(rest_context_t *rest, struct timeval *tv);
 
