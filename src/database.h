@@ -17,24 +17,9 @@
  *
  */
 
-#ifndef REST_UTILS_H
-#define REST_UTILS_H
+#ifndef DATABASE_H
+#define DATABASE_H
 
-#include <stdlib.h>
-#include <stdint.h>
+int database_load_file(rest_context_t *rest);
 
-typedef struct
-{
-    char *uuid;
-    uint8_t *psk;
-    size_t psk_len;
-    uint8_t *psk_id;
-    size_t psk_id_len;
-} database_entry_t;
-
-int coap_to_http_status(int status);
-
-void free_database_entry(database_entry_t *device);
-
-#endif // REST_UTILS_H
-
+#endif //DATABASE_H
