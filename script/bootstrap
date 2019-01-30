@@ -170,7 +170,7 @@ install_jansson () {
 }
 
 install_libjwt () {
-    configure_args="${CONFIGURE_ARGS_BASE} --disable-doxygen-doc --without-openssl PKG_CONFIG_PATH=${PREFIX_PATH_DIR}/lib/pkgconfig"
+    configure_args="${CONFIGURE_ARGS_BASE} --disable-doxygen-doc PKG_CONFIG_PATH=${PREFIX_PATH_DIR}/lib/pkgconfig"
 
     echo "    - Installing JWT..."
 
