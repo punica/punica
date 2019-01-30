@@ -22,10 +22,6 @@ set -e
 PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
 SCRIPTS_DIR="${PROJECT_ROOT_DIR}/script"
 
-if [ -z "${BUILD_STATIC}" ]; then
-    BUILD_STATIC=true
-fi
-
 if [ -z "${BUILD_DIR}" ]; then
     BUILD_DIR="${PROJECT_ROOT_DIR}/build"
 fi
@@ -44,16 +40,9 @@ else
 fi
 
 CMAKE_ARGS_BASE="-DCMAKE_INSTALL_PREFIX:PATH=${PREFIX_PATH_DIR} -DCMAKE_PREFIX_PATH=${PREFIX_PATH_DIR}"
-if [ "${BUILD_STATIC}" = true ]; then
-    CMAKE_ARGS_BASE="${CMAKE_ARGS_BASE} -DBUILD_STATIC=on"
-fi
 
 build_punica () {
     cmake_arguments="${CMAKE_ARGS_BASE} $@"
-    if [ "${BUILD_STATIC}" = true ]; then
-        cmake_args="${cmake_args} -DBUILD_STATIC=on"
-    fi
-
     mkdir -p ${BUILD_DIR}/src &&
     eval "cd ${BUILD_DIR}" &&
 
@@ -70,7 +59,6 @@ build_punica () {
 }
 
 if [ ! "${DO_NOT_BOOTSTRAP}" = "true" ]; then
-    export BUILD_STATIC
     export BUILD_DIR
     export PREFIX_PATH_DIR
     eval "${SCRIPTS_DIR}/bootstrap"

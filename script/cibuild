@@ -35,11 +35,7 @@ else
     export LOG_FILE
 fi
 
-# static builds are not supported yet!
-BUILD_STATIC=true
-
 export BUILD_DIR
-export BUILD_STATIC
 eval "${SCRIPTS_DIR}/setup -DCODE_COVERAGE=ON"
 
 eval "${SCRIPTS_DIR}/test"

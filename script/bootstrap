@@ -22,10 +22,6 @@ set -e
 PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
 THIRD_PARTY_DIR="${PROJECT_ROOT_DIR}/third_party"
 
-if [ -z "${BUILD_STATIC}" ]; then
-    BUILD_STATIC=true
-fi
-
 if [ -z "${BUILD_DIR}" ]; then
     BUILD_DIR="${PROJECT_ROOT_DIR}/build"
 fi
@@ -43,13 +39,12 @@ else
     export LOG_FILE
 fi
 
-BUILD_TOOLS_APT="git cmake build-essential autopoint autogen automake gperf bison texinfo libtool libgcrypt20-dev libunistring-dev zlib1g-dev libgmp-dev"
+BUILD_TOOLS_APT="git cmake build-essential automake libtool gnutls-bin"
+DEPENTANT_LIBRARIES_APT="libssl-dev libgnutls28-dev"
 
-NETTLE_DIR="${THIRD_PARTY_DIR}/nettle"
-GNUTLS_DIR="${THIRD_PARTY_DIR}/gnutls"
-CURL_DIR="${THIRD_PARTY_DIR}/curl"
 JANSSON_DIR="${THIRD_PARTY_DIR}/jansson"
 LIBJWT_DIR="${THIRD_PARTY_DIR}/libjwt"
+CURL_DIR="${THIRD_PARTY_DIR}/curl"
 LIBMICROHTTPD_DIR="${THIRD_PARTY_DIR}/libmicrohttpd"
 ULFFIUS_DIR="${THIRD_PARTY_DIR}/ulfius"
 WAKAAMA_DIR="${THIRD_PARTY_DIR}/wakaama"
@@ -57,13 +52,9 @@ WAKAAMA_DIR="${THIRD_PARTY_DIR}/wakaama"
 AUTORECONF_ARGS_BASE="--prepend-include=${PREFIX_PATH_DIR} -i"
 CONFIGURE_ARGS_BASE="--enable-silent-rules --disable-dependency-tracking --prefix ${PREFIX_PATH_DIR}"
 CMAKE_ARGS_BASE="-DCMAKE_INSTALL_PREFIX:PATH=${PREFIX_PATH_DIR} -DCMAKE_PREFIX_PATH=${PREFIX_PATH_DIR}"
-MAKE_ARGS_BASE="--quiet"
+MAKE_ARGS_BASE=""
 
-if [ "${BUILD_STATIC}" = true ]; then
-    CONFIGURE_ARGS_BASE="${CONFIGURE_ARGS_BASE} --enable-static=yes --enable-shared=no"
-else
-    CONFIGURE_ARGS_BASE="${CONFIGURE_ARGS_BASE} --enable-shared=yes --enable-static=yes"
-fi
+CONFIGURE_ARGS_BASE="${CONFIGURE_ARGS_BASE} --enable-static=yes --enable-shared=no"
 
 echo_stderr () {
     echo "$@" >&2
@@ -100,7 +91,7 @@ update_repositories () {
 update_submodules () {
     eval "cd ${PROJECT_ROOT_DIR}"
 
-    git submodule update --init --recursive --quiet ||
+    git submodule update --init --recursive ||
     (
         echo_stderr "Failed to update submodules!"
         return 1
@@ -111,11 +102,9 @@ update_submodules () {
 
 install_submodules () {
     install_jansson
-    install_nettle
-    install_gnutls
     install_libjwt
-    install_libmicrohttpd
     install_curl
+    install_libmicrohttpd
     install_ulfius
     install_wakaama
 }
@@ -140,16 +129,42 @@ install_build_tools () {
     return $?
 }
 
-install_wakaama () {
-    echo "    - Installing Wakaama..."
+install_dependant_libraries_packages () {
+    if which apt-get; then
+        eval "sudo apt-get install -yqq ${DEPENTANT_LIBRARIES_APT}"
+    elif which rpm; then
+        echo_stderr "RPM is not supported yet!"
+        return 1
+    elif which opkg; then
+        echo_stderr "OPKG is not supported yet!"
+        return 1
+    elif which brew; then
+        echo_stderr "BREW is not supported yet!"
+        return 1
+    else
+        echo_stderr "Unknown package manager! (not supported yet)"
+        return 1
+    fi
+
+    return $?
+}
+
+install_jansson () {
+    cmake_args="${CMAKE_ARGS_BASE} -DJANSSON_WITHOUT_TESTS=on -DJANSSON_BUILD_DOCS=off -DJANSSON_EXAMPLES=off -DJANSSON_BUILD_MAN=off"
+
+    echo "    - Installing Jansson..."
+
+    eval "rm -rf ${JANSSON_DIR}/build"
+    eval "mkdir ${JANSSON_DIR}/build"
+    eval "cd ${JANSSON_DIR}/build"
 
     {
-        eval "${WAKAAMA_DIR}/script/setup ${CMAKE_ARGS_BASE}" &&
-        eval "cd ${WAKAAMA_DIR}/build" &&
+        eval "cmake ../ ${cmake_args}" &&
+        eval "make ${MAKE_ARGS_BASE}" &&
         eval "make install ${MAKE_ARGS_BASE}" &&
         cd -
     } >> ${LOG_FILE} 2>&1 || {
-        library_error "Wakaama"
+        library_error "Jansson"
         return 1
     }
 }
@@ -174,29 +189,6 @@ install_libjwt () {
     }
 }
 
-install_jansson () {
-    cmake_args="${CMAKE_ARGS_BASE} -DJANSSON_WITHOUT_TESTS=on -DJANSSON_BUILD_DOCS=off -DJANSSON_EXAMPLES=off -DJANSSON_BUILD_MAN=off"
-    if [ ! "${BUILD_STATIC}" = true ]; then
-        cmake_args="${cmake_args} -DJANSSON_BUILD_SHARED_LIBS=1"
-    fi
-
-    echo "    - Installing Jansson..."
-
-    eval "rm -rf ${JANSSON_DIR}/build"
-    eval "mkdir ${JANSSON_DIR}/build"
-    eval "cd ${JANSSON_DIR}/build"
-
-    {
-        eval "cmake ../ ${cmake_args}" &&
-        eval "make ${MAKE_ARGS_BASE}" &&
-        eval "make install ${MAKE_ARGS_BASE}" &&
-        cd -
-    } >> ${LOG_FILE} 2>&1 || {
-        library_error "Jansson"
-        return 1
-    }
-}
-
 install_curl () {
     configure_args="${CONFIGURE_ARGS_BASE} --without-ssl --with-gnutls  --disable-ares --disable-manual --disable-proxy --disable-verbose --disable-versioned-symbols --enable-hidden-symbols --without-libidn2 --without-librtmp --disable-ldap"
 
@@ -217,48 +209,8 @@ install_curl () {
     }
 }
 
-install_nettle () {
-    configure_args="${CONFIGURE_ARGS_BASE} --enable-shared=yes --disable-documentation --disable-openssl --libdir=${PREFIX_PATH_DIR}/lib"
-
-    echo "    - Installing Nettle..."
-
-    eval "cd ${NETTLE_DIR}"
-
-    {
-        eval "./.bootstrap" &&
-        eval "./configure ${configure_args}" &&
-        eval "make clean ${MAKE_ARGS_BASE}" &&
-        eval "make ${MAKE_ARGS_BASE}" &&
-        eval "make install ${MAKE_ARGS_BASE}" &&
-        cd -
-    } >> ${LOG_FILE} 2>&1 || {
-        library_error "Nettle"
-        return 1
-    }
-}
-
-install_gnutls () {
-    configure_args="${CONFIGURE_ARGS_BASE} --enable-shared=yes --disable-tests --disable-doc --without-p11-kit --without-idn --without-tpm --disable-libdane --disable-nls --disable-openssl-compatibility --disable-guile --with-included-libtasn1 PKG_CONFIG_PATH=${PREFIX_PATH_DIR}/lib/pkgconfig"
-
-    echo "    - Installing GnuTLS..."
-
-    eval "cd ${GNUTLS_DIR}"
-
-    {
-        eval "./bootstrap" &&
-        eval "./configure ${configure_args}" &&
-        eval "make clean ${MAKE_ARGS_BASE}" &&
-        eval "make ${MAKE_ARGS_BASE}" &&
-        eval "make install ${MAKE_ARGS_BASE}" &&
-        cd -
-    } >> ${LOG_FILE} 2>&1 || {
-        library_error "GnuTLS"
-        return 1
-    }
-}
-
 install_libmicrohttpd () {
-    configure_args="${CONFIGURE_ARGS_BASE} --enable-shared=yes --disable-curl --with-gnutls=yes PKG_CONFIG_PATH=${PREFIX_PATH_DIR}/lib/pkgconfig"
+    configure_args="${CONFIGURE_ARGS_BASE} --enable-shared=yes --enable-curl --with-gnutls=yes PKG_CONFIG_PATH=${PREFIX_PATH_DIR}/lib/pkgconfig"
 
     echo "    - Installing libmicrohttpd..."
 
@@ -278,10 +230,7 @@ install_libmicrohttpd () {
 }
 
 install_ulfius () {
-    cmake_args="${CMAKE_ARGS_BASE} -DWITH_YDER=off -DBUILD_UWSC=off -DWITH_WEBSOCKET=on -DWITH_CURL=on"
-    if [ "${BUILD_STATIC}" = true ]; then
-        cmake_args="${cmake_args} -DBUILD_STATIC=on"
-    fi
+    cmake_args="${CMAKE_ARGS_BASE} -DWITH_YDER=off -DBUILD_UWSC=off -DWITH_GNUTLS=on -DWITH_CURL=on -DBUILD_STATIC=on"
 
     echo "    - Installing Ulfius..."
 
@@ -301,6 +250,20 @@ install_ulfius () {
     }
 }
 
+install_wakaama () {
+    echo "    - Installing Wakaama..."
+
+    {
+        eval "${WAKAAMA_DIR}/script/setup ${CMAKE_ARGS_BASE}" &&
+        eval "cd ${WAKAAMA_DIR}/build" &&
+        eval "make install ${MAKE_ARGS_BASE}" &&
+        cd -
+    } >> ${LOG_FILE} 2>&1 || {
+        library_error "Wakaama"
+        return 1
+    }
+}
+
 sudo -v
 
 eval "rm -rf ${BUILD_DIR}"
@@ -311,6 +274,9 @@ update_repositories >> ${LOG_FILE}
 
 echo "==> Installing building tools..."
 install_build_tools >> ${LOG_FILE}
+
+echo "==> Installing dependant libraries packages..."
+install_dependant_libraries_packages >> ${LOG_FILE}
 
 echo "==> Updating submodules..."
 update_submodules >> ${LOG_FILE}

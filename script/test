@@ -45,8 +45,7 @@ TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/certificate.pem"
 OTHER_TEST_PRIVATE_KEY="${PROJECT_ROOT_DIR}/other_private.key"
 OTHER_TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/other_certificate.pem"
 
-# CERTTOOL_BIN="certtool"
-CERTTOOL_BIN="${PREFIX_PATH_DIR}/bin/certtool"
+CERTTOOL_BIN="certtool"
 
 generate_key_and_certificate () {
     if [ "$#" -ne 3 ]; then
