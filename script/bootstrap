@@ -39,7 +39,7 @@ else
     export LOG_FILE
 fi
 
-BUILD_TOOLS_APT="git cmake build-essential automake libtool gnutls-bin"
+BUILD_TOOLS_APT="git cmake build-essential automake autopoint libtool gnutls-bin"
 DEPENTANT_LIBRARIES_APT="libssl-dev libgnutls28-dev"
 
 JANSSON_DIR="${THIRD_PARTY_DIR}/jansson"
