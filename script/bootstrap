@@ -40,12 +40,11 @@ else
 fi
 
 BUILD_TOOLS_APT="git cmake build-essential automake autopoint libtool gettext gnutls-bin"
-DEPENTANT_LIBRARIES_APT="libssl-dev libgnutls28-dev"
+DEPENTANT_LIBRARIES_APT="libssl-dev libgnutls28-dev libmicrohttpd-dev"
 
 JANSSON_DIR="${THIRD_PARTY_DIR}/jansson"
 LIBJWT_DIR="${THIRD_PARTY_DIR}/libjwt"
 CURL_DIR="${THIRD_PARTY_DIR}/curl"
-LIBMICROHTTPD_DIR="${THIRD_PARTY_DIR}/libmicrohttpd"
 ULFFIUS_DIR="${THIRD_PARTY_DIR}/ulfius"
 WAKAAMA_DIR="${THIRD_PARTY_DIR}/wakaama"
 
@@ -104,7 +103,6 @@ install_submodules () {
     install_jansson
     install_libjwt
     install_curl
-    install_libmicrohttpd
     install_ulfius
     install_wakaama
 }
@@ -205,26 +203,6 @@ install_curl () {
         cd -
     } >> ${LOG_FILE} 2>&1 || {
         library_error "Curl"
-        return 1
-    }
-}
-
-install_libmicrohttpd () {
-    configure_args="${CONFIGURE_ARGS_BASE} --enable-shared=yes --enable-curl --with-gnutls=yes PKG_CONFIG_PATH=${PREFIX_PATH_DIR}/lib/pkgconfig"
-
-    echo "    - Installing libmicrohttpd..."
-
-    eval "cd ${LIBMICROHTTPD_DIR}"
-
-    {
-        eval "autoreconf ${AUTORECONF_ARGS_BASE}" &&
-        eval "./configure ${configure_args}" &&
-        eval "make clean ${MAKE_ARGS_BASE}" &&
-        eval "make ${MAKE_ARGS_BASE}" &&
-        eval "make install ${MAKE_ARGS_BASE}" &&
-        cd -
-    } >> ${LOG_FILE} 2>&1 || {
-        library_error "libmicrohttpd"
         return 1
     }
 }
