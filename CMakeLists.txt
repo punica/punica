@@ -42,17 +42,16 @@ find_library(GMP_LIBRARY gmp)
 find_library(NETTLE_LIBRARY nettle)
 find_library(HOGWEED_LIBRARY hogweed)
 set(NETTLE_LIBRARIES ${HOGWEED_LIBRARY} ${NETTLE_LIBRARY} ${GMP_LIBRARY})
-message("NETTLE libs: ${NETTLE_LIBRARIES}")
 
 # GnuTLS depends on nettle, libtasn1, hogweed, z, unistring (p11-kit if not built manually),
 # if find_package doesn't add those libraries, it must be done manually.
 find_library(ASN1_LIBRARY tasn1)
-find_library(IDN2_LIBRARY idn2)
-find_library(P11-KIT_LIBRARY libp11-kit.so)
-find_library(UNISTRING_LIBRARY unistring)
+find_library(P11-KIT_LIBRARY p11-kit)
 find_library(Z_LIBRARY z)
 find_package(GnuTLS REQUIRED)
 set(GNUTLS_LIBRARIES ${GNUTLS_LIBRARIES} ${NETTLE_LIBRARIES} ${UNISTRING_LIBRARY} ${Z_LIBRARY} ${ASN1_LIBRARY} ${P11-KIT_LIBRARY} ${IDN2_LIBRARY})
+
+find_package(OpenSSL REQUIRED)
 
 # Find STATIC libraries
 set(CMAKE_FIND_LIBRARY_SUFFIXES
@@ -64,7 +63,7 @@ set(CMAKE_FIND_LIBRARY_SUFFIXES
 # Find and link Threads package libraries (pthread on linux)
 find_package(Threads REQUIRED)
 # Inform about libraries linked to define Threads and its symbols
-# message("Threads: ${CMAKE_THREAD_LIBS_INIT}")
+message("Threads: ${CMAKE_THREAD_LIBS_INIT}")
 set(LIBRARIES ${LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
 # Jansson
@@ -92,25 +91,24 @@ find_library(ULFIUS_LIBRARY ulfius)
 # Ulfius depends on liborcania, libcurl, jansson, libmicrohttpd > 0.9.51 (libyder if not built manually)
 set(ULFIUS_LIBRARIES ${ULFIUS_LIBRARY} ${ORCANIA_LIBRARIES} ${MHD_LIBRARIES})
 # Inform about libraries linked to define Ulfius and its symbols
-# message("Ulfius: ${ULFIUS_LIBRARIES}")
+message("Ulfius: ${ULFIUS_LIBRARIES}")
 set(LIBRARIES ${LIBRARIES} ${ULFIUS_LIBRARIES})
 
 # JWT_LIBRARY depends on jansson, openssl or gnutls >=3.6.0
 # NOTE: cheks for gnutls v3.5.8, but all sybols are defined in v3.6.0 or higher
-find_package(OpenSSL REQUIRED)
 find_library(JWT_LIBRARY jwt)
 set(JWT_LIBRARIES ${JWT_LIBRARY} ${OPENSSL_LIBRARIES} ${JANSSON_LIBRARIES})
 # Inform about libraries linked to define JWT and its symbols
-# message("JWT: ${JWT_LIBRARIES}")
+message("JWT: ${JWT_LIBRARIES}")
 set(LIBRARIES ${LIBRARIES} ${JWT_LIBRARIES})
 
 # WAKAAMA_LIBRARY
 find_library(WAKAAMA_LIBRARY wakaama)
 # Inform about libraries linked to define Wakaama and its symbols
-# message("Wakaama: ${WAKAAMA_LIBRARY}")
+message("Wakaama: ${WAKAAMA_LIBRARY}")
 set(LIBRARIES ${LIBRARIES} ${WAKAAMA_LIBRARY})
 
-# message("ALL libraries: ${LIBRARIES}")
+message("ALL libraries: ${LIBRARIES}")
 target_link_libraries(${PROJECT_NAME} ${LIBRARIES})
 
 target_compile_options(${PROJECT_NAME} PRIVATE "-Wall")
