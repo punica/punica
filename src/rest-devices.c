@@ -39,20 +39,20 @@ static void rest_devices_clean_entry(database_entry_t *entry)
     }
 }
 
-static void rest_devices_delete_list(rest_list_t *list, database_entry_t *data)
+static void rest_devices_delete_list(rest_list_t *list)
 {
     rest_list_entry_t *entry;
 
-    if (data)
-    {
-        rest_devices_clean_entry(data);
-        free(data);
-    }
+    pthread_mutex_lock(&list->mutex);
 
     for (entry = list->head; entry != NULL; entry = entry->next)
     {
+//      free all possibly allocated buffers
         rest_devices_clean_entry(entry->data);
     }
+
+    pthread_mutex_unlock(&list->mutex);
+
     rest_list_delete(list);
 }
 
@@ -153,12 +153,13 @@ static int rest_devices_append_list(rest_list_t *list, json_t *array)
         }
 
 abort:
+//      in case of failure, entry is still added to the list for a more elegant clean-up routine
+        rest_list_add(extension, entry);
         if (count != 3)
         {
-            rest_devices_delete_list(extension, entry);
+            rest_devices_delete_list(extension);
             return -1;
         }
-        rest_list_add(extension, entry);
     }
 
     rest_list_append(list, extension);
