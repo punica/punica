@@ -1,13 +1,11 @@
 # Punica
 
-**Introduction**
-----
+## Introduction
 Punica contains easy to use interface to the LwM2M server and client communication.
 
 Detailed [Punica API documentation](./doc/PUNICA_API.md).
 
-**Building**
-----
+## Building
 Punica follows [scripts to rule them all](https://github.com/github/scripts-to-rule-them-all) guidelines, therefore getting dependencies,
 building and testing is implemented by executing scripts, however if you want,
 you can read [manual project build instructions](./doc/MANUAL_BUILD.md).
@@ -21,8 +19,7 @@ $ sudo script/setup
 
 If script succeeds, you should have binary file called `punica` in your `punica/build/` directory.
 
-**Usage**
-----
+## Usage
 You can get some details about `punica` by using `--help` or `-?` argument:
 ```
 $ ./build/punica --help
@@ -47,7 +44,7 @@ Usage: punica [-?V] [-c FILE] [-C CERTIFICATE] [-k PRIVATE_KEY]
             [--private_key=PRIVATE_KEY] [--log=LOGGING_LEVEL] [--help]
 ```
 
-**Arguments list:**
+### Arguments list:
 - `-c CONFIG_FILE` and `--config CONFIG_FILE` is used to load config file.
 
      Example of configuration file is in configuration section (below)
@@ -80,8 +77,7 @@ Usage: punica [-?V] [-c FILE] [-C CERTIFICATE] [-k PRIVATE_KEY]
 
 - `-V` and `--version` - print program version.
 
-**configuration file**
-
+### Configuration file:
 _Please note that configuration file is **OPTIONAL**! That means, that server will work properly without configuration file, however it wont be secure (no encryption nor authentication), therefore it is highly **RECOMMENDED** to configure server properly._
 
 Example of configuration file:
