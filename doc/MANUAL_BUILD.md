@@ -10,10 +10,10 @@ _Note: If you already cloned Punica without initializing submodules, you can do 
 ```
 $ git submodule update --init --recursive
 ```
-2. Install required tools and libraries:
+2. Install required tools and libraries (example is for debian based distributions):
 ```
 $ sudo apt-get update
-$ sudo apt-get git-core cmake build-essential automake libtool gnutls-bin
+$ sudo apt-get install git-core cmake build-essential automake libtool gnutls-bin
 $ sudo apt-get install libssl-dev libgnutls28-dev libmicrohttpd-dev
 ```
 
@@ -35,8 +35,8 @@ _Note: alternatively you can follow   [akheron/jansson](https://github.com/akher
 $ cd third_party/libjwt
 $ autoreconf -i
 $ ./configure --disable-doxygen-doc --enable-static=yes
-$ make
 $ make clean
+$ make
 $ sudo make install
 $ cd -
 ```
@@ -47,8 +47,8 @@ _Note: alternatively you can follow  [benmcollins/libjwt](https://github.com/ben
 $ cd third_party/curl
 $ ./buildconf
 $ ./configure --without-ssl --with-gnutls --disable-ares --disable-proxy --disable-verbose --without-libidn2 --without-librtmp --disable-ldap --disable-manual --enable-static=yes
-$ make
 $ make clean
+$ make
 $ sudo make install
 $ cd -
 ```
