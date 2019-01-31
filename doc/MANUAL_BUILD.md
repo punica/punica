@@ -1,8 +1,8 @@
-**Building Manually**
-----
+## Building Manually
+
 1. Download and install [punica/punica](https://github.com/punica/punica):
 ```
-$ git clone --recursive git@github.com:punica/punica.git
+$ git clone --recursive https://github.com/punica/punica.git
 $ cd punica
 ```
 _Note: If you already cloned Punica without initializing submodules, you can do so by executing:_
