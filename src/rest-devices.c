@@ -237,25 +237,18 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
 //  if database file not specified then only save locally
     if (rest->settings->coap.database_file)
     {
-        jdatabase_list = json_load_file(rest->settings->coap.database_file, 0, NULL);
-        if (json_is_array(jdatabase_list) != 0)
-        {
-            json_array_extend(jdatabase_list, jdevice_list);
+        jdatabase_list = json_array();
 
-            if (json_dump_file(jdatabase_list, rest->settings->coap.database_file, 0) != 0)
-            {
-                ulfius_set_empty_body_response(resp, 500);
-                goto exit;
-            }
-        }
-        else
+        if (database_prepare_array(jdatabase_list, rest->devicesList))
         {
-//          file does not exist
-            if (json_dump_file(jdevice_list, rest->settings->coap.database_file, 0) != 0)
-            {
-                ulfius_set_empty_body_response(resp, 500);
-                goto exit;
-            }
+            ulfius_set_empty_body_response(resp, 500);
+            goto exit;
+        }
+
+        if (json_dump_file(jdatabase_list, rest->settings->coap.database_file, 0) != 0)
+        {
+            ulfius_set_empty_body_response(resp, 500);
+            goto exit;
         }
     }
 
@@ -321,37 +314,12 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         goto exit;
     }
 
-    jdatabase_list = json_load_file(rest->settings->coap.database_file, 0, NULL);
-    if (jdatabase_list == NULL)
+    jdatabase_list = json_array();
+
+    if (database_prepare_array(jdatabase_list, rest->devicesList))
     {
-        // file hasn't been created
-        ulfius_set_empty_body_response(resp, 404);
-        goto exit;
-    }
-    else if (!json_is_array(jdatabase_list))
-    {
-        // file exists, but is not an array
         ulfius_set_empty_body_response(resp, 500);
         goto exit;
-    }
-
-    size_t index;
-    json_t *jobject, *jkey;
-    json_array_foreach(jdatabase_list, index, jobject)
-    {
-        jkey = json_object_get(jobject, "uuid");
-
-//      continue in case database file contains errors
-        if (jkey == NULL)
-        {
-            continue;
-        }
-
-        if (strcmp(json_string_value(jkey), id) == 0)
-        {
-            json_array_set(jdatabase_list, index, jdevice);
-            break;
-        }
     }
 
     if (json_dump_file(jdatabase_list, rest->settings->coap.database_file, 0) != 0)
@@ -397,43 +365,21 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
         goto exit;
     }
 
-    jdatabase_list = json_load_file(rest->settings->coap.database_file, 0, NULL);
-    if (json_is_array(jdatabase_list) == 0)
+    jdatabase_list = json_array();
+
+    if (database_prepare_array(jdatabase_list, rest->devicesList))
     {
-        ulfius_set_empty_body_response(resp, 400);
+        ulfius_set_empty_body_response(resp, 500);
         goto exit;
     }
 
-    size_t index;
-    json_t *j_value, *j_entry;
-    const char *j_string;
-    json_array_foreach(jdatabase_list, index, j_value)
+    if (json_dump_file(jdatabase_list, rest->settings->coap.database_file, 0) != 0)
     {
-//      if error continue in case there are errors in database file
-        j_entry = json_object_get(j_value, "uuid");
-        if (j_entry == NULL)
-        {
-            continue;
-        }
-
-        j_string = json_string_value(j_entry);
-        if (j_string == NULL)
-        {
-            continue;
-        }
-
-        if (strcmp(j_string, id) != 0)
-        {
-            continue;
-        }
-
-        json_array_remove(jdatabase_list, index);
-        json_dump_file(jdatabase_list, rest->settings->coap.database_file, 0);
-        ulfius_set_empty_body_response(resp, 200);
+        ulfius_set_empty_body_response(resp, 500);
         goto exit;
     }
 
-    ulfius_set_empty_body_response(resp, 404);
+    ulfius_set_empty_body_response(resp, 200);
 exit:
     json_decref(jdatabase_list);
     rest_unlock(rest);

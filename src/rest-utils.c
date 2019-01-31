@@ -162,3 +162,46 @@ int database_populate_entry(json_t *j_device_object, database_entry_t *device_en
 
     return 0;
 }
+
+int database_prepare_array(json_t *j_array, rest_list_t *device_list)
+{
+    rest_list_entry_t *list_entry;
+    database_entry_t *device_entry;
+    json_t *j_entry;
+    char psk_string[256];
+    char psk_id_string[256];
+    size_t psk_string_len;
+    size_t psk_id_string_len;
+
+    if (device_list == NULL || !json_is_array(j_array))
+    {
+        return -1;
+    }
+
+    int num = 0;
+    for (list_entry = device_list->head; list_entry != NULL; list_entry = list_entry->next)
+    {
+        printf("num = %d\r\n", ++num);
+        psk_string_len = sizeof(psk_string);
+        psk_id_string_len = sizeof(psk_id_string);
+
+        device_entry = (database_entry_t *)list_entry->data;
+
+        base64_encode(device_entry->psk, device_entry->psk_len, psk_string, &psk_string_len);
+        base64_encode(device_entry->psk_id, device_entry->psk_id_len, psk_id_string, &psk_id_string_len);
+
+        j_entry = json_pack("{s:s, s:s, s:s}", "uuid", device_entry->uuid, "psk", psk_string, "psk_id",
+                            psk_id_string);
+        if (j_entry == NULL)
+        {
+            return -1;
+        }
+
+        if (json_array_append_new(j_array, j_entry))
+        {
+            return -1;
+        }
+    }
+
+    return 0;
+}

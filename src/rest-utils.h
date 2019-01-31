@@ -42,5 +42,7 @@ int database_validate_entry(json_t *j_device_object);
 
 int database_populate_entry(json_t *j_device_object, database_entry_t *device_entry);
 
+int database_prepare_array(json_t *j_array, rest_list_t *device_list);
+
 #endif // REST_UTILS_H
 
