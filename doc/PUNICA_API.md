@@ -489,10 +489,6 @@ The code in this directory is licensed under the MIT license, however please not
 
   * **Code:** 200 <br />
     **Content:** `[{"psk_id": "cHNraWQx"}, {"psk_id": "cHNraWQy"}, {"psk_id": "cHNraWQz"}]`
-    
-* **Error Response:**
-
-  * **Code:** 500 INTERNAL SERVER ERROR <br />
 
 * **Sample Call:**
 
@@ -517,10 +513,6 @@ The code in this directory is licensed under the MIT license, however please not
 
   * **Code:** 200 <br />
     **Content:** `{"psk_id": "cHNraWQy"}`
-    
-* **Error Response:**
-
-  * **Code:** 500 INTERNAL SERVER ERROR <br />
 
 * **Sample Call:**
 
@@ -556,10 +548,6 @@ The code in this directory is licensed under the MIT license, however please not
   OR
   
   * **Code:** 400 BAD REQUEST - sent data was not a json array or was an empty array <br />
-  
-  OR
-  
-  * **Code:** 500 INTERNAL SERVER ERROR <br />
 
 * **Sample Call:**
 
@@ -598,10 +586,6 @@ The code in this directory is licensed under the MIT license, however please not
   OR
   
   * **Code:** 404 NOT FOUND - registered device list is empty <br />
-  
-  OR
-  
-  * **Code:** 500 INTERNAL SERVER ERROR <br />
 
 * **Sample Call:**
 
@@ -628,10 +612,6 @@ The code in this directory is licensed under the MIT license, however please not
 * **Error Response:**
   
   * **Code:** 404 NOT FOUND - device not found in list <br />
-  
-  OR
-  
-  * **Code:** 500 INTERNAL SERVER ERROR <br />
 
 * **Sample Call:**
 
