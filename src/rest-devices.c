@@ -23,149 +23,6 @@
 #include "rest-list.h"
 #include "settings.h"
 
-static void rest_devices_clean_entry(database_entry_t *entry)
-{
-    if (entry->uuid)
-    {
-        free(entry->uuid);
-    }
-    if (entry->psk)
-    {
-        free(entry->psk);
-    }
-    if (entry->psk_id)
-    {
-        free(entry->psk_id);
-    }
-}
-
-static void rest_devices_delete_list(rest_list_t *list)
-{
-    rest_list_entry_t *entry;
-
-    pthread_mutex_lock(&list->mutex);
-
-    for (entry = list->head; entry != NULL; entry = entry->next)
-    {
-//      free all possibly allocated buffers
-        rest_devices_clean_entry(entry->data);
-    }
-
-    pthread_mutex_unlock(&list->mutex);
-
-    rest_list_delete(list);
-}
-
-static int rest_devices_append_list(rest_list_t *list, json_t *array)
-{
-    const char *string;
-    int count;
-    size_t index;
-    json_t *value, *key;
-    database_entry_t *entry;
-    uint8_t binary_buffer[512];
-    size_t length;
-
-    rest_list_t *extension = rest_list_new();
-
-    json_array_foreach(array, index, value)
-    {
-        count = 0;
-
-        entry = calloc(1, sizeof(database_entry_t));
-        if (entry == NULL)
-        {
-            goto abort;
-        }
-
-        if ((key = json_object_get(value, "uuid")) != NULL)
-        {
-            string = json_string_value(key);
-            if (string == NULL)
-            {
-                goto abort;
-            }
-
-            entry->uuid = (char *)malloc(strlen(string) + 1);
-            if (entry->uuid == NULL)
-            {
-                goto abort;
-            }
-
-            memcpy(entry->uuid, string, strlen(string) + 1);
-            count++;
-        }
-        if ((key = json_object_get(value, "psk")) != NULL)
-        {
-            string = json_string_value(key);
-            if (string == NULL)
-            {
-                goto abort;
-            }
-
-            if (base64_decode(string, NULL, &length))
-            {
-                goto abort;
-            }
-
-            if (base64_decode(string, binary_buffer, &length))
-            {
-                goto abort;
-            }
-
-            entry->psk = (uint8_t *)malloc(length);
-            if (entry->psk == NULL)
-            {
-                goto abort;
-            }
-
-            memcpy(entry->psk, binary_buffer, length);
-            entry->psk_len = length;
-            count++;
-        }
-        if ((key = json_object_get(value, "psk_id")) != NULL)
-        {
-            string = json_string_value(key);
-            if (string == NULL)
-            {
-                goto abort;
-            }
-
-            if (base64_decode(string, NULL, &length))
-            {
-                goto abort;
-            }
-
-            if (base64_decode(string, binary_buffer, &length))
-            {
-                goto abort;
-            }
-
-            entry->psk_id = (uint8_t *)malloc(length);
-            if (entry->psk_id == NULL)
-            {
-                goto abort;
-            }
-
-            memcpy(entry->psk_id, binary_buffer, length);
-            entry->psk_id_len = length;
-            count++;
-        }
-
-abort:
-//      in case of failure, entry is still added to the list for a more elegant clean-up routine
-        rest_list_add(extension, entry);
-        if (count != 3)
-        {
-            rest_devices_delete_list(extension);
-            return -1;
-        }
-    }
-
-    rest_list_append(list, extension);
-    return 0;
-}
-
 static int rest_devices_update_list(rest_list_t *list, json_t *jdevice)
 {
     const char *string;
@@ -345,6 +202,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     rest_context_t *rest = (rest_context_t *)context;
     const char *ct;
     json_t *jdevice_list = NULL, *jdatabase_list = NULL;
+    database_entry_t *device_entry;
 
     rest_lock(rest);
 
@@ -356,11 +214,25 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     }
 
     jdevice_list = json_loadb(req->binary_body, req->binary_body_length, 0, NULL);
-    if (!json_is_array(jdevice_list))
+    if (database_validate_entry(jdevice_list))
     {
         ulfius_set_empty_body_response(resp, 400);
         goto exit;
     }
+
+    device_entry = calloc(1, sizeof(database_entry_t));
+    if (device_entry == NULL)
+    {
+        ulfius_set_empty_body_response(resp, 500);
+        goto exit;
+    }
+
+    if (database_populate_entry(jdevice_list, device_entry))
+    {
+        ulfius_set_empty_body_response(resp, 500);
+        goto exit;
+    }
+    rest_list_add(rest->devicesList, device_entry);
 
 //  if database file not specified then only save locally
     if (rest->settings->coap.database_file)
@@ -385,12 +257,6 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
                 goto exit;
             }
         }
-    }
-
-    if (rest_devices_append_list(rest->devicesList, jdevice_list))
-    {
-        ulfius_set_empty_body_response(resp, 400);
-        goto exit;
     }
 
     ulfius_set_empty_body_response(resp, 201);

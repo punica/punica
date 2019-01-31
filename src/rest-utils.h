@@ -20,6 +20,8 @@
 #ifndef REST_UTILS_H
 #define REST_UTILS_H
 
+#include "settings.h"
+
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -34,7 +36,11 @@ typedef struct
 
 int coap_to_http_status(int status);
 
-void free_database_entry(database_entry_t *device);
+void database_free_entry(database_entry_t *device_entry);
+
+int database_validate_entry(json_t *j_device_object);
+
+int database_populate_entry(json_t *j_device_object, database_entry_t *device_entry);
 
 #endif // REST_UTILS_H
 

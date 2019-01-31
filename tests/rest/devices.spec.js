@@ -34,7 +34,7 @@ describe('Devices interface', () => {
     chai.request(server)
       .put('/devices')
       .set('Content-Type', 'application/json')
-      .send('[{"psk":"cHNrMQ==","psk_id":"cHNraWQx","uuid":"ABC"}, {"psk":"cHNrMg==","psk_id":"cHNraWQy","uuid":"DEF"}]')
+      .send('{"psk":"cHNrMQ==","psk_id":"cHNraWQx","uuid":"ABC"}')
       .end( (err, res) => {
         should.not.exist(err);
         res.should.have.status(201);
@@ -53,11 +53,11 @@ describe('Devices interface', () => {
       });
   });
 
-  it('PUT /devices with object instead of an array should return 400', (done) => {
+  it('PUT /devices with an array instead of an object should return 400', (done) => {
     chai.request(server)
       .put('/devices')
       .set('Content-Type', 'application/json')
-      .send('{"psk":"cHNrMQ==","psk_id":"cHNraWQx","uuid":"ABC"}')
+      .send('[{"psk":"cHNrMQ==","psk_id":"cHNraWQx","uuid":"ABC"}, {"psk":"cHNrMg==","psk_id":"cHNraWQy","uuid":"DEF"}]')
       .end( (err, res) => {
         res.should.have.status(400);
         done();
@@ -68,7 +68,7 @@ describe('Devices interface', () => {
     chai.request(server)
       .put('/devices')
       .set('Content-Type', 'application/json')
-      .send('[{"psk_id":"cHNraWQx","uuid":"ABC"}]')
+      .send('{"psk_id":"cHNraWQx","uuid":"ABC"}')
       .end( (err, res) => {
         res.should.have.status(400);
         done();
@@ -79,7 +79,7 @@ describe('Devices interface', () => {
     chai.request(server)
       .put('/devices')
       .set('Content-Type', 'application/json')
-      .send('[{"psk":"invalid-base64-string","psk_id":"cHNraWQx","uuid":"ABC"}]')
+      .send('{"psk":"invalid-base64-string","psk_id":"cHNraWQx","uuid":"ABC"}')
       .end( (err, res) => {
         res.should.have.status(400);
         done();
@@ -90,7 +90,7 @@ describe('Devices interface', () => {
     chai.request(server)
       .put('/devices')
       .set('Content-Type', 'application/json')
-      .send('[{"psk":true,"psk_id":"cHNraWQx","uuid":"ABC"}]')
+      .send('{"psk":true,"psk_id":"cHNraWQx","uuid":"ABC"}')
       .end( (err, res) => {
         res.should.have.status(400);
         done();
@@ -101,7 +101,7 @@ describe('Devices interface', () => {
     chai.request(server)
       .put('/devices')
       .set('Content-Type', 'application/json')
-      .send('[{"psk":"cHNrMw==","psk_id":"cHNraWQz","uuid":"GHI", "invalid-key":"invalid-value"}]')
+      .send('{"psk":"cHNrMw==","psk_id":"cHNraWQz","uuid":"GHI", "invalid-key":"invalid-value"}')
       .end( (err, res) => {
         should.not.exist(err);
         res.should.have.status(201);
@@ -109,7 +109,7 @@ describe('Devices interface', () => {
       });
   });
 
-  it('GET /devices should return json array with three elements', (done) => {
+  it('GET /devices should return json array with two elements', (done) => {
     chai.request(server)
       .get('/devices')
       .end((err, res) => {
@@ -118,11 +118,11 @@ describe('Devices interface', () => {
         res.should.have.header('content-type', 'application/json');
 
         res.body.should.be.a('array');
-        res.body.length.should.be.eql(3);
+        res.body.length.should.be.eql(2);
 
-        res.body[2].should.be.a('object');
-        res.body[2].should.have.property('psk_id');
-        res.body[2].psk_id.should.be.eql('cHNraWQz');
+        res.body[0].should.be.a('object');
+        res.body[0].should.have.property('psk_id');
+        res.body[0].psk_id.should.be.eql('cHNraWQz');
 
         done();
       });
@@ -180,13 +180,13 @@ describe('Devices interface', () => {
 
   it('DELETE /devices:name should return 200', (done) => {
     chai.request(server)
-      .delete('/devices/DEF')
+      .delete('/devices/GHI')
       .end((err, res) => {
         should.not.exist(err);
         res.should.have.status(200);
 
         chai.request(server)
-          .get('/devices/DEF')
+          .get('/devices/GHI')
           .end((error, response) => {
               response.should.have.status(404);
               done();
