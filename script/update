@@ -31,13 +31,10 @@ else
     export LOG_FILE
 fi
 
-eval "${SCRIPTS_DIR}/bootstrap"
+eval "cd ${PROJECT_ROOT_DIR}"
+echo "==> Updating project sources..."
+git pull >> ${LOG_FILE}
 
-echo "==> Recompiling punica..."
-eval "cd ${PROJECT_ROOT_DIR}/build"
-make >> ${LOG_FILE} 2>&1 || {
-    (>&2 echo "Failed to generate private key and certificate!")
-    (>&2 echo "\n\nRefer to \"${LOG_FILE}\" for more detailed information")
-    return 1
-}
+eval "${SCRIPTS_DIR}/setup"
+
 cd -
