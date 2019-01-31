@@ -119,11 +119,12 @@ void rest_list_append(rest_list_t *list, rest_list_t *appended_list)
     pthread_mutex_lock(&list->mutex);
 
     entry = list->head;
-	while (entry != NULL) {
+    while (entry != NULL)
+    {
         entry = entry->next;
     }
 
-	entry = appended_list->head;
+    entry = appended_list->head;
 
     pthread_mutex_destroy(&appended_list->mutex);
     free(appended_list);
