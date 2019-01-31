@@ -56,7 +56,7 @@ static void rest_devices_delete_list(rest_list_t *list, database_entry_t *data)
     rest_list_delete(list);
 }
 
-static int rest_devices_extend_list(rest_list_t *list, json_t *array)
+static int rest_devices_append_list(rest_list_t *list, json_t *array)
 {
     const char *string;
     int count;
@@ -161,7 +161,7 @@ abort:
         rest_list_add(extension, entry);
     }
 
-    rest_list_extend(list, extension);
+    rest_list_append(list, extension);
     return 0;
 }
 
@@ -386,7 +386,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
         }
     }
 
-    if (rest_devices_extend_list(rest->devicesList, jdevice_list))
+    if (rest_devices_append_list(rest->devicesList, jdevice_list))
     {
         ulfius_set_empty_body_response(resp, 400);
         goto exit;
