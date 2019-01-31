@@ -45,16 +45,15 @@ rest_list_t *rest_list_new(void)
 void rest_list_delete(rest_list_t *list)
 {
     rest_list_entry_t *entry;
-    rest_list_entry_t *next;
 
     pthread_mutex_lock(&list->mutex);
 
-    entry = list->head;
-    while (entry != NULL)
+    while (list->head != NULL)
     {
-        next = entry->next;
+        entry = list->head;
+        list->head = entry->next;
+        entry->next = NULL;
         free(entry);
-        entry = next;
     }
 
     pthread_mutex_unlock(&list->mutex);
