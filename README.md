@@ -1,4 +1,5 @@
 # Punica
+[![Build Status](https://travis-ci.com/punica/punica.svg?branch=master)](https://travis-ci.com/punica/punica) [![codecov.io](http://codecov.io/github/punica/punica/coverage.svg?branch=master)](http://codecov.io/github/punica/punica?branch=master)
 
 ## Introduction
 Punica contains easy to use interface to the LwM2M server and client communication.
@@ -10,14 +11,23 @@ Punica follows [scripts to rule them all](https://github.com/github/scripts-to-r
 building and testing is implemented by executing scripts, however if you want,
 you can read [manual project build instructions](./doc/MANUAL_BUILD.md).
 
-1. Build Punica by executing ```script/setup``` script, it will automatically
+1. Download [punica/punica](https://github.com/punica/punica):
+```
+$ git clone --recursive https://github.com/punica/punica.git
+$ cd punica
+```
+_Note: If you already cloned Punica without initializing submodules, you can do so by executing:_
+```
+$ git submodule update --init --recursive
+```
+
+2. Build Punica by executing ```script/setup``` script, it will automatically
 acquire and build required tools and dependencies, after that script will build Punica:
-
 ```
-$ sudo script/setup
+$ script/setup
 ```
 
-If script succeeds, you should have binary file called `punica` in your `punica/build/` directory.
+_Note: If script succeeds, you should have binary file called `punica` in your `punica/build/` directory._
 
 ## Usage
 You can get some details about `punica` by using `--help` or `-?` argument:
