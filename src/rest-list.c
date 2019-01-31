@@ -112,26 +112,21 @@ void rest_list_remove(rest_list_t *list, void *data)
     assert(false);
 }
 
-void rest_list_append(rest_list_t *list, rest_list_t *extension)
+void rest_list_append(rest_list_t *list, rest_list_t *appended_list)
 {
     rest_list_entry_t *entry;
 
     pthread_mutex_lock(&list->mutex);
 
-    if (list->head == NULL)
-    {
-        list->head = extension->head;
-        goto exit;
+    entry = list->head;
+	while (entry != NULL) {
+        entry = entry->next;
     }
 
-    for (entry = list->head; entry->next != NULL; entry = entry->next)
-    {
-    }
-    entry->next = extension->head;
+	entry = appended_list->head;
 
-exit:
-    pthread_mutex_destroy(&extension->mutex);
-    free(extension);
+    pthread_mutex_destroy(&appended_list->mutex);
+    free(appended_list);
 
     pthread_mutex_unlock(&list->mutex);
 }
