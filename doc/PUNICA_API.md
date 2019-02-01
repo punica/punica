@@ -462,9 +462,9 @@ The code in this directory is licensed under the MIT license, however please not
   
   
   
-**List registered devices**
+**List registered devices entries**
 ----
-  Returns a list of registered devices psk_id's.
+  Returns an array of registered device entries. Sensitive device information, such as the pre-shared keys is excluded.
 
 * **URL**
 
@@ -477,7 +477,7 @@ The code in this directory is licensed under the MIT license, however please not
 * **Success Response:**
 
   * **Code:** 200 <br />
-    **Content:** `[{"psk_id": "cHNraWQx"}, {"psk_id": "cHNraWQy"}, {"psk_id": "cHNraWQz"}]`
+    **Content:** `[{"psk_id": "cHNraWQx", "uuid": "ABC"}, {"psk_id": "cHNraWQy", "uuid": "DEF"}, {"psk_id": "cHNraWQz", "uuid": "GHI"}]`
 
 * **Sample Call:**
 
@@ -486,13 +486,13 @@ The code in this directory is licensed under the MIT license, however please not
   ```
   
   
-**Print registered device psk_id**
+**Get single registered device entry**
   ----
-  Returns the psk_id of a specific device.
+  Returns the device entry of a single registered device.
 
 * **URL**
 
-  `/devices/:name`
+  `/devices/:uuid`
 
 * **Method:**
   
@@ -501,7 +501,7 @@ The code in this directory is licensed under the MIT license, however please not
 * **Success Response:**
 
   * **Code:** 200 <br />
-    **Content:** `{"psk_id": "cHNraWQy"}`
+    **Content:** `{"psk_id": "cHNraWQy", "uuid": "DEF"}`
 
 * **Sample Call:**
 
@@ -510,9 +510,9 @@ The code in this directory is licensed under the MIT license, however please not
   ```
   
   
-**Register devices**
+**Register device**
 ----
-  Used to register one or more devices. All new devices are appended to the existing list and get written to the database file.
+  Used to register a new device. A new device entry is appended to the existing list and gets written to the database file.
 
 * **URL**
 
@@ -520,11 +520,11 @@ The code in this directory is licensed under the MIT license, however please not
 
 * **Method:**
   
-  `PUT`
+  `POST`
   
 * **Data Params**
 
-  A json array of device objects, such as in a database file.
+  A json object representing the device entry, such as in a database file.
 
 * **Success Response:**
 
@@ -536,25 +536,25 @@ The code in this directory is licensed under the MIT license, however please not
   
   OR
   
-  * **Code:** 400 BAD REQUEST - sent data was not a json array or was an empty array <br />
+  * **Code:** 400 BAD REQUEST - sent data was not a json object or contains invalid parameters, such as invalid base64 strings, invalid data types etc. <br />
 
 * **Sample Call:**
 
   ```shell
-  $ curl http://localhost:8888/devices -X PUT -H "Content-Type: application/json" --data '[{"psk":"cHNrMQ==","psk_id":"cHNraWQx","uuid":"ABC"}, {"psk":"cHNrMg==","psk_id":"cHNraWQy","uuid":"DEF"}]'
+  $ curl http://localhost:8888/devices -X POST -H "Content-Type: application/json" --data '{"psk":"cHNrMQ==","psk_id":"cHNraWQx","uuid":"ABC"}'
   
   
-**Edit device**
+**Update device entry**
 ----
-  Edit the credentials of a specific device.
+  Update the entry of a specific device.
 
 * **URL**
 
-  `/devices/:name`
+  `/devices/:uuid`
 
 * **Method:**
   
-  `POST`
+  `PUT`
   
 * **Data Params**
 
@@ -571,24 +571,20 @@ The code in this directory is licensed under the MIT license, however please not
   OR
   
   * **Code:** 400 BAD REQUEST - sent data was not a json object or is missing 'psk' and/or 'psk_id' keys <br />
-  
-  OR
-  
-  * **Code:** 404 NOT FOUND - registered device list is empty <br />
 
 * **Sample Call:**
 
   ```shell
-  $ curl http://localhost:8888/devices/ABC -X POST -H "Content-Type: application/json" --data '{"psk":"cHNrMQ==","psk_id":"cHNraWQa"}'
+  $ curl http://localhost:8888/devices/ABC -X PUT -H "Content-Type: application/json" --data '{"psk":"cHNrMQ==","psk_id":"cHNraWQa"}'
   
   
-**Remove device**
+**Delete device entry**
 ----
-  Remove specific device from registered devices list.
+  Remove specific device entry from registered devices list.
 
 * **URL**
 
-  `/devices/:name`
+  `/devices/:uuid`
 
 * **Method:**
   

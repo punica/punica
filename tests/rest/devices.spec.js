@@ -14,9 +14,9 @@ describe('Devices interface', () => {
   after(() => {
   });
 
-  it('PUT /devices should return 201', (done) => {
+  it('POST /devices should return 201', (done) => {
     chai.request(server)
-      .put('/devices')
+      .post('/devices')
       .set('Content-Type', 'application/json')
       .send('{"psk":"cHNrMw==","psk_id":"cHNraWQz","uuid":"GHI"}')
       .end( (err, res) => {
@@ -26,9 +26,9 @@ describe('Devices interface', () => {
       });
   });
 
-  it('PUT /devices with empty payload should return 400', (done) => {
+  it('POST /devices with empty payload should return 400', (done) => {
     chai.request(server)
-      .put('/devices')
+      .post('/devices')
       .set('Content-Type', 'application/json')
       .send('')
       .end( (err, res) => {
@@ -37,9 +37,9 @@ describe('Devices interface', () => {
       });
   });
 
-  it('PUT /devices with an array instead of an object should return 400', (done) => {
+  it('POST /devices with an array instead of an object should return 400', (done) => {
     chai.request(server)
-      .put('/devices')
+      .post('/devices')
       .set('Content-Type', 'application/json')
       .send('[{"psk":"cHNrMQ==","psk_id":"cHNraWQx","uuid":"ABC"}, {"psk":"cHNrMg==","psk_id":"cHNraWQy","uuid":"DEF"}]')
       .end( (err, res) => {
@@ -48,9 +48,9 @@ describe('Devices interface', () => {
       });
   });
 
-  it('PUT /devices with missing key in payload should return 400', (done) => {
+  it('POST /devices with missing key in payload should return 400', (done) => {
     chai.request(server)
-      .put('/devices')
+      .post('/devices')
       .set('Content-Type', 'application/json')
       .send('{"psk_id":"cHNraWQx","uuid":"ABC"}')
       .end( (err, res) => {
@@ -59,9 +59,9 @@ describe('Devices interface', () => {
       });
   });
 
-  it('PUT /devices with invalid base64 string should return 400', (done) => {
+  it('POST /devices with invalid base64 string should return 400', (done) => {
     chai.request(server)
-      .put('/devices')
+      .post('/devices')
       .set('Content-Type', 'application/json')
       .send('{"psk":"invalid-base64-string","psk_id":"cHNraWQx","uuid":"ABC"}')
       .end( (err, res) => {
@@ -70,9 +70,9 @@ describe('Devices interface', () => {
       });
   });
 
-  it('PUT /devices with invalid value at key should return 400', (done) => {
+  it('POST /devices with invalid value at key should return 400', (done) => {
     chai.request(server)
-      .put('/devices')
+      .post('/devices')
       .set('Content-Type', 'application/json')
       .send('{"psk":true,"psk_id":"cHNraWQx","uuid":"ABC"}')
       .end( (err, res) => {
@@ -81,9 +81,9 @@ describe('Devices interface', () => {
       });
   });
 
-  it('PUT /devices with additional invalid key should return 201', (done) => {
+  it('POST /devices with additional invalid key should return 201', (done) => {
     chai.request(server)
-      .put('/devices')
+      .post('/devices')
       .set('Content-Type', 'application/json')
       .send('{"psk":"cHNrNA==","psk_id":"cHNraWQ0","uuid":"JKL", "invalid-key":"invalid-value"}')
       .end( (err, res) => {
@@ -137,11 +137,11 @@ describe('Devices interface', () => {
       });
   });
 
-  it('POST /devices:name should return 201', (done) => {
+  it('PUT /devices:name should return 201', (done) => {
     chai.request(server)
-      .post('/devices/ABC')
+      .put('/devices/ABC')
       .set('Content-Type', 'application/json')
-      .send('{"psk":"cHNrMQ==","psk_id":"cHNraWQa","uuid":"ABC"}')
+      .send('{"psk":"cHNrMQ==","psk_id":"cHNraWQa"}')
       .end((err, res) => {
         should.not.exist(err);
         res.should.have.status(201);
@@ -159,6 +159,17 @@ describe('Devices interface', () => {
 
               done();
           });
+      });
+  });
+
+  it('PUT /devices:name where \'name\' is non-existing should return 400', (done) => {
+    chai.request(server)
+      .put('/devices/non-existing')
+      .set('Content-Type', 'application/json')
+      .send('{"psk":"cHNrMQ==","psk_id":"cHNraWQa"}')
+      .end((err, res) => {
+        res.should.have.status(400);
+        done();
       });
   });
 

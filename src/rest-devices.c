@@ -197,7 +197,7 @@ exit:
     return U_CALLBACK_COMPLETE;
 }
 
-int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
+int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
     rest_context_t *rest = (rest_context_t *)context;
     const char *ct;
@@ -261,7 +261,7 @@ exit:
     return U_CALLBACK_COMPLETE;
 }
 
-int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
+int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
     rest_context_t *rest = (rest_context_t *)context;
     json_t *jdevice = NULL, *jdatabase_list = NULL;
