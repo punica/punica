@@ -14,27 +14,11 @@ describe('Devices interface', () => {
   after(() => {
   });
 
-//  test written with assumption that database file starts empty
-  it('GET /devices should return empty json array', (done) => {
-    chai.request(server)
-      .get('/devices')
-      .end((err, res) => {
-        should.not.exist(err);
-        res.should.have.status(200);
-        res.should.have.header('content-type', 'application/json');
-
-        res.body.should.be.a('array');
-        res.body.length.should.be.eql(0);
-
-        done();
-      });
-  });
-
   it('PUT /devices should return 201', (done) => {
     chai.request(server)
       .put('/devices')
       .set('Content-Type', 'application/json')
-      .send('{"psk":"cHNrMQ==","psk_id":"cHNraWQx","uuid":"ABC"}')
+      .send('{"psk":"cHNrMw==","psk_id":"cHNraWQz","uuid":"GHI"}')
       .end( (err, res) => {
         should.not.exist(err);
         res.should.have.status(201);
@@ -101,7 +85,7 @@ describe('Devices interface', () => {
     chai.request(server)
       .put('/devices')
       .set('Content-Type', 'application/json')
-      .send('{"psk":"cHNrMw==","psk_id":"cHNraWQz","uuid":"GHI", "invalid-key":"invalid-value"}')
+      .send('{"psk":"cHNrNA==","psk_id":"cHNraWQ0","uuid":"JKL", "invalid-key":"invalid-value"}')
       .end( (err, res) => {
         should.not.exist(err);
         res.should.have.status(201);
@@ -109,7 +93,7 @@ describe('Devices interface', () => {
       });
   });
 
-  it('GET /devices should return json array with two elements', (done) => {
+  it('GET /devices should return json array with four elements', (done) => {
     chai.request(server)
       .get('/devices')
       .end((err, res) => {
@@ -118,11 +102,11 @@ describe('Devices interface', () => {
         res.should.have.header('content-type', 'application/json');
 
         res.body.should.be.a('array');
-        res.body.length.should.be.eql(2);
+        res.body.length.should.be.eql(4);
 
-        res.body[0].should.be.a('object');
-        res.body[0].should.have.property('psk_id');
-        res.body[0].psk_id.should.be.eql('cHNraWQz');
+        res.body[2].should.be.a('object');
+        res.body[2].should.have.property('psk_id');
+        res.body[2].psk_id.should.be.eql('cHNraWQy');
 
         done();
       });
