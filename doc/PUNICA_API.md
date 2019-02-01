@@ -459,20 +459,9 @@ The code in this directory is licensed under the MIT license, however please not
 
 **Manage registered devices with devices REST API**
   ----  
-  Devices API is used to create and store device information in a database/json file. Devices that are not present in the /devices list will not be able to register to the server.
   
-  Example of database file:
-```
-[
-  {"psk":"cHNrMQ==","psk_id":"cHNraWQx","uuid":"ABC"},
-  {"psk":"cHNrMg==","psk_id":"cHNraWQy","uuid":"DEF"},
-  {"psk":"cHNrMw==","psk_id":"cHNraWQz","uuid":"GHI"}
-]
-```
   
-  The file is a json array, consisting of multiple objects, each representing a single device. Keys 'psk' and 'psk_id' ar used as binary arrays, and must be encoded using base64. The user must not edit the database file during runtime.
-
-
+  
 **List registered devices**
 ----
   Returns a list of registered devices psk_id's.
