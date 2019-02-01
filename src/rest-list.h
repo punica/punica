@@ -22,6 +22,10 @@
 
 #include <pthread.h>
 
+#define rest_list_foreach(list, entry)  \
+    for (entry = list->head;            \
+         entry != NULL;                 \
+         entry = entry->next)
 
 typedef struct rest_list_entry_t
 {
