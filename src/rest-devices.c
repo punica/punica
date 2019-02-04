@@ -108,40 +108,55 @@ static int rest_devices_remove_list(rest_list_t *list, const char *id)
     return -1;
 }
 
+static json_t *rest_devices_prepare_resp(database_entry_t *device_entry)
+{
+    json_t *j_resp_obj;
+    char psk_id_buf[512];
+    size_t length = sizeof(psk_id_buf);
+
+    if (base64_encode(device_entry->psk_id, device_entry->psk_id_len, psk_id_buf, &length))
+    {
+        return NULL;
+    }
+
+    j_resp_obj = json_pack("{s:s, s:s}", "uuid", device_entry->uuid, "psk_id", psk_id_buf);
+    if (j_resp_obj == NULL)
+    {
+        return NULL;
+    }
+
+    return j_resp_obj;
+}
+
 int rest_devices_get_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
     rest_context_t *rest = (rest_context_t *)context;
     rest_list_t *device_list = rest->devicesList;
-    char string[512];
-    size_t length;
     database_entry_t *device_data;
     rest_list_entry_t *device_entry;
-    json_t *jdevices = NULL;
+    json_t *j_devices = NULL;
+    json_t *j_entry_object;
 
     rest_lock(rest);
 
-    jdevices = json_array();
+    j_devices = json_array();
     for (device_entry = device_list->head; device_entry != NULL; device_entry = device_entry->next)
     {
         device_data = (database_entry_t *)device_entry->data;
-        length = sizeof(string);
-        memset(string, 0, length);
 
-        if (base64_encode(device_data->psk_id, device_data->psk_id_len, string, &length))
+        j_entry_object = rest_devices_prepare_resp(device_data);
+        if (j_entry_object == NULL)
         {
             ulfius_set_empty_body_response(resp, 500);
             goto exit;
         }
 
-        json_t *jstring = json_string(string);
-        json_t *jobject = json_object();
-        json_object_set_new(jobject, "psk_id", jstring);
-        json_array_append_new(jdevices, jobject);
+        json_array_append_new(j_devices, j_entry_object);
     }
 
-    ulfius_set_json_body_response(resp, 200, jdevices);
+    ulfius_set_json_body_response(resp, 200, j_devices);
 exit:
-    json_decref(jdevices);
+    json_decref(j_devices);
     rest_unlock(rest);
 
     return U_CALLBACK_COMPLETE;
@@ -151,11 +166,9 @@ int rest_devices_get_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void 
 {
     rest_context_t *rest = (rest_context_t *)context;
     rest_list_t *device_list = rest->devicesList;
-    char string[512];
-    size_t length = sizeof(string);
     database_entry_t *device_data;
     rest_list_entry_t *device_entry;
-    json_t *jdevice = NULL;
+    json_t *j_entry_object = NULL;
 
     rest_lock(rest);
 
@@ -167,31 +180,26 @@ int rest_devices_get_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void 
         goto exit;
     }
 
-    jdevice = json_object();
     for (device_entry = device_list->head; device_entry != NULL; device_entry = device_entry->next)
     {
         device_data = (database_entry_t *)device_entry->data;
         if (strcmp(id, device_data->uuid) == 0)
         {
-            memset(string, 0, length);
-
-            if (base64_encode(device_data->psk_id, device_data->psk_id_len, string, &length))
+            j_entry_object = rest_devices_prepare_resp(device_data);
+            if (j_entry_object == NULL)
             {
                 ulfius_set_empty_body_response(resp, 500);
                 goto exit;
             }
 
-            json_t *jstring = json_string(string);
-            json_object_set_new(jdevice, "psk_id", jstring);
-            ulfius_set_json_body_response(resp, 200, jdevice);
-
+            ulfius_set_json_body_response(resp, 200, j_entry_object);
             goto exit;
         }
     }
 
     ulfius_set_empty_body_response(resp, 404);
 exit:
-    json_decref(jdevice);
+    json_decref(j_entry_object);
     rest_unlock(rest);
 
     return U_CALLBACK_COMPLETE;
@@ -202,6 +210,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
     rest_context_t *rest = (rest_context_t *)context;
     const char *ct;
     json_t *jdevice_list = NULL, *jdatabase_list = NULL;
+    json_t *j_post_resp;
     database_entry_t *device_entry;
 
     rest_lock(rest);
@@ -252,7 +261,14 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         }
     }
 
-    ulfius_set_empty_body_response(resp, 201);
+    j_post_resp = rest_devices_prepare_resp(device_entry);
+    if (j_post_resp == NULL)
+    {
+        ulfius_set_empty_body_response(resp, 500);
+        goto exit;
+    }
+
+    ulfius_set_json_body_response(resp, 201, j_post_resp);
 exit:
     json_decref(jdevice_list);
     json_decref(jdatabase_list);
