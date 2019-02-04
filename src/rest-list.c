@@ -130,8 +130,5 @@ void rest_list_append(rest_list_t *list, rest_list_t *extension)
     entry->next = extension->head;
 
 exit:
-    pthread_mutex_destroy(&extension->mutex);
-    free(extension);
-
-    pthread_mutex_unlock(&list->mutex);
+    extension->head = NULL;
 }
