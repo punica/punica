@@ -464,7 +464,7 @@ The code in this directory is licensed under the MIT license, however please not
   
 **List registered devices entries**
 ----
-  Returns an array of registered device entries. Sensitive device information, such as the pre-shared keys is excluded.
+  Returns a JSON array of registered device entries. Sensitive device information, such as the pre-shared keys (`psk`) is excluded.
 
 * **URL**
 
@@ -488,7 +488,7 @@ The code in this directory is licensed under the MIT license, however please not
   
 **Get single registered device entry**
   ----
-  Returns the device entry of a single registered device.
+  Returns the device entry of a single registered device (a JSON object).
 
 * **URL**
 
@@ -512,7 +512,7 @@ The code in this directory is licensed under the MIT license, however please not
   
 **Register device**
 ----
-  Used to register a new device. A new device entry is appended to the existing list and gets written to the database file.
+  Register a new device. A new device entry is appended to the existing database. If database file name is provided, database is saved to that file.
 
 * **URL**
 
@@ -524,7 +524,7 @@ The code in this directory is licensed under the MIT license, however please not
   
 * **Data Params**
 
-  A json object representing the device entry, such as in a database file.
+  A JSON object representing the device entry, such as in a database file.
 
 * **Success Response:**
 
@@ -536,7 +536,7 @@ The code in this directory is licensed under the MIT license, however please not
   
   OR
   
-  * **Code:** 400 BAD REQUEST - sent data was not a json object or contains invalid parameters, such as invalid base64 strings, invalid data types etc. <br />
+  * **Code:** 400 BAD REQUEST - sent data was not a JSON object or contains invalid parameters, such as invalid base64 strings, invalid data types etc. <br />
 
 * **Sample Call:**
 
@@ -558,7 +558,7 @@ The code in this directory is licensed under the MIT license, however please not
   
 * **Data Params**
 
-  A json object with updated 'psk' and 'psk_id'.
+  A JSON object with updated `psk` and `psk_id`.
 
 * **Success Response:**
 
@@ -570,7 +570,7 @@ The code in this directory is licensed under the MIT license, however please not
   
   OR
   
-  * **Code:** 400 BAD REQUEST - sent data was not a json object or is missing 'psk' and/or 'psk_id' keys <br />
+  * **Code:** 400 BAD REQUEST - sent data was not a JSON object or is missing 'psk' and/or 'psk_id' keys <br />
 
 * **Sample Call:**
 
