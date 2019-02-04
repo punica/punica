@@ -541,7 +541,7 @@ The code in this directory is licensed under the MIT license, however please not
 * **Sample Call:**
 
   ```shell
-  $ curl http://localhost:8888/devices -X POST -H "Content-Type: application/json" --data '{"psk":"cHNrMQ==","psk_id":"cHNraWQx","uuid":"ABC"}'
+  $ curl http://localhost:8888/devices -X POST -H "Content-Type: application/json" --data '{"psk":"cHNrMQ==","psk_id":"cHNraWQx"}'
   
   
 **Update device entry**
