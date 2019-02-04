@@ -178,10 +178,8 @@ int database_prepare_array(json_t *j_array, rest_list_t *device_list)
         return -1;
     }
 
-    int num = 0;
     for (list_entry = device_list->head; list_entry != NULL; list_entry = list_entry->next)
     {
-        printf("num = %d\r\n", ++num);
         psk_string_len = sizeof(psk_string);
         psk_id_string_len = sizeof(psk_id_string);
 
