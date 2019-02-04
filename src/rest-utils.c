@@ -76,31 +76,41 @@ int database_validate_new_entry(json_t *j_new_device_object)
     size_t buffer_len = sizeof(buffer);
 
     if (!json_is_object(j_new_device_object))
+    {
         return -1;
+    }
 
     json_object_foreach(j_new_device_object, key, j_value)
     {
         if (!json_is_string(j_value))
+        {
             return -1;
+        }
 
         if (strcasecmp(key, "psk") == 0)
         {
             if (base64_decode(json_string_value(j_value), buffer, &buffer_len))
+            {
                 return -1;
+            }
 
             key_check |= DATABASE_PSK_KEY_BIT;
         }
         else if (strcasecmp(key, "psk_id") == 0)
         {
             if (base64_decode(json_string_value(j_value), buffer, &buffer_len))
+            {
                 return -1;
+            }
 
             key_check |= DATABASE_PSK_ID_KEY_BIT;
         }
     }
 
     if (key_check != DATABASE_ALL_NEW_KEYS_SET)
+    {
         return -1;
+    }
 
     return 0;
 }
@@ -211,13 +221,17 @@ int database_populate_new_entry(json_t *j_new_device_object, database_entry_t *d
     json_t *j_device_object = json_deep_copy(j_new_device_object);
 
     if (j_device_object == NULL || device_entry == NULL)
+    {
         return -1;
+    }
 
     uuid_generate_random(b_uuid);
 
     uuid = malloc(37);
     if (uuid == NULL)
+    {
         return -1;
+    }
 
     uuid_unparse(b_uuid, uuid);
 
