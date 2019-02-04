@@ -214,7 +214,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
     }
 
     jdevice_list = json_loadb(req->binary_body, req->binary_body_length, 0, NULL);
-    if (database_validate_entry(jdevice_list))
+    if (database_validate_new_entry(jdevice_list))
     {
         ulfius_set_empty_body_response(resp, 400);
         goto exit;
@@ -227,7 +227,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         goto exit;
     }
 
-    if (database_populate_entry(jdevice_list, device_entry))
+    if (database_populate_new_entry(jdevice_list, device_entry))
     {
         ulfius_set_empty_body_response(resp, 500);
         goto exit;

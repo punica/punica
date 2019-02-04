@@ -38,9 +38,11 @@ int coap_to_http_status(int status);
 
 void database_free_entry(database_entry_t *device_entry);
 
+int database_validate_new_entry(json_t *j_new_device_object);
 int database_validate_entry(json_t *j_device_object);
 
 int database_populate_entry(json_t *j_device_object, database_entry_t *device_entry);
+int database_populate_new_entry(json_t *j_new_device_object, database_entry_t *device_entry);
 
 int database_prepare_array(json_t *j_array, rest_list_t *device_list);
 

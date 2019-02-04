@@ -17,6 +17,7 @@
  *
  */
 #include <string.h>
+#include <uuid/uuid.h>
 
 #include "rest-utils.h"
 
@@ -25,6 +26,7 @@
 #define DATABASE_UUID_KEY_BIT       0x1
 #define DATABASE_PSK_KEY_BIT        0x2
 #define DATABASE_PSK_ID_KEY_BIT     0x4
+#define DATABASE_ALL_NEW_KEYS_SET   0x6
 #define DATABASE_ALL_KEYS_SET       0x7
 
 int coap_to_http_status(int status)
@@ -63,6 +65,44 @@ void database_free_entry(database_entry_t *device_entry)
 
         free(device_entry);
     }
+}
+
+int database_validate_new_entry(json_t *j_new_device_object)
+{
+    int key_check = 0;
+    const char *key;
+    json_t *j_value;
+    uint8_t buffer[512];
+    size_t buffer_len = sizeof(buffer);
+
+    if (!json_is_object(j_new_device_object))
+        return -1;
+
+    json_object_foreach(j_new_device_object, key, j_value)
+    {
+        if (!json_is_string(j_value))
+            return -1;
+
+        if (strcasecmp(key, "psk") == 0)
+        {
+            if (base64_decode(json_string_value(j_value), buffer, &buffer_len))
+                return -1;
+
+            key_check |= DATABASE_PSK_KEY_BIT;
+        }
+        else if (strcasecmp(key, "psk_id") == 0)
+        {
+            if (base64_decode(json_string_value(j_value), buffer, &buffer_len))
+                return -1;
+
+            key_check |= DATABASE_PSK_ID_KEY_BIT;
+        }
+    }
+
+    if (key_check != DATABASE_ALL_NEW_KEYS_SET)
+        return -1;
+
+    return 0;
 }
 
 int database_validate_entry(json_t *j_device_object)
@@ -161,6 +201,39 @@ int database_populate_entry(json_t *j_device_object, database_entry_t *device_en
     base64_decode(json_string, device_entry->psk_id, &device_entry->psk_id_len);
 
     return 0;
+}
+
+int database_populate_new_entry(json_t *j_new_device_object, database_entry_t *device_entry)
+{
+    uuid_t b_uuid;
+    char *uuid = NULL;
+    int return_code;
+    json_t *j_device_object = json_deep_copy(j_new_device_object);
+
+    if (j_device_object == NULL || device_entry == NULL)
+        return -1;
+
+    uuid_generate_random(b_uuid);
+
+    uuid = malloc(37);
+    if (uuid == NULL)
+        return -1;
+
+    uuid_unparse(b_uuid, uuid);
+
+    if (json_object_set_new(
+            j_device_object, "uuid", json_stringn(uuid, 37)) != 0)
+    {
+        return_code = -1;
+        goto exit;
+    }
+
+    return_code = database_populate_entry(j_device_object, device_entry);
+
+exit:
+    free(uuid);
+    json_decref(j_device_object);
+    return return_code;
 }
 
 int database_prepare_array(json_t *j_array, rest_list_t *device_list)
