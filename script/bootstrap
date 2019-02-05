@@ -50,7 +50,7 @@ WAKAAMA_DIR="${THIRD_PARTY_DIR}/wakaama"
 
 AUTORECONF_ARGS_BASE="--prepend-include=${PREFIX_PATH_DIR} -i"
 CONFIGURE_ARGS_BASE="--enable-silent-rules --disable-dependency-tracking --prefix ${PREFIX_PATH_DIR}"
-CMAKE_ARGS_BASE="-DCMAKE_INSTALL_PREFIX:PATH=${PREFIX_PATH_DIR} -DCMAKE_PREFIX_PATH=${PREFIX_PATH_DIR}"
+CMAKE_ARGS_BASE="-DCMAKE_INSTALL_PREFIX=${PREFIX_PATH_DIR} -DCMAKE_PREFIX_PATH=${PREFIX_PATH_DIR}"
 MAKE_ARGS_BASE=""
 
 CONFIGURE_ARGS_BASE="${CONFIGURE_ARGS_BASE} --enable-static=yes --enable-shared=no"
@@ -218,8 +218,8 @@ install_ulfius () {
 
     {
         eval "cmake ../ ${cmake_args}" &&
-        eval "make ${MAKE_ARGS_BASE}" &&
         eval "make clean ${MAKE_ARGS_BASE}" &&
+        eval "make ${MAKE_ARGS_BASE}" &&
         eval "make install ${MAKE_ARGS_BASE}" &&
         cd -
     } >> ${LOG_FILE} 2>&1 || {
