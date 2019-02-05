@@ -79,7 +79,7 @@ _Note: alternatively you can follow [punica/wakaama](https://github.com/punica/w
 
 If you installed locally or want to build punica the easy way:
 ```
-$ DO_NOT_BOOTSTRAP=true ./script/setup
+$ SKIP_BOOTSTRAP=true ./script/setup
 ```
 or build manually (_Note: this method should work only for globally installed libraries._).
 ```

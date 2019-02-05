@@ -58,7 +58,7 @@ build_punica () {
     }
 }
 
-if [ ! "${DO_NOT_BOOTSTRAP}" = "true" ]; then
+if [ ! "${SKIP_BOOTSTRAP}" = "true" ]; then
     export BUILD_DIR
     export PREFIX_PATH_DIR
     eval "${SCRIPTS_DIR}/bootstrap"
