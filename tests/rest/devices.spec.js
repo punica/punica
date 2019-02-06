@@ -18,6 +18,7 @@ describe('Devices interface', () => {
 
   describe('POST /devices', function() {
     it('should return 201', (done) => {
+      const id_regex = /^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
       chai.request(server)
         .post('/devices')
         .set('Content-Type', 'application/json')
@@ -31,6 +32,7 @@ describe('Devices interface', () => {
           res.body.should.have.a.property('psk_id');
 
           res.body['psk_id'].should.be.equal('cHNraWQz');
+          res.body['uuid'].should.match(id_regex);
 
           test_uuid = res.body['uuid'];
           test_psk_id = res.body['psk_id'];
@@ -116,7 +118,7 @@ describe('Devices interface', () => {
 
   describe('GET /devices', function() {
     it('should return json array of device entries with a length of four', (done) => {
-      const id_regex = /^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/g;
+      const id_regex = /^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
       chai.request(server)
         .get('/devices')
         .end((err, res) => {
@@ -132,7 +134,7 @@ describe('Devices interface', () => {
               res.body[i].should.have.property('psk_id');
               res.body[i].should.have.property('uuid');
 
-              //res.body[i]['uuid'].should.match(id_regex);
+              res.body[i]['uuid'].should.match(id_regex);
           }
 
           done();
