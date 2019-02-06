@@ -115,7 +115,7 @@ describe('Devices interface', () => {
   });
 
   describe('GET /devices', function() {
-    it('should return json array of device entries', (done) => {
+    it('should return json array of device entries with a length of four', (done) => {
       const id_regex = /^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/g;
       chai.request(server)
         .get('/devices')
@@ -125,7 +125,7 @@ describe('Devices interface', () => {
           res.should.have.header('content-type', 'application/json');
 
           res.body.should.be.a('array');
-          res.body.length.should.be.above(0);
+          res.body.length.should.equal(4);
 
           for (i = 0; i < res.body.length; i++) {
               res.body[i].should.be.a('object');
