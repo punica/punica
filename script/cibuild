@@ -22,6 +22,20 @@ set -e
 PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
 SCRIPTS_DIR="${PROJECT_ROOT_DIR}/script"
 
+if [ -z "${BUILD_DIR}" ]; then
+    BUILD_DIR="${PROJECT_ROOT_DIR}/build"
+fi
+
+SCRIPT_NAME=$(basename -- "$0")
+TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+
+if [ -z "${LOG_FILE}" ]; then
+    LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
+else
+    export LOG_FILE
+fi
+
+export BUILD_DIR
 eval "${SCRIPTS_DIR}/setup -DCODE_COVERAGE=ON"
 
 eval "${SCRIPTS_DIR}/test"
@@ -36,15 +50,18 @@ sleep_timeout=10 # Timeout in seconds
 for time_slept in $(seq 0.0 ${sleep_interval} ${sleep_timeout})
 do
     if [ -d "regular" ] && [ -d "secure" ]; then
-        echo "Time until coverage directories appeared: ${time_slept} s"
+        eval "echo 'Time until coverage directories appeared: ${time_slept} s' >> ${LOG_FILE}"
         # If another way of making sure that coverage reports appears is found,
         # following code can be moved out of this for-if section
-        cp -r ${PROJECT_ROOT_DIR}/build ${PROJECT_ROOT_DIR}/src ${PROJECT_ROOT_DIR}/secure
-        cp -r ${PROJECT_ROOT_DIR}/build ${PROJECT_ROOT_DIR}/src ${PROJECT_ROOT_DIR}/regular
+        eval "cp -r ${BUILD_DIR} ${PROJECT_ROOT_DIR}/src ${PROJECT_ROOT_DIR}/secure"
+        eval "cp -r ${BUILD_DIR} ${PROJECT_ROOT_DIR}/src ${PROJECT_ROOT_DIR}/regular"
+
+        echo "Finished continuous integration procedure!"
+
         exit 0
     fi
-    sleep ${sleep_interval}
+    eval "sleep ${sleep_interval}"
 done
 
-echo "Not all code coverage report directories appeared in ${sleep_timeout} seconds!"
+(>&2 echo "Not all code coverage report directories appeared in ${sleep_timeout} seconds!")
 exit 1

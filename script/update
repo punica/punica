@@ -22,9 +22,19 @@ set -e
 PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
 SCRIPTS_DIR="${PROJECT_ROOT_DIR}/script"
 
-eval "${SCRIPTS_DIR}/bootstrap"
+SCRIPT_NAME=$(basename -- "$0")
+TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 
-echo "==> Recompiling punica..."
-eval "cd ${PROJECT_ROOT_DIR}/build"
-make
+if [ -z "${LOG_FILE}" ]; then
+    LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
+else
+    export LOG_FILE
+fi
+
+eval "cd ${PROJECT_ROOT_DIR}"
+echo "==> Updating project sources..."
+git pull >> ${LOG_FILE}
+
+eval "${SCRIPTS_DIR}/setup"
+
 cd -
