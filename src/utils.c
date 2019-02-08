@@ -223,3 +223,25 @@ lwm2m_client_t *utils_find_client(lwm2m_client_t *list, const char *name)
 
     return NULL;
 }
+
+const char *binding_to_string(lwm2m_binding_t bind)
+{
+    switch (bind)
+    {
+    case BINDING_U:
+        return "U";
+    case BINDING_UQ:
+        return "UQ";
+    case BINDING_S:
+        return "S";
+    case BINDING_SQ:
+        return "SQ";
+    case BINDING_US:
+        return "US";
+    case BINDING_UQS:
+        return "UQS";
+    default:
+        return "Unknown";
+    }
+}
+

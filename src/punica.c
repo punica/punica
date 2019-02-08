@@ -19,6 +19,7 @@
 
 #include "punica.h"
 #include "rest.h"
+#include "utils.h"
 #include "linked_list.h"
 #include "connection.h"
 #include "logging.h"
@@ -84,27 +85,6 @@ static void init_signals(void)
     if (0 != sigaction(SIGPIPE, &sig, &oldsig))
     {
         log_message(LOG_LEVEL_FATAL, "Failed to install SIGPIPE handler: %s\n", strerror(errno));
-    }
-}
-
-const char *binding_to_string(lwm2m_binding_t bind)
-{
-    switch (bind)
-    {
-    case BINDING_U:
-        return "U";
-    case BINDING_UQ:
-        return "UQ";
-    case BINDING_S:
-        return "S";
-    case BINDING_SQ:
-        return "SQ";
-    case BINDING_US:
-        return "US";
-    case BINDING_UQS:
-        return "UQS";
-    default:
-        return "Unknown";
     }
 }
 
