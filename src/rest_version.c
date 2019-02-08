@@ -17,11 +17,16 @@
  *
  */
 
-#ifndef REST_AUTHENTICATION_H
-#define REST_AUTHENTICATION_H
+#include "http_codes.h"
+#include "rest_callbacks.h"
+#include "version.h"
 
-#define HEADER_AUTHORIZATION   "Authorization"
-#define HEADER_UNAUTHORIZED    "WWW-Authenticate"
-#define HEADER_PREFIX_BEARER   "Bearer "
+int rest_version_cb(const struct _u_request *u_request,
+                    struct _u_response *u_response,
+                    void *context)
 
-#endif // REST_AUTHENTICATION_H
+{
+    ulfius_set_string_body_response(u_response, HTTP_200_OK, PUNICA_VERSION);
+
+    return U_CALLBACK_COMPLETE;
+}

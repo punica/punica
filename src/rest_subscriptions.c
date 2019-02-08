@@ -69,9 +69,9 @@ static void rest_unobserve_cb(uint16_t clientID, lwm2m_uri_t *uriP, int count,
     free(ctx);
 }
 
-static int rest_subscriptions_put_cb_unsafe(punica_context_t *punica,
-                                            const ulfius_req_t *req,
-                                            ulfius_resp_t *resp)
+static int rest_subscriptions_put_cb_unsafe(const struct _u_request *u_request,
+                                            struct _u_response *u_response,
+                                            punica_context_t *punica)
 {
     const char *name;
     lwm2m_client_t *client;
@@ -93,36 +93,37 @@ static int rest_subscriptions_put_cb_unsafe(punica_context_t *punica,
      */
 
     /* Find requested client */
-    name = u_map_get(req->map_url, "name");
+    name = u_map_get(u_request->map_url, "name");
     client = utils_find_client(punica->lwm2m->clientList, name);
     if (client == NULL)
     {
-        ulfius_set_empty_body_response(resp, 404);
+        ulfius_set_empty_body_response(u_response, 404);
         return U_CALLBACK_COMPLETE;
     }
 
     /* Reconstruct and validate client path */
     len = snprintf(path, sizeof(path), "/subscriptions/%s/", name);
 
-    if (req->http_url == NULL || strlen(req->http_url) >= sizeof(path) || len >= sizeof(path))
+    if (u_request->http_url == NULL || strlen(u_request->http_url) >= sizeof(path) ||
+        len >= sizeof(path))
     {
-        log_message(LOG_LEVEL_WARN, "%s(): invalid http request (%s)!\n", __func__, req->http_url);
+        log_message(LOG_LEVEL_WARN, "%s(): invalid http request (%s)!\n", __func__, u_request->http_url);
         return U_CALLBACK_ERROR;
     }
 
     // this is probaly redundant if there's only one matching ulfius filter
-    if (strncmp(path, req->http_url, len) != 0)
+    if (strncmp(path, u_request->http_url, len) != 0)
     {
-        ulfius_set_empty_body_response(resp, 404);
+        ulfius_set_empty_body_response(u_response, 404);
         return U_CALLBACK_COMPLETE;
     }
 
     /* Extract and convert resource path */
-    strcpy(path, &req->http_url[len - 1]);
+    strcpy(path, &u_request->http_url[len - 1]);
 
     if (lwm2m_stringToUri(path, strlen(path), &uri) == 0)
     {
-        ulfius_set_empty_body_response(resp, 404);
+        ulfius_set_empty_body_response(u_response, 404);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -175,7 +176,7 @@ static int rest_subscriptions_put_cb_unsafe(punica_context_t *punica,
 
     jresponse = json_object();
     json_object_set_new(jresponse, "async-response-id", json_string(observe_context->response->id));
-    ulfius_set_json_body_response(resp, 202, jresponse);
+    ulfius_set_json_body_response(u_response, 202, jresponse);
     json_decref(jresponse);
 
     return U_CALLBACK_COMPLETE;
@@ -196,21 +197,24 @@ exit:
     return err;
 }
 
-int rest_subscriptions_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
+int rest_subscriptions_put_cb(const struct _u_request *u_request,
+                              struct _u_response *u_response,
+                              void *context)
 {
     punica_context_t *punica = (punica_context_t *)context;
     int ret;
 
     punica_lock(punica);
-    ret = rest_subscriptions_put_cb_unsafe(punica, req, resp);
+    ret = rest_subscriptions_put_cb_unsafe(u_request, u_response, punica);
     punica_unlock(punica);
 
     return ret;
 }
 
-static int rest_subscriptions_delete_cb_unsafe(punica_context_t *punica,
-                                               const ulfius_req_t *req,
-                                               ulfius_resp_t *resp)
+static int rest_subscriptions_delete_cb_unsafe(
+    const struct _u_request *u_request,
+    struct _u_response *u_response,
+    punica_context_t *punica)
 {
     const char *name;
     lwm2m_client_t *client;
@@ -231,36 +235,37 @@ static int rest_subscriptions_delete_cb_unsafe(punica_context_t *punica,
      */
 
     /* Find requested client */
-    name = u_map_get(req->map_url, "name");
+    name = u_map_get(u_request->map_url, "name");
     client = utils_find_client(punica->lwm2m->clientList, name);
     if (client == NULL)
     {
-        ulfius_set_empty_body_response(resp, 404);
+        ulfius_set_empty_body_response(u_response, 404);
         return U_CALLBACK_COMPLETE;
     }
 
     /* Reconstruct and validate client path */
     len = snprintf(path, sizeof(path), "/subscriptions/%s/", name);
 
-    if (req->http_url == NULL || strlen(req->http_url) >= sizeof(path) || len >= sizeof(path))
+    if (u_request->http_url == NULL || strlen(u_request->http_url) >= sizeof(path) ||
+        len >= sizeof(path))
     {
-        log_message(LOG_LEVEL_WARN, "%s(): invalid http request (%s)!\n", __func__, req->http_url);
+        log_message(LOG_LEVEL_WARN, "%s(): invalid http request (%s)!\n", __func__, u_request->http_url);
         return U_CALLBACK_ERROR;
     }
 
     // this is probaly redundant if there's only one matching ulfius filter
-    if (strncmp(path, req->http_url, len) != 0)
+    if (strncmp(path, u_request->http_url, len) != 0)
     {
-        ulfius_set_empty_body_response(resp, 404);
+        ulfius_set_empty_body_response(u_response, 404);
         return U_CALLBACK_COMPLETE;
     }
 
     /* Extract and convert resource path */
-    strcpy(path, &req->http_url[len - 1]);
+    strcpy(path, &u_request->http_url[len - 1]);
 
     if (lwm2m_stringToUri(path, strlen(path), &uri) == 0)
     {
-        ulfius_set_empty_body_response(resp, 404);
+        ulfius_set_empty_body_response(u_response, 404);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -279,7 +284,7 @@ static int rest_subscriptions_delete_cb_unsafe(punica_context_t *punica,
 
     if (observe_context == NULL)
     {
-        ulfius_set_empty_body_response(resp, 404);
+        ulfius_set_empty_body_response(u_response, 404);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -303,7 +308,7 @@ static int rest_subscriptions_delete_cb_unsafe(punica_context_t *punica,
         goto exit;
     }
 
-    ulfius_set_empty_body_response(resp, 204);
+    ulfius_set_empty_body_response(u_response, 204);
 
     return U_CALLBACK_COMPLETE;
 
@@ -312,13 +317,15 @@ exit:
     return err;
 }
 
-int rest_subscriptions_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
+int rest_subscriptions_delete_cb(const struct _u_request *u_request,
+                                 struct _u_response *u_response,
+                                 void *context)
 {
     punica_context_t *punica = (punica_context_t *)context;
     int ret;
 
     punica_lock(punica);
-    ret = rest_subscriptions_delete_cb_unsafe(punica, req, resp);
+    ret = rest_subscriptions_delete_cb_unsafe(u_request, u_response, punica);
     punica_unlock(punica);
 
     return ret;

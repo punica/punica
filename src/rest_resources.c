@@ -85,8 +85,9 @@ static void rest_async_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
     free(ctx);
 }
 
-static int rest_resources_rwe_cb_unsafe(punica_context_t *punica,
-                                        const ulfius_req_t *req, ulfius_resp_t *resp)
+static int rest_resources_rwe_cb_unsafe(const struct _u_request *u_request,
+                                        struct _u_response *u_response,
+                                        punica_context_t *punica)
 {
     enum
     {
@@ -114,88 +115,89 @@ static int rest_resources_rwe_cb_unsafe(punica_context_t *punica,
      * the end of the function.
      */
 
-    if (strcmp(req->http_verb, "GET") == 0)
+    if (strcmp(u_request->http_verb, "GET") == 0)
     {
-        log_message(LOG_LEVEL_INFO, "[READ-REQUEST] %s\n", req->http_url);
+        log_message(LOG_LEVEL_INFO, "[READ-REQUEST] %s\n", u_request->http_url);
         action = RES_ACTION_READ;
     }
-    else if (strcmp(req->http_verb, "PUT") == 0)
+    else if (strcmp(u_request->http_verb, "PUT") == 0)
     {
-        log_message(LOG_LEVEL_INFO, "[WRITE-REQUEST] %s\n", req->http_url);
+        log_message(LOG_LEVEL_INFO, "[WRITE-REQUEST] %s\n", u_request->http_url);
         action = RES_ACTION_WRITE;
     }
-    else if (strcmp(req->http_verb, "POST") == 0)
+    else if (strcmp(u_request->http_verb, "POST") == 0)
     {
-        log_message(LOG_LEVEL_INFO, "[EXEC-REQUEST] %s\n", req->http_url);
+        log_message(LOG_LEVEL_INFO, "[EXEC-REQUEST] %s\n", u_request->http_url);
         action = RES_ACTION_EXEC;
     }
     else
     {
-        ulfius_set_empty_body_response(resp, 405);
+        ulfius_set_empty_body_response(u_response, 405);
         return U_CALLBACK_COMPLETE;
     }
 
     if (action == RES_ACTION_WRITE)
     {
-        format = http_to_coap_format(u_map_get_case(req->map_header, "Content-Type"));
+        format = http_to_coap_format(u_map_get_case(u_request->map_header, "Content-Type"));
         if (format == -1)
         {
-            ulfius_set_empty_body_response(resp, 415);
+            ulfius_set_empty_body_response(u_response, 415);
             return U_CALLBACK_COMPLETE;
         }
     }
     else if (action == RES_ACTION_EXEC)
     {
-        if ((u_map_get_case(req->map_header, "Content-Type") == NULL)
-            || (strcmp(u_map_get_case(req->map_header, "Content-Type"), "text/plain") == 0))
+        if ((u_map_get_case(u_request->map_header, "Content-Type") == NULL)
+            || (strcmp(u_map_get_case(u_request->map_header, "Content-Type"), "text/plain") == 0))
         {
             format = LWM2M_CONTENT_TEXT;
         }
         else
         {
-            ulfius_set_empty_body_response(resp, 415);
+            ulfius_set_empty_body_response(u_response, 415);
             return U_CALLBACK_COMPLETE;
         }
     }
 
     // Return 400 BAD REQUEST if request body length is 0
-    if ((action == RES_ACTION_WRITE) && (req->binary_body_length == 0))
+    if ((action == RES_ACTION_WRITE) && (u_request->binary_body_length == 0))
     {
-        ulfius_set_empty_body_response(resp, 400);
+        ulfius_set_empty_body_response(u_response, 400);
         return U_CALLBACK_COMPLETE;
     }
 
     /* Find requested client */
-    name = u_map_get(req->map_url, "name");
+    name = u_map_get(u_request->map_url, "name");
     client = utils_find_client(punica->lwm2m->clientList, name);
     if (client == NULL)
     {
-        ulfius_set_empty_body_response(resp, 410);
+        ulfius_set_empty_body_response(u_response, 410);
         return U_CALLBACK_COMPLETE;
     }
 
     /* Reconstruct and validate client path */
     len = snprintf(path, sizeof(path), "/endpoints/%s/", name);
 
-    if (req->http_url == NULL || strlen(req->http_url) >= sizeof(path) || len >= sizeof(path))
+    if (u_request->http_url == NULL || strlen(u_request->http_url) >= sizeof(path) ||
+        len >= sizeof(path))
     {
-        log_message(LOG_LEVEL_WARN, "%s(): invalid http request (%s)!\n", __func__, req->http_url);
+        log_message(LOG_LEVEL_WARN, "%s(): invalid http request (%s)!\n", __func__, u_request->http_url);
         return U_CALLBACK_ERROR;
     }
 
     // this is probaly redundant if there's only one matching ulfius filter
-    if (strncmp(path, req->http_url, len) != 0)
+    if (strncmp(path, u_request->http_url, len) != 0)
     {
-        ulfius_set_empty_body_response(resp, 404);
+        ulfius_set_empty_body_response(u_response, 404);
         return U_CALLBACK_COMPLETE;
     }
 
     /* Extract and convert resource path */
-    strcpy(path, &req->http_url[len - 1]);
+    strcpy(path, &u_request->http_url[len - 1]);
 
     if (lwm2m_stringToUri(path, strlen(path), &uri) == 0)
     {
-        ulfius_set_empty_body_response(resp, 404);
+        ulfius_set_empty_body_response(u_response, 404);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -214,12 +216,12 @@ static int rest_resources_rwe_cb_unsafe(punica_context_t *punica,
 
     async_context->punica = punica;
 
-    async_context->payload = malloc(req->binary_body_length);
+    async_context->payload = malloc(u_request->binary_body_length);
     if (async_context->payload == NULL)
     {
         goto exit;
     }
-    memcpy(async_context->payload, req->binary_body, req->binary_body_length);
+    memcpy(async_context->payload, u_request->binary_body, u_request->binary_body_length);
 
     async_context->response = rest_async_response_new();
     if (async_context->response == NULL)
@@ -239,7 +241,7 @@ static int rest_resources_rwe_cb_unsafe(punica_context_t *punica,
     case RES_ACTION_WRITE:
         res = lwm2m_dm_write(
                   punica->lwm2m, client->internalID, &uri,
-                  format, async_context->payload, req->binary_body_length,
+                  format, async_context->payload, u_request->binary_body_length,
                   rest_async_cb, async_context
               );
         break;
@@ -247,7 +249,7 @@ static int rest_resources_rwe_cb_unsafe(punica_context_t *punica,
     case RES_ACTION_EXEC:
         res = lwm2m_dm_execute(
                   punica->lwm2m, client->internalID, &uri,
-                  format, async_context->payload, req->binary_body_length,
+                  format, async_context->payload, u_request->binary_body_length,
                   rest_async_cb, async_context
               );
         break;
@@ -265,7 +267,7 @@ static int rest_resources_rwe_cb_unsafe(punica_context_t *punica,
 
     jresponse = json_object();
     json_object_set_new(jresponse, "async-response-id", json_string(async_context->response->id));
-    ulfius_set_json_body_response(resp, 202, jresponse);
+    ulfius_set_json_body_response(u_response, 202, jresponse);
     json_decref(jresponse);
 
     return U_CALLBACK_COMPLETE;
@@ -292,13 +294,15 @@ exit:
     return err;
 }
 
-int rest_resources_rwe_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
+int rest_resources_rwe_cb(const struct _u_request *u_request,
+                          struct _u_response *u_response,
+                          void *context)
 {
     punica_context_t *punica = (punica_context_t *)context;
     int ret;
 
     punica_lock(punica);
-    ret = rest_resources_rwe_cb_unsafe(punica, req, resp);
+    ret = rest_resources_rwe_cb_unsafe(u_request, u_response, punica);
     punica_unlock(punica);
 
     return ret;

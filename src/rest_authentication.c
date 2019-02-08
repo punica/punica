@@ -64,10 +64,10 @@ static int validate_authentication_body(json_t *authentication_json)
     return 0;
 }
 
-static char *get_request_access_token(const struct _u_request *request)
+static char *get_request_access_token(const struct _u_request *u_request)
 {
     char *token;
-    const char *authorization_header = u_map_get(request->map_header, HEADER_AUTHORIZATION);
+    const char *authorization_header = u_map_get(u_request->map_header, HEADER_AUTHORIZATION);
 
     if (authorization_header == NULL)
     {
@@ -84,11 +84,11 @@ static char *get_request_access_token(const struct _u_request *request)
     return token;
 }
 
-static char *get_request_scope(const struct _u_request *request)
+static char *get_request_scope(const struct _u_request *u_request)
 {
     char *scope;
-    size_t method_length = strnlen(request->http_verb, J_MAX_LENGTH_METHOD);
-    size_t url_length = strnlen(request->http_url, J_MAX_LENGTH_URL);
+    size_t method_length = strnlen(u_request->http_verb, J_MAX_LENGTH_METHOD);
+    size_t url_length = strnlen(u_request->http_url, J_MAX_LENGTH_URL);
 
     if (method_length == 0 || method_length == J_MAX_LENGTH_METHOD || url_length == J_MAX_LENGTH_URL)
     {
@@ -102,9 +102,9 @@ static char *get_request_scope(const struct _u_request *request)
         return NULL;
     }
 
-    strcpy(scope, request->http_verb);
+    strcpy(scope, u_request->http_verb);
     strcat(scope, " ");
-    strcat(scope, request->http_url);
+    strcat(scope, u_request->http_url);
 
     return scope;
 }
@@ -233,12 +233,13 @@ exit:
     return status;
 }
 
-int rest_authenticate_cb(const struct _u_request *request, struct _u_response *response,
-                         void *user_data)
+int rest_authenticate_cb(const struct _u_request *u_request,
+                         struct _u_response *u_response,
+                         void *context)
 {
     json_t *j_request_body, *j_response_body;
     jwt_t *jwt = NULL;
-    jwt_settings_t *jwt_settings = (jwt_settings_t *)user_data;
+    jwt_settings_t *jwt_settings = (jwt_settings_t *)context;
     linked_list_entry_t *entry;
     user_t *user = NULL, *user_entry;
     char *token;
@@ -246,7 +247,7 @@ int rest_authenticate_cb(const struct _u_request *request, struct _u_response *r
     time_t issuing_time;
     int status = U_CALLBACK_COMPLETE;
 
-    j_request_body = json_loadb(request->binary_body, request->binary_body_length, 0, NULL);
+    j_request_body = json_loadb(u_request->binary_body, u_request->binary_body_length, 0, NULL);
     j_response_body = json_object();
 
     if (validate_authentication_body(j_request_body) != 0)
@@ -255,7 +256,7 @@ int rest_authenticate_cb(const struct _u_request *request, struct _u_response *r
 
         json_object_set_new(j_response_body, "error", json_string("invalid_request"));
 
-        ulfius_set_json_body_response(response, HTTP_400_BAD_REQUEST, j_response_body);
+        ulfius_set_json_body_response(u_response, HTTP_400_BAD_REQUEST, j_response_body);
 
         goto exit;
     }
@@ -283,7 +284,7 @@ int rest_authenticate_cb(const struct _u_request *request, struct _u_response *r
 
         json_object_set_new(j_response_body, "error", json_string("invalid_client"));
 
-        ulfius_set_json_body_response(response, HTTP_400_BAD_REQUEST, j_response_body);
+        ulfius_set_json_body_response(u_response, HTTP_400_BAD_REQUEST, j_response_body);
 
         goto exit;
     }
@@ -310,7 +311,7 @@ int rest_authenticate_cb(const struct _u_request *request, struct _u_response *r
 
     log_message(LOG_LEVEL_INFO, "[JWT] Access token issued to user \"%s\".\n", user->name);
 
-    ulfius_set_json_body_response(response, HTTP_201_CREATED, j_response_body);
+    ulfius_set_json_body_response(u_response, HTTP_201_CREATED, j_response_body);
 
 exit:
     if (j_request_body != NULL)
@@ -329,10 +330,11 @@ exit:
     return status;
 }
 
-int rest_validate_jwt_cb(const struct _u_request *request, struct _u_response *response,
-                         void *user_data)
+int rest_validate_jwt_cb(const struct _u_request *u_request,
+                         struct _u_response *u_response,
+                         void *context)
 {
-    jwt_settings_t *jwt_settings = (jwt_settings_t *)user_data;
+    jwt_settings_t *jwt_settings = (jwt_settings_t *)context;
     jwt_error_t token_scope_status;
     char *access_token, *required_scope;
 
@@ -341,14 +343,14 @@ int rest_validate_jwt_cb(const struct _u_request *request, struct _u_response *r
         return U_CALLBACK_CONTINUE;
     }
 
-    required_scope = get_request_scope(request);
+    required_scope = get_request_scope(u_request);
     if (required_scope == NULL)
     {
         log_message(LOG_LEVEL_WARN, "[JWT] Failed to obtain request scope");
         return U_CALLBACK_ERROR;
     }
 
-    access_token =  get_request_access_token(request);
+    access_token =  get_request_access_token(u_request);
 
     token_scope_status = access_token_check_scope(access_token, jwt_settings, required_scope);
     free(required_scope);
@@ -358,16 +360,16 @@ int rest_validate_jwt_cb(const struct _u_request *request, struct _u_response *r
     case J_OK:
         return U_CALLBACK_CONTINUE;
     case J_ERROR_INVALID_REQUEST:
-        u_map_put(response->map_header, HEADER_UNAUTHORIZED,
+        u_map_put(u_response->map_header, HEADER_UNAUTHORIZED,
                   "error=\"invalid_request\",error_description=\"The access token is missing\"");
         return U_CALLBACK_UNAUTHORIZED;
     case J_ERROR_INVALID_TOKEN:
     case J_ERROR_EXPIRED_TOKEN:
-        u_map_put(response->map_header, HEADER_UNAUTHORIZED,
+        u_map_put(u_response->map_header, HEADER_UNAUTHORIZED,
                   "error=\"invalid_token\",error_description=\"The access token is invalid\"");
         return U_CALLBACK_UNAUTHORIZED;
     case J_ERROR_INSUFFICIENT_SCOPE:
-        u_map_put(response->map_header, HEADER_UNAUTHORIZED,
+        u_map_put(u_response->map_header, HEADER_UNAUTHORIZED,
                   "error=\"invalid_scope\",error_description=\"The scope is invalid\"");
         return U_CALLBACK_UNAUTHORIZED;
     case J_ERROR:

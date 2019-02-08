@@ -19,13 +19,13 @@
 
 #include "punica.h"
 #include "rest.h"
-#include "connection.h"
 #include "linked_list.h"
+#include "connection.h"
 #include "logging.h"
-#include "rest_authentication.h"
 #include "security.h"
 #include "settings.h"
-#include "version.h"
+#include "rest_authentication.h"
+#include "rest_callbacks.h"
 
 #include <liblwm2m.h>
 
@@ -106,13 +106,6 @@ const char *binding_to_string(lwm2m_binding_t bind)
     default:
         return "Unknown";
     }
-}
-
-int punica_version_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
-{
-    ulfius_set_string_body_response(resp, 200, PUNICA_VERSION);
-
-    return U_CALLBACK_COMPLETE;
 }
 
 void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
@@ -363,7 +356,7 @@ int main(int argc, char *argv[])
                                &rest_subscriptions_delete_cb, &punica);
 
     // Version
-    ulfius_add_endpoint_by_val(&instance, "GET", "/version", NULL, 1, &punica_version_cb, NULL);
+    ulfius_add_endpoint_by_val(&instance, "GET", "/version", NULL, 1, &rest_version_cb, NULL);
 
     // JWT authentication
     ulfius_add_endpoint_by_val(&instance, "POST", "/authenticate", NULL, 1, &rest_authenticate_cb,

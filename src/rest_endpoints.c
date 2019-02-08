@@ -17,8 +17,10 @@
  *
  */
 
+#include "http_codes.h"
 #include "punica.h"
 #include "rest.h"
+#include "rest_callbacks.h"
 
 #include <string.h>
 
@@ -84,7 +86,9 @@ static json_t *endpoint_resources_to_json(lwm2m_client_t *client)
     return jobjects;
 }
 
-int rest_endpoints_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
+int rest_endpoints_cb(const struct _u_request *u_request,
+                      struct _u_response *u_response,
+                      void *context)
 {
     punica_context_t *punica = (punica_context_t *)context;
     lwm2m_client_t *client;
@@ -97,7 +101,7 @@ int rest_endpoints_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *contex
         json_array_append_new(jclients, endpoint_to_json(client));
     }
 
-    ulfius_set_json_body_response(resp, 200, jclients);
+    ulfius_set_json_body_response(u_response, HTTP_200_OK, jclients);
     json_decref(jclients);
 
     punica_unlock(punica);
@@ -105,11 +109,13 @@ int rest_endpoints_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *contex
     return U_CALLBACK_COMPLETE;
 }
 
-int rest_endpoints_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
+int rest_endpoints_name_cb(const struct _u_request *u_request,
+                           struct _u_response *u_response,
+                           void *context)
 {
     punica_context_t *punica = (punica_context_t *)context;
     lwm2m_client_t *client;
-    const char *name = u_map_get(req->map_url, "name");
+    const char *name = u_map_get(u_request->map_url, "name");
     json_t *jclient;
 
     punica_lock(punica);
@@ -118,12 +124,12 @@ int rest_endpoints_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
 
     if (client == NULL)
     {
-        ulfius_set_empty_body_response(resp, 404);
+        ulfius_set_empty_body_response(u_response, HTTP_404_NOT_FOUND);
     }
     else
     {
         jclient = endpoint_resources_to_json(client);
-        ulfius_set_json_body_response(resp, 200, jclient);
+        ulfius_set_json_body_response(u_response, HTTP_200_OK, jclient);
         json_decref(jclient);
     }
 

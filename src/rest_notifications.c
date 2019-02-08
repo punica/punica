@@ -35,8 +35,8 @@ bool validate_callback(json_t *jcallback, punica_context_t *punica)
     json_t *value;
     int res;
     const char *callback_url;
-    ulfius_req_t test_request;
-    ulfius_resp_t test_response;
+    struct _u_request test_request;
+    struct _u_response test_response;
     struct _u_map headers;
     bool validation_state = true;
     json_t *jbody = json_pack("{s:[], s:[], s:[], s:[]}",
@@ -125,7 +125,8 @@ bool validate_callback(json_t *jcallback, punica_context_t *punica)
     return validation_state;
 }
 
-int rest_notifications_get_callback_cb(const ulfius_req_t *req, ulfius_resp_t *resp,
+int rest_notifications_get_callback_cb(const struct _u_request *u_request,
+                                       struct _u_response *u_response,
                                        void *context)
 {
     punica_context_t *punica = (punica_context_t *)context;
@@ -134,11 +135,11 @@ int rest_notifications_get_callback_cb(const ulfius_req_t *req, ulfius_resp_t *r
 
     if (punica->j_callback == NULL)
     {
-        ulfius_set_empty_body_response(resp, 404);
+        ulfius_set_empty_body_response(u_response, 404);
     }
     else
     {
-        ulfius_set_json_body_response(resp, 200, punica->j_callback);
+        ulfius_set_json_body_response(u_response, 200, punica->j_callback);
     }
 
     punica_unlock(punica);
@@ -146,7 +147,8 @@ int rest_notifications_get_callback_cb(const ulfius_req_t *req, ulfius_resp_t *r
     return U_CALLBACK_COMPLETE;
 }
 
-int rest_notifications_put_callback_cb(const ulfius_req_t *req, ulfius_resp_t *resp,
+int rest_notifications_put_callback_cb(const struct _u_request *u_request,
+                                       struct _u_response *u_response,
                                        void *context)
 {
     punica_context_t *punica = (punica_context_t *)context;
@@ -154,14 +156,14 @@ int rest_notifications_put_callback_cb(const ulfius_req_t *req, ulfius_resp_t *r
     const char *callback_url;
     json_t *jcallback;
 
-    ct = u_map_get_case(req->map_header, "Content-Type");
+    ct = u_map_get_case(u_request->map_header, "Content-Type");
     if (ct == NULL || strcmp(ct, "application/json") != 0)
     {
-        ulfius_set_empty_body_response(resp, 415);
+        ulfius_set_empty_body_response(u_response, 415);
         return U_CALLBACK_COMPLETE;
     }
 
-    jcallback = json_loadb(req->binary_body, req->binary_body_length, 0, NULL);
+    jcallback = json_loadb(u_request->binary_body, u_request->binary_body_length, 0, NULL);
     if (!validate_callback(jcallback, punica))
     {
         if (jcallback != NULL)
@@ -169,7 +171,7 @@ int rest_notifications_put_callback_cb(const ulfius_req_t *req, ulfius_resp_t *r
             json_decref(jcallback);
         }
 
-        ulfius_set_empty_body_response(resp, 400);
+        ulfius_set_empty_body_response(u_response, 400);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -186,14 +188,15 @@ int rest_notifications_put_callback_cb(const ulfius_req_t *req, ulfius_resp_t *r
 
     punica->j_callback = jcallback;
 
-    ulfius_set_empty_body_response(resp, 204);
+    ulfius_set_empty_body_response(u_response, 204);
 
     punica_unlock(punica);
 
     return U_CALLBACK_COMPLETE;
 }
 
-int rest_notifications_delete_callback_cb(const ulfius_req_t *req, ulfius_resp_t *resp,
+int rest_notifications_delete_callback_cb(const struct _u_request *u_request,
+                                          struct _u_response *u_response,
                                           void *context)
 {
     punica_context_t *punica = (punica_context_t *)context;
@@ -208,13 +211,13 @@ int rest_notifications_delete_callback_cb(const ulfius_req_t *req, ulfius_resp_t
         json_decref(punica->j_callback);
         punica->j_callback = NULL;
 
-        ulfius_set_empty_body_response(resp, 204);
+        ulfius_set_empty_body_response(u_response, 204);
     }
     else
     {
         log_message(LOG_LEVEL_WARN, "[DELETE-CALLBACK] No callbacks to delete\n");
 
-        ulfius_set_empty_body_response(resp, 404);
+        ulfius_set_empty_body_response(u_response, 404);
     }
 
     punica_unlock(punica);
@@ -222,7 +225,9 @@ int rest_notifications_delete_callback_cb(const ulfius_req_t *req, ulfius_resp_t
     return U_CALLBACK_COMPLETE;
 }
 
-int rest_notifications_pull_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
+int rest_notifications_pull_cb(const struct _u_request *u_request,
+                               struct _u_response *u_response,
+                               void *context)
 {
     punica_context_t *punica = (punica_context_t *)context;
 
@@ -232,7 +237,7 @@ int rest_notifications_pull_cb(const ulfius_req_t *req, ulfius_resp_t *resp, voi
 
     rest_notifications_clear(punica);
 
-    ulfius_set_json_body_response(resp, 200, jbody);
+    ulfius_set_json_body_response(u_response, 200, jbody);
     json_decref(jbody);
 
     punica_unlock(punica);
@@ -260,9 +265,9 @@ void rest_notify_timeout(punica_context_t *punica, rest_notif_timeout_t *timeout
     linked_list_add(punica->rest_timeouts, timeout);
 }
 
-void rest_notify_async_response(punica_context_t *punica, rest_notif_async_response_t *resp)
+void rest_notify_async_response(punica_context_t *punica, rest_notif_async_response_t *u_response)
 {
-    linked_list_add(punica->rest_async_responses, resp);
+    linked_list_add(punica->rest_async_responses, u_response);
 }
 
 static json_t *rest_async_response_to_json(rest_async_response_t *async)

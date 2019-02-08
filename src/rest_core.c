@@ -25,13 +25,13 @@
 
 int rest_step(punica_context_t *rest, struct timeval *tv)
 {
-    ulfius_req_t request;
-    ulfius_resp_t response;
+    struct _u_request u_request;
+    struct _u_response u_response;
+    struct _u_map headers;
     json_t *jbody;
     json_t *jheaders;
     json_t *value;
     const char *header;
-    struct _u_map headers;
     int res;
 
     if ((rest->rest_registrations->head != NULL
@@ -52,40 +52,40 @@ int rest_step(punica_context_t *rest, struct timeval *tv)
 
         jbody = rest_notifications_json(rest);
 
-        ulfius_init_request(&request);
-        request.http_verb = strdup("PUT");
-        request.http_url = strdup(url);
-        request.timeout = 20;
-        request.check_server_certificate = 0;
-        request.client_cert_file = o_strdup(rest->settings->http.security.certificate);
-        request.client_key_file = o_strdup(rest->settings->http.security.private_key);
-        if ((rest->settings->http.security.certificate != NULL && request.client_cert_file == NULL) ||
-            (rest->settings->http.security.private_key != NULL && request.client_key_file == NULL))
+        ulfius_init_request(&u_request);
+        u_request.http_verb = strdup("PUT");
+        u_request.http_url = strdup(url);
+        u_request.timeout = 20;
+        u_request.check_server_certificate = 0;
+        u_request.client_cert_file = o_strdup(rest->settings->http.security.certificate);
+        u_request.client_key_file = o_strdup(rest->settings->http.security.private_key);
+        if ((rest->settings->http.security.certificate != NULL && u_request.client_cert_file == NULL) ||
+            (rest->settings->http.security.private_key != NULL && u_request.client_key_file == NULL))
         {
             log_message(LOG_LEVEL_ERROR, "[CALLBACK] Failed to set client security credentials\n");
 
             json_decref(jbody);
             u_map_clean(&headers);
-            ulfius_clean_request(&request);
+            ulfius_clean_request(&u_request);
 
             return -1;
         }
 
-        u_map_copy_into(request.map_header, &headers);
+        u_map_copy_into(u_request.map_header, &headers);
 
-        ulfius_set_json_body_request(&request, jbody);
+        ulfius_set_json_body_request(&u_request, jbody);
         json_decref(jbody);
 
-        ulfius_init_response(&response);
-        res = ulfius_send_http_request(&request, &response);
+        ulfius_init_response(&u_response);
+        res = ulfius_send_http_request(&u_request, &u_response);
         if (res == U_OK)
         {
             rest_notifications_clear(rest);
         }
 
         u_map_clean(&headers);
-        ulfius_clean_request(&request);
-        ulfius_clean_response(&response);
+        ulfius_clean_request(&u_request);
+        ulfius_clean_response(&u_response);
     }
 
     return 0;
