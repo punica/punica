@@ -18,7 +18,7 @@
  */
 
 #include "logging.h"
-#include "punica.h"
+#include "rest.h"
 
 #include <string.h>
 
@@ -132,13 +132,13 @@ int rest_notifications_get_callback_cb(const ulfius_req_t *req, ulfius_resp_t *r
 
     punica_lock(punica);
 
-    if (punica->callback == NULL)
+    if (punica->j_callback == NULL)
     {
         ulfius_set_empty_body_response(resp, 404);
     }
     else
     {
-        ulfius_set_json_body_response(resp, 200, punica->callback);
+        ulfius_set_json_body_response(resp, 200, punica->j_callback);
     }
 
     punica_unlock(punica);
@@ -178,13 +178,13 @@ int rest_notifications_put_callback_cb(const ulfius_req_t *req, ulfius_resp_t *r
 
     punica_lock(punica);
 
-    if (punica->callback != NULL)
+    if (punica->j_callback != NULL)
     {
-        json_decref(punica->callback);
-        punica->callback = NULL;
+        json_decref(punica->j_callback);
+        punica->j_callback = NULL;
     }
 
-    punica->callback = jcallback;
+    punica->j_callback = jcallback;
 
     ulfius_set_empty_body_response(resp, 204);
 
@@ -200,13 +200,13 @@ int rest_notifications_delete_callback_cb(const ulfius_req_t *req, ulfius_resp_t
 
     punica_lock(punica);
 
-    if (punica->callback != NULL)
+    if (punica->j_callback != NULL)
     {
         log_message(LOG_LEVEL_INFO, "[DELETE-CALLBACK] url=%s\n",
-                    json_string_value(json_object_get(punica->callback, "url")));
+                    json_string_value(json_object_get(punica->j_callback, "url")));
 
-        json_decref(punica->callback);
-        punica->callback = NULL;
+        json_decref(punica->j_callback);
+        punica->j_callback = NULL;
 
         ulfius_set_empty_body_response(resp, 204);
     }
@@ -242,27 +242,27 @@ int rest_notifications_pull_cb(const ulfius_req_t *req, ulfius_resp_t *resp, voi
 
 void rest_notify_registration(punica_context_t *punica, rest_notif_registration_t *reg)
 {
-    linked_list_add(punica->registrationList, reg);
+    linked_list_add(punica->rest_registrations, reg);
 }
 
 void rest_notify_update(punica_context_t *punica, rest_notif_update_t *update)
 {
-    linked_list_add(punica->updateList, update);
+    linked_list_add(punica->rest_updates, update);
 }
 
 void rest_notify_deregistration(punica_context_t *punica, rest_notif_deregistration_t *dereg)
 {
-    linked_list_add(punica->deregistrationList, dereg);
+    linked_list_add(punica->rest_deregistrations, dereg);
 }
 
 void rest_notify_timeout(punica_context_t *punica, rest_notif_timeout_t *timeout)
 {
-    linked_list_add(punica->timeoutList, timeout);
+    linked_list_add(punica->rest_timeouts, timeout);
 }
 
 void rest_notify_async_response(punica_context_t *punica, rest_notif_async_response_t *resp)
 {
-    linked_list_add(punica->asyncResponseList, resp);
+    linked_list_add(punica->rest_async_responses, resp);
 }
 
 static json_t *rest_async_response_to_json(rest_async_response_t *async)
@@ -316,10 +316,10 @@ json_t *rest_notifications_json(punica_context_t *punica)
 
     jnotifs = json_object();
 
-    if (punica->registrationList)
+    if (punica->rest_registrations)
     {
         jarray = json_array();
-        for (entry = punica->registrationList->head; entry != NULL; entry = entry->next)
+        for (entry = punica->rest_registrations->head; entry != NULL; entry = entry->next)
         {
             reg = entry->data;
             json_array_append_new(jarray, rest_registration_notification_to_json(reg));
@@ -327,10 +327,10 @@ json_t *rest_notifications_json(punica_context_t *punica)
         json_object_set_new(jnotifs, "registrations", jarray);
     }
 
-    if (punica->updateList)
+    if (punica->rest_updates)
     {
         jarray = json_array();
-        for (entry = punica->updateList->head; entry != NULL; entry = entry->next)
+        for (entry = punica->rest_updates->head; entry != NULL; entry = entry->next)
         {
             upd = entry->data;
             json_array_append_new(jarray, rest_update_notification_to_json(upd));
@@ -338,10 +338,10 @@ json_t *rest_notifications_json(punica_context_t *punica)
         json_object_set_new(jnotifs, "reg-updates", jarray);
     }
 
-    if (punica->deregistrationList)
+    if (punica->rest_deregistrations)
     {
         jarray = json_array();
-        for (entry = punica->deregistrationList->head; entry != NULL; entry = entry->next)
+        for (entry = punica->rest_deregistrations->head; entry != NULL; entry = entry->next)
         {
             dereg = entry->data;
             json_array_append_new(jarray, rest_deregistration_notification_to_json(dereg));
@@ -349,10 +349,10 @@ json_t *rest_notifications_json(punica_context_t *punica)
         json_object_set_new(jnotifs, "de-registrations", jarray);
     }
 
-    if (punica->asyncResponseList)
+    if (punica->rest_async_responses)
     {
         jarray = json_array();
-        for (entry = punica->asyncResponseList->head; entry != NULL; entry = entry->next)
+        for (entry = punica->rest_async_responses->head; entry != NULL; entry = entry->next)
         {
             async = entry->data;
             json_array_append_new(jarray, rest_async_response_to_json(async));
@@ -365,31 +365,31 @@ json_t *rest_notifications_json(punica_context_t *punica)
 
 void rest_notifications_clear(punica_context_t *punica)
 {
-    while (punica->registrationList->head != NULL)
+    while (punica->rest_registrations->head != NULL)
     {
-        rest_notif_registration_t *reg = punica->registrationList->head->data;
-        linked_list_remove(punica->registrationList, reg);
+        rest_notif_registration_t *reg = punica->rest_registrations->head->data;
+        linked_list_remove(punica->rest_registrations, reg);
         rest_notif_registration_delete(reg);
     }
 
-    while (punica->updateList->head != NULL)
+    while (punica->rest_updates->head != NULL)
     {
-        rest_notif_update_t *upd = punica->updateList->head->data;
-        linked_list_remove(punica->updateList, upd);
+        rest_notif_update_t *upd = punica->rest_updates->head->data;
+        linked_list_remove(punica->rest_updates, upd);
         rest_notif_update_delete(upd);
     }
 
-    while (punica->deregistrationList->head != NULL)
+    while (punica->rest_deregistrations->head != NULL)
     {
-        rest_notif_deregistration_t *dereg = punica->deregistrationList->head->data;
-        linked_list_remove(punica->deregistrationList, dereg);
+        rest_notif_deregistration_t *dereg = punica->rest_deregistrations->head->data;
+        linked_list_remove(punica->rest_deregistrations, dereg);
         rest_notif_deregistration_delete(dereg);
     }
 
-    while (punica->asyncResponseList->head != NULL)
+    while (punica->rest_async_responses->head != NULL)
     {
-        rest_notif_async_response_t *async = punica->asyncResponseList->head->data;
-        linked_list_remove(punica->asyncResponseList, async);
+        rest_notif_async_response_t *async = punica->rest_async_responses->head->data;
+        linked_list_remove(punica->rest_async_responses, async);
         rest_async_response_delete(async);
     }
 }

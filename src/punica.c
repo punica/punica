@@ -18,6 +18,7 @@
  */
 
 #include "punica.h"
+#include "rest.h"
 #include "connection.h"
 #include "linked_list.h"
 #include "logging.h"

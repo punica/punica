@@ -17,8 +17,10 @@
  *
  */
 
+#include "http_codes.h"
 #include "logging.h"
 #include "punica.h"
+#include "rest.h"
 
 #include <string.h>
 
@@ -26,13 +28,13 @@ typedef struct
 {
     punica_context_t *punica;
     rest_async_response_t *response;
-} punica_observe_context_t;
+} rest_observe_context_t;
 
 static void rest_observe_cb(uint16_t clientID, lwm2m_uri_t *uriP, int count,
                             lwm2m_media_type_t format, uint8_t *data, int dataLength,
                             void *context)
 {
-    punica_observe_context_t *ctx = (punica_observe_context_t *)context;
+    rest_observe_context_t *ctx = (rest_observe_context_t *)context;
     rest_async_response_t *response;
 
     log_message(LOG_LEVEL_INFO, "[OBSERVE-RESPONSE] id=%s count=%d data=%p\n",
@@ -57,11 +59,11 @@ static void rest_unobserve_cb(uint16_t clientID, lwm2m_uri_t *uriP, int count,
                               lwm2m_media_type_t format, uint8_t *data, int dataLength,
                               void *context)
 {
-    punica_observe_context_t *ctx = (punica_observe_context_t *)context;
+    rest_observe_context_t *ctx = (rest_observe_context_t *)context;
 
     log_message(LOG_LEVEL_INFO, "[UNOBSERVE-RESPONSE] id=%s\n", ctx->response->id);
 
-    linked_list_remove(ctx->punica->observeList, ctx->response);
+    linked_list_remove(ctx->punica->rest_observations, ctx->response);
 
     rest_async_response_delete(ctx->response);
     free(ctx);
@@ -78,7 +80,7 @@ static int rest_subscriptions_put_cb_unsafe(punica_context_t *punica,
     lwm2m_uri_t uri;
     json_t *jresponse;
     lwm2m_observation_t *targetP;
-    punica_observe_context_t *observe_context = NULL;
+    rest_observe_context_t *observe_context = NULL;
     int res;
 
     /*
@@ -146,7 +148,7 @@ static int rest_subscriptions_put_cb_unsafe(punica_context_t *punica,
     if (observe_context == NULL)
     {
         /* Create response callback context and async-response */
-        observe_context = malloc(sizeof(punica_observe_context_t));
+        observe_context = malloc(sizeof(rest_observe_context_t));
         if (observe_context == NULL)
         {
             goto exit;
@@ -168,7 +170,7 @@ static int rest_subscriptions_put_cb_unsafe(punica_context_t *punica,
             goto exit;
         }
 
-        linked_list_add(punica->observeList, observe_context->response);
+        linked_list_add(punica->rest_observations, observe_context->response);
     }
 
     jresponse = json_object();
@@ -216,7 +218,7 @@ static int rest_subscriptions_delete_cb_unsafe(punica_context_t *punica,
     size_t len;
     lwm2m_uri_t uri;
     lwm2m_observation_t *targetP;
-    punica_observe_context_t *observe_context = NULL;
+    rest_observe_context_t *observe_context = NULL;
     int res;
 
     /*

@@ -22,7 +22,7 @@
 
 #include "logging.h"
 #include "security.h"
-#include "rest-utils.h"
+#include "utils.h"
 
 #include <jansson.h>
 

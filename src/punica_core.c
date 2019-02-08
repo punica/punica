@@ -27,13 +27,13 @@ void punica_init(punica_context_t *punica, settings_t *settings)
 {
     memset(punica, 0, sizeof(punica_context_t));
 
-    punica->registrationList = linked_list_new();
-    punica->updateList = linked_list_new();
-    punica->deregistrationList = linked_list_new();
-    punica->timeoutList = linked_list_new();
-    punica->asyncResponseList = linked_list_new();
-    punica->pendingResponseList = linked_list_new();
-    punica->observeList = linked_list_new();
+    punica->rest_registrations = linked_list_new();
+    punica->rest_updates = linked_list_new();
+    punica->rest_deregistrations = linked_list_new();
+    punica->rest_timeouts = linked_list_new();
+    punica->rest_async_responses = linked_list_new();
+    punica->rest_pending_responses = linked_list_new();
+    punica->rest_observations = linked_list_new();
     punica->settings = settings;
 
     assert(pthread_mutex_init(&punica->mutex, NULL) == 0);
@@ -41,20 +41,20 @@ void punica_init(punica_context_t *punica, settings_t *settings)
 
 void punica_cleanup(punica_context_t *punica)
 {
-    if (punica->callback)
+    if (punica->j_callback)
     {
-        json_decref(punica->callback);
-        punica->callback = NULL;
+        json_decref(punica->j_callback);
+        punica->j_callback = NULL;
     }
 
     rest_notifications_clear(punica);
-    linked_list_delete(punica->registrationList);
-    linked_list_delete(punica->updateList);
-    linked_list_delete(punica->deregistrationList);
-    linked_list_delete(punica->timeoutList);
-    linked_list_delete(punica->asyncResponseList);
-    linked_list_delete(punica->pendingResponseList);
-    linked_list_delete(punica->observeList);
+    linked_list_delete(punica->rest_registrations);
+    linked_list_delete(punica->rest_updates);
+    linked_list_delete(punica->rest_deregistrations);
+    linked_list_delete(punica->rest_timeouts);
+    linked_list_delete(punica->rest_async_responses);
+    linked_list_delete(punica->rest_pending_responses);
+    linked_list_delete(punica->rest_observations);
 
     assert(pthread_mutex_destroy(&punica->mutex) == 0);
 }

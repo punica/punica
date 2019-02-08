@@ -18,9 +18,11 @@
  */
 
 #include "settings.h"
+
 #include "linked_list.h"
+#include "rest_core_types.h"
 #include "security.h"
-#include "rest-core-types.h"
+#include "version.h"
 
 #define DATABASE_UUID_KEY_BIT       0x1
 #define DATABASE_PSK_KEY_BIT        0x2

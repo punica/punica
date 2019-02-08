@@ -18,12 +18,12 @@
  */
 
 #include "logging.h"
-#include "punica.h"
+#include "rest.h"
 
 #include <assert.h>
 #include <string.h>
 
-int rest_step(punica_context_t *punica, struct timeval *tv)
+int rest_step(punica_context_t *rest, struct timeval *tv)
 {
     ulfius_req_t request;
     ulfius_resp_t response;
@@ -34,14 +34,14 @@ int rest_step(punica_context_t *punica, struct timeval *tv)
     struct _u_map headers;
     int res;
 
-    if ((punica->registrationList->head != NULL
-         || punica->updateList->head != NULL
-         || punica->deregistrationList->head != NULL
-         || punica->asyncResponseList->head != NULL)
-        && punica->callback != NULL)
+    if ((rest->rest_registrations->head != NULL
+         || rest->rest_updates->head != NULL
+         || rest->rest_deregistrations->head != NULL
+         || rest->rest_async_responses->head != NULL)
+        && rest->j_callback != NULL)
     {
-        const char *url = json_string_value(json_object_get(punica->callback, "url"));
-        jheaders = json_object_get(punica->callback, "headers");
+        const char *url = json_string_value(json_object_get(rest->j_callback, "url"));
+        jheaders = json_object_get(rest->j_callback, "headers");
         u_map_init(&headers);
         json_object_foreach(jheaders, header, value)
         {
@@ -50,17 +50,17 @@ int rest_step(punica_context_t *punica, struct timeval *tv)
 
         log_message(LOG_LEVEL_INFO, "[CALLBACK] Sending to %s\n", url);
 
-        jbody = rest_notifications_json(punica);
+        jbody = rest_notifications_json(rest);
 
         ulfius_init_request(&request);
         request.http_verb = strdup("PUT");
         request.http_url = strdup(url);
         request.timeout = 20;
         request.check_server_certificate = 0;
-        request.client_cert_file = o_strdup(punica->settings->http.security.certificate);
-        request.client_key_file = o_strdup(punica->settings->http.security.private_key);
-        if ((punica->settings->http.security.certificate != NULL && request.client_cert_file == NULL) ||
-            (punica->settings->http.security.private_key != NULL && request.client_key_file == NULL))
+        request.client_cert_file = o_strdup(rest->settings->http.security.certificate);
+        request.client_key_file = o_strdup(rest->settings->http.security.private_key);
+        if ((rest->settings->http.security.certificate != NULL && request.client_cert_file == NULL) ||
+            (rest->settings->http.security.private_key != NULL && request.client_key_file == NULL))
         {
             log_message(LOG_LEVEL_ERROR, "[CALLBACK] Failed to set client security credentials\n");
 
@@ -80,7 +80,7 @@ int rest_step(punica_context_t *punica, struct timeval *tv)
         res = ulfius_send_http_request(&request, &response);
         if (res == U_OK)
         {
-            rest_notifications_clear(punica);
+            rest_notifications_clear(rest);
         }
 
         u_map_clean(&headers);

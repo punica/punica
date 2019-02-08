@@ -23,18 +23,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-typedef struct
-{
-    char *uuid;
-    uint8_t *psk;
-    size_t psk_len;
-    uint8_t *psk_id;
-    size_t psk_id_len;
-} database_entry_t;
-
 int coap_to_http_status(int status);
-
-void free_database_entry(database_entry_t *device);
 
 #endif // REST_UTILS_H
 

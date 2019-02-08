@@ -17,6 +17,7 @@
  *
  */
 
+#include "http_codes.h"
 #include "utils.h"
 #include "punica.h"
 
@@ -25,18 +26,110 @@
 static const char *base64_table =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-const char *utils_base64_encode(const uint8_t *data, size_t length)
+int base64_decode(const char *base64_string, uint8_t *data, size_t *length)
 {
-    size_t buffer_length = ((length + 2) / 3) * 4 + 1; // +1 for null-terminator
-    char *buffer;
+    if (!base64_string || !length)
+    {
+        return BASE64_ERR_ARG;
+    }
+
+    int string_index, data_index = 0;
+    int buffer_length, string_length, padding = 0;
+    int i;
+
+    string_length = strlen(base64_string);
+    for (i = 0; i < string_length; i++)
+    {
+        if (base64_string[i] == 0x3d)
+        {
+            padding++;
+            if (base64_string[i + 1] == 0x3d)
+            {
+                padding++;
+            }
+            break;
+        }
+    }
+
+    buffer_length = (string_length / 4) * 3 - padding;
+    if (buffer_length <= 0)
+    {
+        return BASE64_ERR_ARG;
+    }
+
+    if (data == NULL)
+    {
+        *length = buffer_length;
+        return BASE64_ERR_NONE;
+    }
+
+    if (*length < buffer_length)
+    {
+        return BASE64_ERR_BUF_SIZE;
+    }
+
+    memset(data, 0, *length);
+
+    uint8_t bits6;
+    const char *pos;
+    for (string_index = 0; string_index < string_length; string_index++)
+    {
+        if (base64_string[string_index] == 0x3d)
+        {
+            break;
+        }
+        if ((pos = strchr(base64_table, base64_string[string_index])) == NULL)
+        {
+            return BASE64_ERR_INV_CHAR;
+        }
+        bits6 = pos - base64_table;
+
+        switch (string_index % 4)
+        {
+        case 0:
+            data[data_index] = data[data_index] | (bits6 << 2);
+            break;
+        case 1:
+            data[data_index] = data[data_index] | (bits6 >> 4);
+            data[data_index + 1] = data[data_index + 1] | (bits6 << 4);
+            break;
+        case 2:
+            data[data_index + 1] = data[data_index + 1] | (bits6 >> 2);
+            data[data_index + 2] = data[data_index + 2] | (bits6 << 6);
+            break;
+        case 3:
+            data[data_index + 2] = data[data_index + 2] | (bits6);
+            data_index = data_index + 3;
+            break;
+        }
+    }
+
+    return BASE64_ERR_NONE;
+}
+
+int base64_encode(const uint8_t *data, size_t length, char *base64_string, size_t *base64_length)
+{
     static uint8_t previous_byte;
     int data_index = 0,
         buffer_index = 0;
 
-    buffer = malloc(buffer_length);
-    if (buffer == NULL)
+    if (data == NULL || length <= 0)
     {
-        return NULL;
+        *base64_length = 0;
+        return BASE64_ERR_NONE;
+    }
+
+    int string_length = ((length + 2) / 3) * 4;
+    if (base64_string == NULL)
+    {
+        *base64_length = string_length;
+        return BASE64_ERR_NONE;
+    }
+
+    if (*base64_length < string_length)
+    {
+        *base64_length = string_length;
+        return BASE64_ERR_STR_SIZE;
     }
 
     for (data_index = 0; data_index < length; data_index++)
@@ -44,18 +137,18 @@ const char *utils_base64_encode(const uint8_t *data, size_t length)
         switch (data_index % 3)
         {
         case 2:
-            buffer[buffer_index++] = base64_table[
-                                         ((previous_byte & 0x0f) << 2) + ((data[data_index] & 0xc0) >> 6)
-                                     ];
-            buffer[buffer_index++] = base64_table[data[data_index] & 0x3f];
+            base64_string[buffer_index++] = base64_table[
+                                                ((previous_byte & 0x0f) << 2) + ((data[data_index] & 0xc0) >> 6)
+                                            ];
+            base64_string[buffer_index++] = base64_table[data[data_index] & 0x3f];
             break;
         case 1:
-            buffer[buffer_index++] = base64_table[
-                                         ((previous_byte & 0x03) << 4) + ((data[data_index] & 0xf0) >> 4)
-                                     ];
+            base64_string[buffer_index++] = base64_table[
+                                                ((previous_byte & 0x03) << 4) + ((data[data_index] & 0xf0) >> 4)
+                                            ];
             break;
         case 0:
-            buffer[buffer_index++] = base64_table[(data[data_index] & 0xfc) >> 2];
+            base64_string[buffer_index++] = base64_table[(data[data_index] & 0xfc) >> 2];
             break;
         }
         previous_byte = data[data_index];
@@ -63,21 +156,20 @@ const char *utils_base64_encode(const uint8_t *data, size_t length)
 
     if ((data_index % 3) == 2)
     {
-        buffer[buffer_index++] = base64_table[(previous_byte & 0x0f) << 2];
-        buffer[buffer_index++] = '=';
+        base64_string[buffer_index++] = base64_table[(previous_byte & 0x0f) << 2];
+        base64_string[buffer_index++] = '=';
     }
     else if ((data_index % 3) == 1)
     {
-        buffer[buffer_index++] = base64_table[(previous_byte & 0x03) << 4];
-        buffer[buffer_index++] = '=';
-        buffer[buffer_index++] = '=';
+        base64_string[buffer_index++] = base64_table[(previous_byte & 0x03) << 4];
+        base64_string[buffer_index++] = '=';
+        base64_string[buffer_index++] = '=';
     }
 
-    buffer[buffer_index++] = '\0';
+    base64_string[buffer_index++] = '\0';
+    *base64_length = string_length;
 
-    assert(buffer_index == buffer_length);
-
-    return buffer;
+    return BASE64_ERR_NONE;
 }
 
 int utils_coap_to_http_status(int status)

@@ -17,17 +17,40 @@
  *
  */
 
+#include "database.h"
+#include "linked_list.h"
+#include "punica.h"
+#include "rest_core_types.h"
 #include "settings.h"
-#include "rest-core-types.h"
-#include "rest-list.h"
-#include "restserver.h"
 
 #define DATABASE_UUID_KEY_BIT       0x1
 #define DATABASE_PSK_KEY_BIT        0x2
 #define DATABASE_PSK_ID_KEY_BIT     0x4
 #define DATABASE_ALL_KEYS_SET       0x7
 
-int database_load_file(rest_context_t *rest)
+void free_database_entry(database_entry_t *device)
+{
+
+    if (device)
+    {
+        if (device->uuid)
+        {
+            free(device->uuid);
+        }
+        if (device->psk)
+        {
+            free(device->psk);
+        }
+        if (device->psk_id)
+        {
+            free(device->psk_id);
+        }
+
+        free(device);
+    }
+}
+
+int database_load_file(punica_context_t *punica)
 {
     json_error_t error;
     const char *section;
@@ -38,7 +61,7 @@ int database_load_file(rest_context_t *rest)
     int key_check;
     int ret = 1;
 
-    rest_list_t *device_list = rest_list_new();
+    linked_list_t *device_list = linked_list_new();
     if (device_list == 0)
     {
         fprintf(stderr, "%s:%d - failed to allocate device list\r\n",
@@ -46,15 +69,15 @@ int database_load_file(rest_context_t *rest)
         goto exit;
     }
 
-    rest->devicesList = device_list;
-    if (rest->settings->coap.database_file == NULL)
+    punica->rest_devices = device_list;
+    if (punica->settings->coap.database_file == NULL)
     {
 //      internal list created, nothing more to do here
         ret = 0;
         goto exit;
     }
 
-    j_database = json_load_file(rest->settings->coap.database_file, 0, &error);
+    j_database = json_load_file(punica->settings->coap.database_file, 0, &error);
     if (j_database == NULL)
     {
         fprintf(stdout, "%s:%d - database file not found, must be created with /devices REST API\r\n",
@@ -67,7 +90,7 @@ int database_load_file(rest_context_t *rest)
     {
         fprintf(stderr, "%s:%d - database file must contain a json array\r\n",
                 __FILE__, __LINE__);
-        rest_list_delete(device_list);
+        linked_list_delete(device_list);
         goto exit;
     }
 
@@ -165,7 +188,7 @@ int database_load_file(rest_context_t *rest)
             goto free_device;
         }
 
-        rest_list_add(device_list, (void *)curr);
+        linked_list_add(device_list, (void *)curr);
         continue;
 
 free_device:

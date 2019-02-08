@@ -18,6 +18,7 @@
  */
 
 #include "punica.h"
+#include "rest.h"
 
 #include <string.h>
 
