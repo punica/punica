@@ -17,41 +17,24 @@
  *
  */
 
-#ifndef SETTINGS_H
-#define SETTINGS_H
+#ifndef REST_UTILS_H
+#define REST_UTILS_H
 
-#include "logging.h"
-#include "security.h"
-#include "rest-utils.h"
-
-#include <jansson.h>
-
-#include <argp.h>
+#include <stdlib.h>
 #include <stdint.h>
-#include <string.h>
 
 typedef struct
 {
-    uint16_t port;
-    http_security_settings_t security;
-} http_settings_t;
+    char *uuid;
+    uint8_t *psk;
+    size_t psk_len;
+    uint8_t *psk_id;
+    size_t psk_id_len;
+} database_entry_t;
 
-typedef struct
-{
-    uint16_t port;
-    char *database_file;
-} coap_settings_t;
+int coap_to_http_status(int status);
 
-typedef struct
-{
-    http_settings_t http;
-    coap_settings_t coap;
-    logging_settings_t logging;
-} settings_t;
+void free_database_entry(database_entry_t *device);
 
-error_t parse_opt(int key, char *arg, struct argp_state *state);
-
-int settings_init(int argc, char *argv[], settings_t *settings);
-
-#endif // SETTINGS_H
+#endif // REST_UTILS_H
 

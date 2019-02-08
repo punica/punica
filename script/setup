@@ -22,26 +22,50 @@ set -e
 PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
 SCRIPTS_DIR="${PROJECT_ROOT_DIR}/script"
 
+if [ -z "${BUILD_DIR}" ]; then
+    BUILD_DIR="${PROJECT_ROOT_DIR}/build"
+fi
+
+if [ -z "${PREFIX_PATH_DIR}" ]; then
+    PREFIX_PATH_DIR="${BUILD_DIR}"
+fi
+
+SCRIPT_NAME=$(basename -- "$0")
+TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+
+if [ -z "${LOG_FILE}" ]; then
+    LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
+else
+    export LOG_FILE
+fi
+
+CMAKE_ARGS_BASE="-DCMAKE_INSTALL_PREFIX:PATH=${PREFIX_PATH_DIR} -DCMAKE_PREFIX_PATH=${PREFIX_PATH_DIR}"
+
 build_punica () {
-    cmake_arguments=""
+    cmake_arguments="${CMAKE_ARGS_BASE} $@"
+    mkdir -p ${BUILD_DIR}/src &&
+    eval "cd ${BUILD_DIR}" &&
 
-    if ! [ -z "$1" ]; then
-        cmake_arguments="${cmake_arguments} $1"
-    fi
+    {
+        eval "cmake ${cmake_arguments} ${PROJECT_ROOT_DIR}" &&
+        make &&
+        cd -
+    } >> ${LOG_FILE} 2>&1 || {
+        (>&2 echo "Failed to build punica!")
+        (>&2 echo "\nFor more information refer to ${LOG_FILE}")
 
-    mkdir -p ${PROJECT_ROOT_DIR}/build/src
-    if ! [ $? -eq 0 ]; then
-        echo "Failed to create build directory!"
         return 1
-    fi
-
-    eval "cd ${PROJECT_ROOT_DIR}/build"
-    eval "cmake ${cmake_arguments} ${PROJECT_ROOT_DIR}"
-    make
-    cd -
+    }
 }
 
-eval "${SCRIPTS_DIR}/bootstrap"
+if [ ! "${SKIP_BOOTSTRAP}" = "true" ]; then
+    export BUILD_DIR
+    export PREFIX_PATH_DIR
+    eval "${SCRIPTS_DIR}/bootstrap"
+fi
 
 echo "==> Building punica..."
 build_punica "$@"
+eval "strip -s ${BUILD_DIR}/punica"
+
+echo "Finished setting up punica!"

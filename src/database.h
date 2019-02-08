@@ -17,41 +17,9 @@
  *
  */
 
-#ifndef SETTINGS_H
-#define SETTINGS_H
+#ifndef DATABASE_H
+#define DATABASE_H
 
-#include "logging.h"
-#include "security.h"
-#include "rest-utils.h"
+int database_load_file(rest_context_t *rest);
 
-#include <jansson.h>
-
-#include <argp.h>
-#include <stdint.h>
-#include <string.h>
-
-typedef struct
-{
-    uint16_t port;
-    http_security_settings_t security;
-} http_settings_t;
-
-typedef struct
-{
-    uint16_t port;
-    char *database_file;
-} coap_settings_t;
-
-typedef struct
-{
-    http_settings_t http;
-    coap_settings_t coap;
-    logging_settings_t logging;
-} settings_t;
-
-error_t parse_opt(int key, char *arg, struct argp_state *state);
-
-int settings_init(int argc, char *argv[], settings_t *settings);
-
-#endif // SETTINGS_H
-
+#endif //DATABASE_H

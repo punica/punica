@@ -53,6 +53,9 @@ typedef struct
     // punica-subsciptions
     linked_list_t *observeList;
 
+    // rest-devices
+    rest_list_t *devicesList;
+
     settings_t *settings;
 } punica_context_t;
 

@@ -16,6 +16,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  */
+#include <string.h>
 
 #ifndef UTILS_H
 #define UTILS_H
@@ -35,3 +36,24 @@ lwm2m_client_t *utils_find_client(lwm2m_client_t *list, const char *name);
 
 #endif // UTILS_H
 
+void free_database_entry(database_entry_t *device)
+{
+
+    if (device)
+    {
+        if (device->uuid)
+        {
+            free(device->uuid);
+        }
+        if (device->psk)
+        {
+            free(device->psk);
+        }
+        if (device->psk_id)
+        {
+            free(device->psk_id);
+        }
+
+        free(device);
+    }
+}
