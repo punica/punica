@@ -75,7 +75,7 @@ static void set_coap_settings(json_t *j_section, coap_settings_t *settings)
     }
 }
 
-static int set_user_settings(json_t *user_settings, linked_list_t *users_list)
+static int set_user_settings(json_t *j_user_settings, linked_list_t *users_list)
 {
     user_t *user, *user_entry;
     linked_list_entry_t *entry;
@@ -84,9 +84,9 @@ static int set_user_settings(json_t *user_settings, linked_list_t *users_list)
     char *scope_value;
     size_t user_name_length, user_secret_length, scope_length, scope_index;
 
-    j_name = json_object_get(user_settings, "name");
-    j_secret = json_object_get(user_settings, "secret");
-    j_scope = json_object_get(user_settings, "scope");
+    j_name = json_object_get(j_user_settings, "name");
+    j_secret = json_object_get(j_user_settings, "secret");
+    j_scope = json_object_get(j_user_settings, "scope");
 
     if (!json_is_string(j_name) || strlen(json_string_value(j_name)) < 1)
     {
@@ -346,16 +346,16 @@ static int read_config(char *config_name, settings_t *settings)
     const char *section;
     json_t *j_value;
 
-    json_t *settings_json = json_load_file(config_name, 0, &error);
+    json_t *j_settings = json_load_file(config_name, 0, &error);
 
-    if (settings_json == NULL)
+    if (j_settings == NULL)
     {
         fprintf(stderr, "%s:%d:%d error:%s \n",
                 config_name, error.line, error.column, error.text);
         return 1;
     }
 
-    json_object_foreach(settings_json, section, j_value)
+    json_object_foreach(j_settings, section, j_value)
     {
         if (strcasecmp(section, "coap") == 0)
         {

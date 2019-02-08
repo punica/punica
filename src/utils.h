@@ -34,5 +34,7 @@ size_t utils_get_random(void *buf, size_t buflen);
 
 lwm2m_client_t *utils_find_client(lwm2m_client_t *list, const char *name);
 
+const char *binding_to_string(lwm2m_binding_t bind);
+
 #endif // UTILS_H
 

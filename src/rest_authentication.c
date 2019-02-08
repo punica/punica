@@ -24,25 +24,25 @@
 
 #include <string.h>
 
-static int validate_authentication_body(json_t *authentication_json)
+static int validate_authentication_body(json_t *j_authentication_body)
 {
     json_t *j_name, *j_secret;
     const char *user_name, *user_secret;
     size_t user_name_length, user_secret_length;
 
-    if (authentication_json == NULL)
+    if (j_authentication_body == NULL)
     {
         return 1;
     }
 
-    if (!json_is_object(authentication_json)
-        || json_object_size(authentication_json) != 2)
+    if (!json_is_object(j_authentication_body)
+        || json_object_size(j_authentication_body) != 2)
     {
         return 1;
     }
 
-    j_name = json_object_get(authentication_json, "name");
-    j_secret = json_object_get(authentication_json, "secret");
+    j_name = json_object_get(j_authentication_body, "name");
+    j_secret = json_object_get(j_authentication_body, "secret");
 
     if (!json_is_string(j_name) || !json_is_string(j_secret))
     {

@@ -81,7 +81,7 @@ void jwt_init(jwt_settings_t *settings);
 void jwt_cleanup(jwt_settings_t *settings);
 
 user_t *security_user_new();
-int security_user_set(user_t *user, const char *name, const char *secret, json_t *scope);
+int security_user_set(user_t *user, const char *name, const char *secret, json_t *j_scope);
 void security_user_delete(user_t *user);
 
 int security_user_check_scope(user_t *user, char *required_scope);

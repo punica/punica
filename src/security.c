@@ -110,11 +110,11 @@ void security_user_delete(user_t *user)
     free(user);
 }
 
-int security_user_set(user_t *user, const char *name, const char *secret, json_t *scope)
+int security_user_set(user_t *user, const char *name, const char *secret, json_t *j_scope)
 {
     user->name = strdup(name);
     user->secret = strdup(secret);
-    user->j_scope_list = json_deep_copy(scope);
+    user->j_scope_list = json_deep_copy(j_scope);
 
     return 0;
 }

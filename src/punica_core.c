@@ -19,6 +19,7 @@
 
 #include "logging.h"
 #include "punica.h"
+#include "rest.h"
 
 #include <assert.h>
 #include <string.h>

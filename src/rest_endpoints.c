@@ -40,19 +40,19 @@ static json_t *endpoint_to_json(lwm2m_client_t *client)
         break;
     }
 
-    json_t *jclient = json_object();
-    json_object_set_new(jclient, "name", json_string(client->name));
+    json_t *j_client_description = json_object();
+    json_object_set_new(j_client_description, "name", json_string(client->name));
 
     if (client->type != NULL)
     {
-        json_object_set_new(jclient, "type", json_string(client->type));
+        json_object_set_new(j_client_description, "type", json_string(client->type));
     }
 
-    json_object_set_new(jclient, "status", json_string("ACTIVE"));
+    json_object_set_new(j_client_description, "status", json_string("ACTIVE"));
 
-    json_object_set_new(jclient, "q", json_boolean(queue));
+    json_object_set_new(j_client_description, "q", json_boolean(queue));
 
-    return jclient;
+    return j_client_description;
 }
 
 static json_t *endpoint_resources_to_json(lwm2m_client_t *client)
@@ -61,29 +61,29 @@ static json_t *endpoint_resources_to_json(lwm2m_client_t *client)
     lwm2m_list_t *ins;
     char buf[20]; // 13 bytes should be enough (i.e. max string "/65535/65535\0")
 
-    json_t *jobjects = json_array();
+    json_t *j_objects = json_array();
     for (obj = client->objectList; obj != NULL; obj = obj->next)
     {
         if (obj->instanceList == NULL)
         {
             snprintf(buf, sizeof(buf), "/%d", obj->id);
-            json_t *jobject = json_object();
-            json_object_set_new(jobject, "uri", json_string(buf));
-            json_array_append_new(jobjects, jobject);
+            json_t *j_object = json_object();
+            json_object_set_new(j_object, "uri", json_string(buf));
+            json_array_append_new(j_objects, j_object);
         }
         else
         {
             for (ins = obj->instanceList; ins != NULL; ins = ins->next)
             {
                 snprintf(buf, sizeof(buf), "/%d/%d", obj->id, ins->id);
-                json_t *jobject = json_object();
-                json_object_set_new(jobject, "uri", json_string(buf));
-                json_array_append_new(jobjects, jobject);
+                json_t *j_object = json_object();
+                json_object_set_new(j_object, "uri", json_string(buf));
+                json_array_append_new(j_objects, j_object);
             }
         }
     }
 
-    return jobjects;
+    return j_objects;
 }
 
 int rest_endpoints_cb(const struct _u_request *u_request,
@@ -95,14 +95,14 @@ int rest_endpoints_cb(const struct _u_request *u_request,
 
     punica_lock(punica);
 
-    json_t *jclients = json_array();
+    json_t *j_client_descriptions = json_array();
     for (client = punica->lwm2m->clientList; client != NULL; client = client->next)
     {
-        json_array_append_new(jclients, endpoint_to_json(client));
+        json_array_append_new(j_client_descriptions, endpoint_to_json(client));
     }
 
-    ulfius_set_json_body_response(u_response, HTTP_200_OK, jclients);
-    json_decref(jclients);
+    ulfius_set_json_body_response(u_response, HTTP_200_OK, j_client_descriptions);
+    json_decref(j_client_descriptions);
 
     punica_unlock(punica);
 
@@ -116,7 +116,7 @@ int rest_endpoints_name_cb(const struct _u_request *u_request,
     punica_context_t *punica = (punica_context_t *)context;
     lwm2m_client_t *client;
     const char *name = u_map_get(u_request->map_url, "name");
-    json_t *jclient;
+    json_t *j_client_description;
 
     punica_lock(punica);
 
@@ -128,9 +128,9 @@ int rest_endpoints_name_cb(const struct _u_request *u_request,
     }
     else
     {
-        jclient = endpoint_resources_to_json(client);
-        ulfius_set_json_body_response(u_response, HTTP_200_OK, jclient);
-        json_decref(jclient);
+        j_client_description = endpoint_resources_to_json(client);
+        ulfius_set_json_body_response(u_response, HTTP_200_OK, j_client_description);
+        json_decref(j_client_description);
     }
 
     punica_unlock(punica);

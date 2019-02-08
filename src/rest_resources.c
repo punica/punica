@@ -102,7 +102,7 @@ static int rest_resources_rwe_cb_unsafe(const struct _u_request *u_request,
     char path[100];
     size_t len;
     lwm2m_uri_t uri;
-    json_t *jresponse;
+    json_t *j_body;
     rest_async_context_t *async_context = NULL;
     lwm2m_media_type_t format;
     int res;
@@ -266,10 +266,10 @@ static int rest_resources_rwe_cb_unsafe(const struct _u_request *u_request,
     }
     linked_list_add(punica->rest_pending_responses, async_context->response);
 
-    jresponse = json_object();
-    json_object_set_new(jresponse, "async-response-id", json_string(async_context->response->id));
-    ulfius_set_json_body_response(u_response, HTTP_202_ACCEPTED, jresponse);
-    json_decref(jresponse);
+    j_body = json_object();
+    json_object_set_new(j_body, "async-response-id", json_string(async_context->response->id));
+    ulfius_set_json_body_response(u_response, HTTP_202_ACCEPTED, j_body);
+    json_decref(j_body);
 
     return U_CALLBACK_COMPLETE;
 

@@ -29,61 +29,61 @@ bool valid_callback_url(const char *url)
     return true;
 }
 
-bool validate_callback(json_t *jcallback, punica_context_t *punica)
+bool validate_callback(json_t *j_callback, punica_context_t *punica)
 {
-    json_t *url, *jheaders;
+    json_t *j_url, *j_headers;
     const char *header;
-    json_t *value;
+    json_t *j_value;
     int res;
     const char *callback_url;
     struct _u_request test_request;
     struct _u_response test_response;
     struct _u_map headers;
     bool validation_state = true;
-    json_t *jbody = json_pack("{s:[], s:[], s:[], s:[]}",
-                              "registrations", "reg-updates",
-                              "async-responses", "de-registrations");
+    json_t *j_body = json_pack("{s:[], s:[], s:[], s:[]}",
+                               "registrations", "reg-updates",
+                               "async-responses", "de-registrations");
 
-    if (jcallback == NULL)
+    if (j_callback == NULL)
     {
         return false;
     }
 
     // Must be an object with "url" and "headers"
-    if (!json_is_object(jcallback) || json_object_size(jcallback) != 2)
+    if (!json_is_object(j_callback) || json_object_size(j_callback) != 2)
     {
         return false;
     }
 
     // "url" must be a string with valid url
-    url = json_object_get(jcallback, "url");
-    if (!json_is_string(url) || !valid_callback_url(json_string_value(url)))
+    j_url = json_object_get(j_callback, "url");
+    if (!json_is_string(j_url) || !valid_callback_url(json_string_value(j_url)))
     {
         return false;
     }
 
     // "header" must be an object...
-    jheaders = json_object_get(jcallback, "headers");
-    if (!json_is_object(jheaders))
+    j_headers = json_object_get(j_callback, "headers");
+    if (!json_is_object(j_headers))
     {
         return false;
     }
 
     u_map_init(&headers);
     // ... which contains string key-value pairs
-    json_object_foreach(jheaders, header, value)
+    json_object_foreach(j_headers, header, j_value)
     {
-        if (!json_is_string(value))
+        if (!json_is_string(j_value))
         {
             u_map_clean(&headers);
 
             return false;
         }
 
-        u_map_put(&headers, header, json_string_value(value));
+        u_map_put(&headers, header, json_string_value(j_value));
     }
 
-    callback_url = json_string_value(url);
+    callback_url = json_string_value(j_url);
 
     ulfius_init_request(&test_request);
     test_request.http_verb = strdup("PUT");
@@ -98,7 +98,7 @@ bool validate_callback(json_t *jcallback, punica_context_t *punica)
     {
         log_message(LOG_LEVEL_ERROR, "[CALLBACK] Failed to set client security credentials\n");
 
-        json_decref(jbody);
+        json_decref(j_body);
         u_map_clean(&headers);
         ulfius_clean_request(&test_request);
 
@@ -106,8 +106,8 @@ bool validate_callback(json_t *jcallback, punica_context_t *punica)
     }
 
     u_map_copy_into(test_request.map_header, &headers);
-    ulfius_set_json_body_request(&test_request, jbody);
-    json_decref(jbody);
+    ulfius_set_json_body_request(&test_request, j_body);
+    json_decref(j_body);
 
     ulfius_init_response(&test_response);
     res = ulfius_send_http_request(&test_request, &test_response);
@@ -155,7 +155,7 @@ int rest_notifications_put_callback_cb(const struct _u_request *u_request,
     punica_context_t *punica = (punica_context_t *)context;
     const char *ct;
     const char *callback_url;
-    json_t *jcallback;
+    json_t *j_callback;
 
     ct = u_map_get_case(u_request->map_header, "Content-Type");
     if (ct == NULL || strcmp(ct, "application/json") != 0)
@@ -164,19 +164,19 @@ int rest_notifications_put_callback_cb(const struct _u_request *u_request,
         return U_CALLBACK_COMPLETE;
     }
 
-    jcallback = json_loadb(u_request->binary_body, u_request->binary_body_length, 0, NULL);
-    if (!validate_callback(jcallback, punica))
+    j_callback = json_loadb(u_request->binary_body, u_request->binary_body_length, 0, NULL);
+    if (!validate_callback(j_callback, punica))
     {
-        if (jcallback != NULL)
+        if (j_callback != NULL)
         {
-            json_decref(jcallback);
+            json_decref(j_callback);
         }
 
         ulfius_set_empty_body_response(u_response, HTTP_400_BAD_REQUEST);
         return U_CALLBACK_COMPLETE;
     }
 
-    callback_url = json_string_value(json_object_get(jcallback, "url"));
+    callback_url = json_string_value(json_object_get(j_callback, "url"));
     log_message(LOG_LEVEL_INFO, "[SET-CALLBACK] url=%s\n", callback_url);
 
     punica_lock(punica);
@@ -187,7 +187,7 @@ int rest_notifications_put_callback_cb(const struct _u_request *u_request,
         punica->j_callback = NULL;
     }
 
-    punica->j_callback = jcallback;
+    punica->j_callback = j_callback;
 
     ulfius_set_empty_body_response(u_response, HTTP_204_NO_CONTENT);
 
@@ -234,12 +234,12 @@ int rest_notifications_pull_cb(const struct _u_request *u_request,
 
     punica_lock(punica);
 
-    json_t *jbody = rest_notifications_json(punica);
+    json_t *j_body = rest_notifications_json(punica);
 
     rest_notifications_clear(punica);
 
-    ulfius_set_json_body_response(u_response, HTTP_200_OK, jbody);
-    json_decref(jbody);
+    ulfius_set_json_body_response(u_response, HTTP_200_OK, j_body);
+    json_decref(j_body);
 
     punica_unlock(punica);
 
@@ -273,100 +273,100 @@ void rest_notify_async_response(punica_context_t *punica, rest_notif_async_respo
 
 static json_t *rest_async_response_to_json(rest_async_response_t *async)
 {
-    json_t *jasync = json_object();
+    json_t *j_async_response = json_object();
 
-    json_object_set_new(jasync, "timestamp", json_integer(async->timestamp));
-    json_object_set_new(jasync, "id", json_string(async->id));
-    json_object_set_new(jasync, "status", json_integer(async->status));
-    json_object_set_new(jasync, "payload", json_string(async->payload));
+    json_object_set_new(j_async_response, "timestamp", json_integer(async->timestamp));
+    json_object_set_new(j_async_response, "id", json_string(async->id));
+    json_object_set_new(j_async_response, "status", json_integer(async->status));
+    json_object_set_new(j_async_response, "payload", json_string(async->payload));
 
-    return jasync;
+    return j_async_response;
 }
 
 static json_t *rest_registration_notification_to_json(rest_notif_registration_t *registration)
 {
-    json_t *jreg = json_object();
+    json_t *j_registration_notification = json_object();
 
-    json_object_set_new(jreg, "name", json_string(registration->name));
+    json_object_set_new(j_registration_notification, "name", json_string(registration->name));
 
-    return jreg;
+    return j_registration_notification;
 }
 
 static json_t *rest_update_notification_to_json(rest_notif_update_t *update)
 {
-    json_t *jupdate = json_object();
+    json_t *j_update_notification = json_object();
 
-    json_object_set_new(jupdate, "name", json_string(update->name));
+    json_object_set_new(j_update_notification, "name", json_string(update->name));
 
-    return jupdate;
+    return j_update_notification;
 }
 
 static json_t *rest_deregistration_notification_to_json(rest_notif_deregistration_t *deregistration)
 {
-    json_t *jdereg = json_object();
+    json_t *j_deregistration_notification = json_object();
 
-    json_object_set_new(jdereg, "name", json_string(deregistration->name));
+    json_object_set_new(j_deregistration_notification, "name", json_string(deregistration->name));
 
-    return jdereg;
+    return j_deregistration_notification;
 }
 
 json_t *rest_notifications_json(punica_context_t *punica)
 {
-    json_t *jnotifs;
-    json_t *jarray;
+    json_t *j_notifications;
+    json_t *j_array;
     linked_list_entry_t *entry;
     rest_notif_registration_t *reg;
     rest_notif_update_t *upd;
     rest_notif_deregistration_t *dereg;
     rest_notif_async_response_t *async;
 
-    jnotifs = json_object();
+    j_notifications = json_object();
 
     if (punica->rest_registrations)
     {
-        jarray = json_array();
+        j_array = json_array();
         for (entry = punica->rest_registrations->head; entry != NULL; entry = entry->next)
         {
             reg = entry->data;
-            json_array_append_new(jarray, rest_registration_notification_to_json(reg));
+            json_array_append_new(j_array, rest_registration_notification_to_json(reg));
         }
-        json_object_set_new(jnotifs, "registrations", jarray);
+        json_object_set_new(j_notifications, "registrations", j_array);
     }
 
     if (punica->rest_updates)
     {
-        jarray = json_array();
+        j_array = json_array();
         for (entry = punica->rest_updates->head; entry != NULL; entry = entry->next)
         {
             upd = entry->data;
-            json_array_append_new(jarray, rest_update_notification_to_json(upd));
+            json_array_append_new(j_array, rest_update_notification_to_json(upd));
         }
-        json_object_set_new(jnotifs, "reg-updates", jarray);
+        json_object_set_new(j_notifications, "reg-updates", j_array);
     }
 
     if (punica->rest_deregistrations)
     {
-        jarray = json_array();
+        j_array = json_array();
         for (entry = punica->rest_deregistrations->head; entry != NULL; entry = entry->next)
         {
             dereg = entry->data;
-            json_array_append_new(jarray, rest_deregistration_notification_to_json(dereg));
+            json_array_append_new(j_array, rest_deregistration_notification_to_json(dereg));
         }
-        json_object_set_new(jnotifs, "de-registrations", jarray);
+        json_object_set_new(j_notifications, "de-registrations", j_array);
     }
 
     if (punica->rest_async_responses)
     {
-        jarray = json_array();
+        j_array = json_array();
         for (entry = punica->rest_async_responses->head; entry != NULL; entry = entry->next)
         {
             async = entry->data;
-            json_array_append_new(jarray, rest_async_response_to_json(async));
+            json_array_append_new(j_array, rest_async_response_to_json(async));
         }
-        json_object_set_new(jnotifs, "async-responses", jarray);
+        json_object_set_new(j_notifications, "async-responses", j_array);
     }
 
-    return jnotifs;
+    return j_notifications;
 }
 
 void rest_notifications_clear(punica_context_t *punica)
