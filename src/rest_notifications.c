@@ -135,11 +135,11 @@ int rest_notifications_get_callback_cb(const struct _u_request *u_request,
 
     if (punica->j_callback == NULL)
     {
-        ulfius_set_empty_body_response(u_response, 404);
+        ulfius_set_empty_body_response(u_response, HTTP_404_NOT_FOUND);
     }
     else
     {
-        ulfius_set_json_body_response(u_response, 200, punica->j_callback);
+        ulfius_set_json_body_response(u_response, HTTP_200_OK, punica->j_callback);
     }
 
     punica_unlock(punica);
@@ -159,7 +159,7 @@ int rest_notifications_put_callback_cb(const struct _u_request *u_request,
     ct = u_map_get_case(u_request->map_header, "Content-Type");
     if (ct == NULL || strcmp(ct, "application/json") != 0)
     {
-        ulfius_set_empty_body_response(u_response, 415);
+        ulfius_set_empty_body_response(u_response, HTTP_415_UNSUPPORTED_MEDIA_TYPE);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -171,7 +171,7 @@ int rest_notifications_put_callback_cb(const struct _u_request *u_request,
             json_decref(jcallback);
         }
 
-        ulfius_set_empty_body_response(u_response, 400);
+        ulfius_set_empty_body_response(u_response, HTTP_400_BAD_REQUEST);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -188,7 +188,7 @@ int rest_notifications_put_callback_cb(const struct _u_request *u_request,
 
     punica->j_callback = jcallback;
 
-    ulfius_set_empty_body_response(u_response, 204);
+    ulfius_set_empty_body_response(u_response, HTTP_204_NO_CONTENT);
 
     punica_unlock(punica);
 
@@ -211,13 +211,13 @@ int rest_notifications_delete_callback_cb(const struct _u_request *u_request,
         json_decref(punica->j_callback);
         punica->j_callback = NULL;
 
-        ulfius_set_empty_body_response(u_response, 204);
+        ulfius_set_empty_body_response(u_response, HTTP_204_NO_CONTENT);
     }
     else
     {
         log_message(LOG_LEVEL_WARN, "[DELETE-CALLBACK] No callbacks to delete\n");
 
-        ulfius_set_empty_body_response(u_response, 404);
+        ulfius_set_empty_body_response(u_response, HTTP_404_NOT_FOUND);
     }
 
     punica_unlock(punica);
@@ -237,7 +237,7 @@ int rest_notifications_pull_cb(const struct _u_request *u_request,
 
     rest_notifications_clear(punica);
 
-    ulfius_set_json_body_response(u_response, 200, jbody);
+    ulfius_set_json_body_response(u_response, HTTP_200_OK, jbody);
     json_decref(jbody);
 
     punica_unlock(punica);

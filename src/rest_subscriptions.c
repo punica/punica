@@ -97,7 +97,7 @@ static int rest_subscriptions_put_cb_unsafe(const struct _u_request *u_request,
     client = utils_find_client(punica->lwm2m->clientList, name);
     if (client == NULL)
     {
-        ulfius_set_empty_body_response(u_response, 404);
+        ulfius_set_empty_body_response(u_response, HTTP_404_NOT_FOUND);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -114,7 +114,7 @@ static int rest_subscriptions_put_cb_unsafe(const struct _u_request *u_request,
     // this is probaly redundant if there's only one matching ulfius filter
     if (strncmp(path, u_request->http_url, len) != 0)
     {
-        ulfius_set_empty_body_response(u_response, 404);
+        ulfius_set_empty_body_response(u_response, HTTP_404_NOT_FOUND);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -123,7 +123,7 @@ static int rest_subscriptions_put_cb_unsafe(const struct _u_request *u_request,
 
     if (lwm2m_stringToUri(path, strlen(path), &uri) == 0)
     {
-        ulfius_set_empty_body_response(u_response, 404);
+        ulfius_set_empty_body_response(u_response, HTTP_404_NOT_FOUND);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -176,7 +176,7 @@ static int rest_subscriptions_put_cb_unsafe(const struct _u_request *u_request,
 
     jresponse = json_object();
     json_object_set_new(jresponse, "async-response-id", json_string(observe_context->response->id));
-    ulfius_set_json_body_response(u_response, 202, jresponse);
+    ulfius_set_json_body_response(u_response, HTTP_202_ACCEPTED, jresponse);
     json_decref(jresponse);
 
     return U_CALLBACK_COMPLETE;
@@ -239,7 +239,7 @@ static int rest_subscriptions_delete_cb_unsafe(
     client = utils_find_client(punica->lwm2m->clientList, name);
     if (client == NULL)
     {
-        ulfius_set_empty_body_response(u_response, 404);
+        ulfius_set_empty_body_response(u_response, HTTP_404_NOT_FOUND);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -256,7 +256,7 @@ static int rest_subscriptions_delete_cb_unsafe(
     // this is probaly redundant if there's only one matching ulfius filter
     if (strncmp(path, u_request->http_url, len) != 0)
     {
-        ulfius_set_empty_body_response(u_response, 404);
+        ulfius_set_empty_body_response(u_response, HTTP_404_NOT_FOUND);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -265,7 +265,7 @@ static int rest_subscriptions_delete_cb_unsafe(
 
     if (lwm2m_stringToUri(path, strlen(path), &uri) == 0)
     {
-        ulfius_set_empty_body_response(u_response, 404);
+        ulfius_set_empty_body_response(u_response, HTTP_404_NOT_FOUND);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -284,7 +284,7 @@ static int rest_subscriptions_delete_cb_unsafe(
 
     if (observe_context == NULL)
     {
-        ulfius_set_empty_body_response(u_response, 404);
+        ulfius_set_empty_body_response(u_response, HTTP_404_NOT_FOUND);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -308,7 +308,7 @@ static int rest_subscriptions_delete_cb_unsafe(
         goto exit;
     }
 
-    ulfius_set_empty_body_response(u_response, 204);
+    ulfius_set_empty_body_response(u_response, HTTP_204_NO_CONTENT);
 
     return U_CALLBACK_COMPLETE;
 

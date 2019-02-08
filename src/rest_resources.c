@@ -132,7 +132,7 @@ static int rest_resources_rwe_cb_unsafe(const struct _u_request *u_request,
     }
     else
     {
-        ulfius_set_empty_body_response(u_response, 405);
+        ulfius_set_empty_body_response(u_response, HTTP_405_METHOD_NOT_ALLOWED);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -141,7 +141,7 @@ static int rest_resources_rwe_cb_unsafe(const struct _u_request *u_request,
         format = http_to_coap_format(u_map_get_case(u_request->map_header, "Content-Type"));
         if (format == -1)
         {
-            ulfius_set_empty_body_response(u_response, 415);
+            ulfius_set_empty_body_response(u_response, HTTP_415_UNSUPPORTED_MEDIA_TYPE);
             return U_CALLBACK_COMPLETE;
         }
     }
@@ -154,7 +154,7 @@ static int rest_resources_rwe_cb_unsafe(const struct _u_request *u_request,
         }
         else
         {
-            ulfius_set_empty_body_response(u_response, 415);
+            ulfius_set_empty_body_response(u_response, HTTP_415_UNSUPPORTED_MEDIA_TYPE);
             return U_CALLBACK_COMPLETE;
         }
     }
@@ -162,7 +162,7 @@ static int rest_resources_rwe_cb_unsafe(const struct _u_request *u_request,
     // Return 400 BAD REQUEST if request body length is 0
     if ((action == RES_ACTION_WRITE) && (u_request->binary_body_length == 0))
     {
-        ulfius_set_empty_body_response(u_response, 400);
+        ulfius_set_empty_body_response(u_response, HTTP_400_BAD_REQUEST);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -171,7 +171,7 @@ static int rest_resources_rwe_cb_unsafe(const struct _u_request *u_request,
     client = utils_find_client(punica->lwm2m->clientList, name);
     if (client == NULL)
     {
-        ulfius_set_empty_body_response(u_response, 410);
+        ulfius_set_empty_body_response(u_response, HTTP_410_GONE);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -188,7 +188,7 @@ static int rest_resources_rwe_cb_unsafe(const struct _u_request *u_request,
     // this is probaly redundant if there's only one matching ulfius filter
     if (strncmp(path, u_request->http_url, len) != 0)
     {
-        ulfius_set_empty_body_response(u_response, 404);
+        ulfius_set_empty_body_response(u_response, HTTP_404_NOT_FOUND);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -197,7 +197,7 @@ static int rest_resources_rwe_cb_unsafe(const struct _u_request *u_request,
 
     if (lwm2m_stringToUri(path, strlen(path), &uri) == 0)
     {
-        ulfius_set_empty_body_response(u_response, 404);
+        ulfius_set_empty_body_response(u_response, HTTP_404_NOT_FOUND);
         return U_CALLBACK_COMPLETE;
     }
 
@@ -267,7 +267,7 @@ static int rest_resources_rwe_cb_unsafe(const struct _u_request *u_request,
 
     jresponse = json_object();
     json_object_set_new(jresponse, "async-response-id", json_string(async_context->response->id));
-    ulfius_set_json_body_response(u_response, 202, jresponse);
+    ulfius_set_json_body_response(u_response, HTTP_202_ACCEPTED, jresponse);
     json_decref(jresponse);
 
     return U_CALLBACK_COMPLETE;
