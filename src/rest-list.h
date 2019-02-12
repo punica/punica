@@ -69,12 +69,4 @@ void rest_list_add(rest_list_t *list, void *data);
  */
 void rest_list_remove(rest_list_t *list, void *data);
 
-/**
- * This function appends a list resource with entries present in another list
- *
- * @param[in]  list       Pointer to the list
- * @param[in]  extension  Pointer to list to be appended
- */
-void rest_list_append(rest_list_t *list, rest_list_t *extension);
-
 #endif // REST_LIST_H

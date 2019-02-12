@@ -111,3 +111,4 @@ void rest_list_remove(rest_list_t *list, void *data)
 
     assert(false);
 }
+
