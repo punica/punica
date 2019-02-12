@@ -108,6 +108,10 @@ find_library(WAKAAMA_LIBRARY wakaama)
 message("Wakaama: ${WAKAAMA_LIBRARY}")
 set(LIBRARIES ${LIBRARIES} ${WAKAAMA_LIBRARY})
 
+# UUID_LIBRARY
+find_library(UUID_LIBRARY uuid)
+set(LIBRARIES ${LIBRARIES} ${UUID_LIBRARY})
+
 message("ALL libraries: ${LIBRARIES}")
 target_link_libraries(${PROJECT_NAME} ${LIBRARIES})
 

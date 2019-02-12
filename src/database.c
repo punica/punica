@@ -22,21 +22,14 @@
 #include "rest-list.h"
 #include "restserver.h"
 
-#define DATABASE_UUID_KEY_BIT       0x1
-#define DATABASE_PSK_KEY_BIT        0x2
-#define DATABASE_PSK_ID_KEY_BIT     0x4
-#define DATABASE_ALL_KEYS_SET       0x7
-
 int database_load_file(rest_context_t *rest)
 {
     json_error_t error;
-    const char *section;
     size_t index;
-    json_t *j_value;
     json_t *j_entry;
     json_t *j_database = NULL;
-    int key_check;
     int ret = 1;
+    database_entry_t *curr;
 
     rest_list_t *device_list = rest_list_new();
     if (device_list == 0)
@@ -79,89 +72,23 @@ int database_load_file(rest_context_t *rest)
         goto exit;
     }
 
-    database_entry_t *curr;
-    const char *json_string;
     json_array_foreach(j_database, index, j_entry)
     {
-        curr = calloc(1, sizeof(database_entry_t));
-        key_check = 0;
-
-        json_object_foreach(j_entry, section, j_value)
+        if (database_validate_entry(j_entry))
         {
-            if (!json_is_string(j_value))
-            {
-                fprintf(stderr, "%s:%d - \'%s\' must be a string\r\n",
-                        __FILE__, __LINE__, section);
-                goto free_device;
-            }
-            if (strcasecmp(section, "uuid") == 0)
-            {
-                json_string = json_string_value(j_value);
-                curr->uuid = strdup(json_string);
-                if (curr->uuid == NULL)
-                {
-                    fprintf(stderr, "%s:%d - failed to allocate string\r\n",
-                            __FILE__, __LINE__);
-                    goto free_device;
-                }
-                key_check |= DATABASE_UUID_KEY_BIT;
-            }
-            else if (strcasecmp(section, "psk") == 0)
-            {
-                if ((ret = base64_decode(json_string_value(j_value), NULL, &curr->psk_len)))
-                {
-                    fprintf(stderr, "%s:%d base64_decode failed with status %d\r\n",
-                            __FILE__, __LINE__, ret);
-                    goto free_device;
-                }
-                curr->psk = (uint8_t *)calloc(1, curr->psk_len);
-                if (curr->psk == NULL)
-                {
-                    fprintf(stderr, "%s:%d - failed to allocate buffer\r\n",
-                            __FILE__, __LINE__);
-                    goto free_device;
-                }
-                if ((ret = base64_decode(json_string_value(j_value), curr->psk, &curr->psk_len)))
-                {
-                    fprintf(stderr, "%s:%d base64_decode failed with status %d\r\n",
-                            __FILE__, __LINE__, ret);
-                    goto free_device;
-                }
-                key_check |= DATABASE_PSK_KEY_BIT;
-            }
-            else if (strcasecmp(section, "psk_id") == 0)
-            {
-                if ((ret = base64_decode(json_string_value(j_value), NULL, &curr->psk_id_len)))
-                {
-                    fprintf(stderr, "%s:%d base64_decode failed with status %d\r\n",
-                            __FILE__, __LINE__, ret);
-                    goto free_device;
-                }
-                curr->psk_id = (uint8_t *)calloc(1, curr->psk_id_len);
-                if (curr->psk_id == NULL)
-                {
-                    fprintf(stderr, "%s:%d - failed to allocate buffer\r\n",
-                            __FILE__, __LINE__);
-                    goto free_device;
-                }
-                if ((ret = base64_decode(json_string_value(j_value), curr->psk_id, &curr->psk_id_len)))
-                {
-                    fprintf(stderr, "%s:%d base64_decode failed with status %d\r\n",
-                            __FILE__, __LINE__, ret);
-                    goto free_device;
-                }
-                key_check |= DATABASE_PSK_ID_KEY_BIT;
-            }
-            else
-            {
-                fprintf(stdout, "Unrecognised database file key: %s\n", section);
-            }
+            fprintf(stdout, "Found error(s) in device entry no. %ld\n", index);
+            continue;
         }
 
-        if (key_check != DATABASE_ALL_KEYS_SET)
+        curr = calloc(1, sizeof(database_entry_t));
+        if (curr == NULL)
         {
-            fprintf(stderr, "%s:%d - missing \'key:value\' pair\r\n",
-                    __FILE__, __LINE__);
+            goto exit;
+        }
+
+        if (database_populate_entry(j_entry, curr))
+        {
+            fprintf(stdout, "Internal server error while managing device entry\n");
             goto free_device;
         }
 
@@ -169,7 +96,7 @@ int database_load_file(rest_context_t *rest)
         continue;
 
 free_device:
-        free_database_entry(curr);
+        database_free_entry(curr);
     }
     ret = 0;
 
