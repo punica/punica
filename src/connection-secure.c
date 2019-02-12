@@ -62,12 +62,6 @@ mbedtls_dhm_context dhm;
 #if defined(MBEDTLS_SSL_CACHE_C)
 mbedtls_ssl_cache_context cache;
 #endif
-#if defined(MBEDTLS_SSL_SESSION_TICKETS)
-mbedtls_ssl_ticket_context ticket_ctx;
-#endif
-#if defined(SNI_OPTION)
-sni_entry *sni_info = NULL;
-#endif
 #if defined(MBEDTLS_ECP_C)
 mbedtls_ecp_group_id curve_list[CURVE_LIST_SIZE];
 const mbedtls_ecp_curve_info *curve_cur;
@@ -92,11 +86,8 @@ static struct mbedtls_options opt =
     .psk                 = "",
     .psk_identity        = "",
     .psk_cont            = NULL,
-    .ecjpake_pw          = NULL,
-    .force_ciphersuite[0] = 0,
     .version_suites      = NULL,
     .renegotiation       = MBEDTLS_SSL_RENEGOTIATION_DISABLED,
-    .allow_legacy        = -2,
     .renegotiate         = 0,
     .renego_delay        = -2,
     .renego_period       = ((uint64_t) -1),
@@ -107,9 +98,7 @@ static struct mbedtls_options opt =
     .allow_sha1          = -1,
     .auth_mode           = 1,
     .cert_req_ca_list    = MBEDTLS_SSL_CERT_REQ_CA_LIST_ENABLED,
-    .mfl_code            = MBEDTLS_SSL_MAX_FRAG_LEN_NONE,
     .trunc_hmac          = -1,
-    .tickets             = MBEDTLS_SSL_SESSION_TICKETS_ENABLED,
     .ticket_timeout      = 86400,
     .cache_max           = 1,
     .cache_timeout       = 1,
@@ -117,13 +106,11 @@ static struct mbedtls_options opt =
     .dhm_file            = NULL,
     .transport           = MBEDTLS_SSL_TRANSPORT_DATAGRAM,
     .cookies             = 1,
-    .anti_replay         = -1,
     .hs_to_min           = 0,
     .hs_to_max           = 0,
     .dtls_mtu            = -1,
     .dgram_packing       = 1,
     .badmac_limit        = -1,
-    .extended_ms         = -1,
     .etm                 = -1,
 };
 
@@ -143,6 +130,11 @@ int connection_create_secure(settings_t *options, int addressFamily)
 //  pass whole coap structure in case the HEAD of linked list 'coap.security' changes
     opt.psk_cont = &options->coap;
 
+    if (opt.crt_file == NULL && opt.psk == NULL)
+    {
+        return -1;
+    }
+
     mbedtls_net_init(&listen_fd);
     mbedtls_ssl_config_init(&conf);
     mbedtls_ctr_drbg_init(&ctr_drbg);
@@ -156,9 +148,6 @@ int connection_create_secure(settings_t *options, int addressFamily)
 #endif
 #if defined(MBEDTLS_SSL_CACHE_C)
     mbedtls_ssl_cache_init(&cache);
-#endif
-#if defined(MBEDTLS_SSL_SESSION_TICKETS)
-    mbedtls_ssl_ticket_init(&ticket_ctx);
 #endif
 #if defined(MBEDTLS_SSL_COOKIE_C)
     mbedtls_ssl_cookie_init(&cookie_ctx);
@@ -239,18 +228,6 @@ int connection_create_secure(settings_t *options, int addressFamily)
     }
 #endif
 
-#if defined(SNI_OPTION)
-    if (opt.sni != NULL)
-    {
-        if ((sni_info = sni_parse(opt.sni)) == NULL)
-        {
-            return -1;
-        }
-
-        printf(" ok\n");
-    }
-#endif /* SNI_OPTION */
-
     char server_port_string[6];
     snprintf(server_port_string, sizeof(server_port_string), "%d", opt.server_port);
 
@@ -279,25 +256,10 @@ int connection_create_secure(settings_t *options, int addressFamily)
         mbedtls_ssl_conf_cert_req_ca_list(&conf, opt.cert_req_ca_list);
     }
 
-#if defined(MBEDTLS_SSL_MAX_FRAGMENT_LENGTH)
-    if ((ret = mbedtls_ssl_conf_max_frag_len(&conf, opt.mfl_code)) != 0)
-    {
-        printf(" failed\n  ! mbedtls_ssl_conf_max_frag_len returned %d\n\n", ret);
-        return -1;
-    };
-#endif
-
 #if defined(MBEDTLS_SSL_TRUNCATED_HMAC)
     if (opt.trunc_hmac != DFL_TRUNC_HMAC)
     {
         mbedtls_ssl_conf_truncated_hmac(&conf, opt.trunc_hmac);
-    }
-#endif
-
-#if defined(MBEDTLS_SSL_EXTENDED_MASTER_SECRET)
-    if (opt.extended_ms != DFL_EXTENDED_MS)
-    {
-        mbedtls_ssl_conf_extended_master_secret(&conf, opt.extended_ms);
     }
 #endif
 
@@ -325,25 +287,6 @@ int connection_create_secure(settings_t *options, int addressFamily)
     mbedtls_ssl_conf_session_cache(&conf, &cache,
                                    mbedtls_ssl_cache_get,
                                    mbedtls_ssl_cache_set);
-#endif
-
-#if defined(MBEDTLS_SSL_SESSION_TICKETS)
-    if (opt.tickets == MBEDTLS_SSL_SESSION_TICKETS_ENABLED)
-    {
-        if ((ret = mbedtls_ssl_ticket_setup(&ticket_ctx,
-                                            mbedtls_ctr_drbg_random, &ctr_drbg,
-                                            MBEDTLS_CIPHER_AES_256_GCM,
-                                            opt.ticket_timeout)) != 0)
-        {
-            fprintf(stderr, "mbedtls_ssl_ticket_setup returned %d\n\n", ret);
-            return -1;
-        }
-
-        mbedtls_ssl_conf_session_tickets_cb(&conf,
-                                            mbedtls_ssl_ticket_write,
-                                            mbedtls_ssl_ticket_parse,
-                                            &ticket_ctx);
-    }
 #endif
 
 #if defined(MBEDTLS_SSL_PROTO_DTLS)
@@ -375,13 +318,6 @@ int connection_create_secure(settings_t *options, int addressFamily)
                 ; /* Nothing to do */
             }
 
-#if defined(MBEDTLS_SSL_DTLS_ANTI_REPLAY)
-        if (opt.anti_replay != DFL_ANTI_REPLAY)
-        {
-            mbedtls_ssl_conf_dtls_anti_replay(&conf, opt.anti_replay);
-        }
-#endif
-
 #if defined(MBEDTLS_SSL_DTLS_BADMAC_LIMIT)
         if (opt.badmac_limit != DFL_BADMAC_LIMIT)
         {
@@ -391,28 +327,8 @@ int connection_create_secure(settings_t *options, int addressFamily)
     }
 #endif /* MBEDTLS_SSL_PROTO_DTLS */
 
-    if (opt.force_ciphersuite[0] != DFL_FORCE_CIPHER)
-    {
-        mbedtls_ssl_conf_ciphersuites(&conf, opt.force_ciphersuite);
-    }
-
-    if (opt.allow_legacy != DFL_ALLOW_LEGACY)
-    {
-        mbedtls_ssl_conf_legacy_renegotiation(&conf, opt.allow_legacy);
-    }
 #if defined(MBEDTLS_SSL_RENEGOTIATION)
     mbedtls_ssl_conf_renegotiation(&conf, opt.renegotiation);
-
-    if (opt.renego_delay != DFL_RENEGO_DELAY)
-    {
-        mbedtls_ssl_conf_renegotiation_enforced(&conf, opt.renego_delay);
-    }
-
-    if (opt.renego_period != DFL_RENEGO_PERIOD)
-    {
-        PUT_UINT64_BE(renego_period, opt.renego_period, 0);
-        mbedtls_ssl_conf_renegotiation_period(&conf, renego_period);
-    }
 #endif
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
@@ -431,13 +347,6 @@ int connection_create_secure(settings_t *options, int addressFamily)
     }
 
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
-
-#if defined(SNI_OPTION)
-    if (opt.sni != NULL)
-    {
-        mbedtls_ssl_conf_sni(&conf, sni_callback, sni_info);
-    }
-#endif
 
 #if defined(MBEDTLS_ECP_C)
     curve_list[0] = MBEDTLS_ECP_DP_SECP256R1;

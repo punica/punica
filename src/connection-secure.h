@@ -110,11 +110,9 @@ struct mbedtls_options
     const char *psk;            /* the pre-shared key                       */
     const char *psk_identity;   /* the pre-shared key identity              */
     void *psk_cont;             /* list of PSK id/key pairs for callback    */
-    const char *ecjpake_pw;     /* the EC J-PAKE password                   */
     int force_ciphersuite[2];   /* protocol/ciphersuite to use, or all      */
     const char *version_suites; /* per-version ciphersuites                 */
     int renegotiation;          /* enable / disable renegotiation           */
-    int allow_legacy;           /* allow legacy renegotiation               */
     int renegotiate;            /* attempt renegotiation?                   */
     int renego_delay;           /* delay before enforcing renegotiation     */
     uint64_t renego_period;     /* period for automatic renegotiation       */
@@ -127,18 +125,14 @@ struct mbedtls_options
     int cert_req_ca_list;       /* should we send the CA list?              */
     unsigned char mfl_code;     /* code for maximum fragment length         */
     int trunc_hmac;             /* accept truncated hmac?                   */
-    int tickets;                /* enable / disable session tickets         */
     int ticket_timeout;         /* session ticket lifetime                  */
     int cache_max;              /* max number of session cache entries      */
     int cache_timeout;          /* expiration delay of session cache entries */
-    char *sni;                  /* string describing sni information        */
     const char *alpn_string;    /* ALPN supported protocols                 */
     const char *dhm_file;       /* the file with the DH parameters          */
-    int extended_ms;            /* allow negotiation of extended MS?        */
     int etm;                    /* allow negotiation of encrypt-then-MAC?   */
     int transport;              /* TLS or DTLS?                             */
     int cookies;                /* Use cookies for DTLS? -1 to break them   */
-    int anti_replay;            /* Use anti-replay for DTLS? -1 for default */
     uint32_t hs_to_min;         /* Initial value of DTLS handshake timer    */
     uint32_t hs_to_max;         /* Max value of DTLS handshake timer        */
     int dtls_mtu;               /* UDP Maximum tranport unit for DTLS       */
