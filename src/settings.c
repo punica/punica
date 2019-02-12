@@ -25,6 +25,12 @@
 #include "settings.h"
 #include "version.h"
 #include "security.h"
+#include "rest-core-types.h"
+
+#define DATABASE_UUID_KEY_BIT       0x1
+#define DATABASE_PSK_KEY_BIT        0x2
+#define DATABASE_PSK_ID_KEY_BIT     0x4
+#define DATABASE_ALL_KEYS_SET       0x7
 
 const char *argp_program_version = PUNICA_FULL_VERSION;
 
@@ -34,6 +40,7 @@ static struct argp_option options[] =
 {
     {"log",   'l', "LOGGING_LEVEL", 0, "Specify logging level (0-5)" },
     {"config",   'c', "FILE", 0, "Specify parameters configuration file" },
+    {"database",   'd', "FILE", 0, "Specify device database file" },
     {"private_key",   'k', "PRIVATE_KEY", 0, "Specify TLS security private key file" },
     {"certificate",   'C', "CERTIFICATE", 0, "Specify TLS security certificate file" },
     { 0 }
@@ -88,6 +95,18 @@ static void set_coap_settings(json_t *j_section, coap_settings_t *settings)
             if (json_is_string(j_value))
             {
                 settings->certificate_file = (char *) json_string_value(j_value);
+            }
+            else
+            {
+                fprintf(stdout, "value at key %s:%s must be a string",
+                        section_name, key);
+            }
+        }
+        else if (strcasecmp(key, "database_file") == 0)
+        {
+            if (json_is_string(j_value))
+            {
+                settings->database_file = (char *) json_string_value(j_value);
             }
             else
             {
@@ -214,7 +233,6 @@ static void set_jwt_settings(json_t *j_section, jwt_settings_t *settings)
         }
         else if (strcasecmp(key, "secret_key") == 0)
         {
-            printf("DEBUG Before segfault!\n");
             if (!json_is_string(j_value))
             {
                 fprintf(stdout, "Token %s must be a string\n", key);
@@ -369,15 +387,13 @@ static void set_logging_settings(json_t *j_section, logging_settings_t *settings
     }
 }
 
-int read_config(char *config_name, settings_t *settings)
+static int read_config(char *config_name, settings_t *settings)
 {
     json_error_t error;
     const char *section;
     json_t *j_value;
 
-    json_t *settings_json = json_object();
-
-    settings_json = json_load_file(config_name, 0, &error);
+    json_t *settings_json = json_load_file(config_name, 0, &error);
 
     if (settings_json == NULL)
     {
@@ -421,6 +437,15 @@ error_t parse_opt(int key, char *arg, struct argp_state *state)
 
     case 'c':
         if (read_config(arg, settings) != 0)
+        {
+            argp_usage(state);
+            return 1;
+        }
+        break;
+
+    case 'd':
+        settings->coap.database_file = strdup(arg);
+        if (settings->coap.database_file == NULL)
         {
             argp_usage(state);
             return 1;

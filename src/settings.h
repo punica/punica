@@ -27,6 +27,7 @@
 
 #include "logging.h"
 #include "security.h"
+#include "rest-utils.h"
 
 typedef struct
 {
@@ -40,6 +41,7 @@ typedef struct
     uint16_t port;
     char *private_key_file;
     char *certificate_file;
+    char *database_file;
 } coap_settings_t;
 
 typedef struct
@@ -48,8 +50,6 @@ typedef struct
     coap_settings_t coap;
     logging_settings_t logging;
 } settings_t;
-
-int read_config(char *config_name, settings_t *settings);
 
 error_t parse_opt(int key, char *arg, struct argp_state *state);
 

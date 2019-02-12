@@ -1,28 +1,35 @@
 # Punica
+[![Build Status](https://travis-ci.com/punica/punica.svg?branch=master)](https://travis-ci.com/punica/punica) [![codecov.io](http://codecov.io/github/punica/punica/coverage.svg?branch=master)](http://codecov.io/github/punica/punica?branch=master)
 
-**Introduction**
-----
+## Introduction
 Punica contains easy to use interface to the LwM2M server and client communication.
 
 Detailed [Punica API documentation](./doc/PUNICA_API.md).
 
-**Building**
-----
+## Building
 Punica follows [scripts to rule them all](https://github.com/github/scripts-to-rule-them-all) guidelines, therefore getting dependencies,
 building and testing is implemented by executing scripts, however if you want,
 you can read [manual project build instructions](./doc/MANUAL_BUILD.md).
 
-1. Build Punica by executing ```script/setup``` script, it will automatically
-acquire and build required dependencies, after that script will build Punica:
-
+1. Download [punica/punica](https://github.com/punica/punica):
 ```
-# script/setup
+$ git clone --recursive https://github.com/punica/punica.git
+$ cd punica
+```
+_Note: If you already cloned Punica without initializing submodules, you can do so by executing:_
+```
+$ git submodule update --init --recursive
 ```
 
-If script succeeds, you should have binary file called `punica` in your `punica/build/` directory.
+2. Build Punica by executing ```script/setup``` script, it will automatically
+acquire and build required tools and dependencies, after that script will build Punica:
+```
+$ script/setup
+```
 
-**Usage**
-----
+_Note: If script succeeds, you should have binary file called `punica` in your `punica/build/` directory._
+
+## Usage
 You can get some details about `punica` by using `--help` or `-?` argument:
 ```
 $ ./build/punica --help
@@ -47,10 +54,14 @@ Usage: punica [-?V] [-c FILE] [-C CERTIFICATE] [-k PRIVATE_KEY]
             [--private_key=PRIVATE_KEY] [--log=LOGGING_LEVEL] [--help]
 ```
 
-**Arguments list:**
+### Arguments list:
 - `-c CONFIG_FILE` and `--config CONFIG_FILE` is used to load config file.
 
      Example of configuration file is in configuration section (below)
+
+- `-d DATABASE_FILE` and `--database DATABASE_FILE` is used to load database file.
+
+     Example and description of database file is in database section (below)
 
 - `-k PRIVATE_KEY` and `--private_key PRIVATE_KEY` specify TLS security private key file.
   Private key could be generated with following command:
@@ -80,8 +91,7 @@ Usage: punica [-?V] [-c FILE] [-C CERTIFICATE] [-k PRIVATE_KEY]
 
 - `-V` and `--version` - print program version.
 
-**configuration file**
-
+### Configuration file:
 _Please note that configuration file is **OPTIONAL**! That means, that server will work properly without configuration file, however it wont be secure (no encryption nor authentication), therefore it is highly **RECOMMENDED** to configure server properly._
 
 Example of configuration file:
@@ -150,3 +160,26 @@ Example of configuration file:
 
 - **`logging`**
   - `level` _(integer)_ - visible messages logging level requirement (is mentioned in arguments list).  _**Optional**, default value is 2 (LOG_LEVEL_WARN)._
+
+**database file**
+
+Database file is used to store security credentials of devices managed by the server. The database file content is managed through /devices API (refer to API documentation in /doc project directory). If specified file does not exist, it will be created once security credentials are added. Not specifying a database file path will not disable secure communication between the server and the devices, but stored settings will not persist between run cycles.
+
+Example of database file:
+```
+[
+  {"psk":"cHNrMQ==","psk_id":"cHNraWQx","uuid":"ABC"},
+  {"psk":"cHNrMg==","psk_id":"cHNraWQy","uuid":"DEF"},
+  {"psk":"cHNrMw==","psk_id":"cHNraWQz","uuid":"GHI"}
+]
+```
+
+The file consists of a json array of device entries, each specifying the following keys:
+
+- **`psk`** - pre-shared key known only by the server and the device. Used to authorize a device. Must be encoded in base64.
+
+- **`psk_id`** - pre-shared key id used to map a device to it's pre-shared key. Must be encoded in base64.
+
+- **`uuid`** - universaly unique identifier. Device name used in the application layer.
+
+If an error exists in one of the entries, such as a wrong key type, invalid base64 string etc., the said entry will be ignored, but others will be used. The database file **MUST NOT** be edited during runtime.

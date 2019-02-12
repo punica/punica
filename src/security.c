@@ -119,17 +119,6 @@ int security_user_set(user_t *user, const char *name, const char *secret, json_t
     return 0;
 }
 
-int security_unload(http_security_settings_t *settings)
-{
-    memset(settings->private_key, 0, strlen(settings->private_key));
-    memset(settings->certificate, 0, strlen(settings->certificate));
-    memset(settings->private_key_file, 0, strlen(settings->private_key_file));
-    memset(settings->certificate_file, 0, strlen(settings->certificate_file));
-
-    log_message(LOG_LEVEL_TRACE, "Successfully unloaded security");
-    return 0;
-}
-
 void jwt_init(jwt_settings_t *settings)
 {
     settings->initialised = true;

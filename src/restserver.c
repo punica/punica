@@ -267,9 +267,9 @@ int main(int argc, char *argv[])
         },
         .coap = {
             .port = 5555,
-            .security = NULL,
             .private_key_file = NULL,
             .certificate_file = NULL,
+            .database_file = NULL,
         },
         .logging = {
             .level = LOG_LEVEL_WARN,
@@ -293,7 +293,7 @@ int main(int argc, char *argv[])
 
     init_signals();
 
-    rest_init(&rest);
+    rest_init(&rest, &settings);
 
     if (prv_api_init(&ConnApi, settings.coap.mode) != 0)
     {
@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
     /* Socket section */
     log_message(LOG_LEVEL_INFO, "Creating coap socket on port %d\n", settings.coap.port);
 
-    res = ConnApi.f_socket(&settings, AF_INET6);
+    res = ConnApi.f_socket(&settings, AF_INET6, (void *)rest.devicesList);
     if (res < 0)
     {
         log_message(LOG_LEVEL_FATAL, "Failed to create socket!\n");
@@ -391,8 +391,6 @@ int main(int argc, char *argv[])
         {
             log_message(LOG_LEVEL_WARN, "Encryption without authentication is unadvisable!\n");
         }
-
-        security_unload(&(settings.http.security));
     }
     else
     {
