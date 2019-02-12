@@ -213,7 +213,7 @@ typedef struct _mbedtls_connection_t
     mbedtls_ssl_context    *ssl;
 } mbedtls_connection_t;
 
-int connection_create_secure(settings_t *options, int addressFamily);
+int connection_create_secure(settings_t *options, int addressFamily, void *context);
 
 void connection_free_secure(void *connP);
 

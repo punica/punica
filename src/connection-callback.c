@@ -23,18 +23,20 @@
 #include <mbedtls/ssl.h>
 #include <mbedtls/oid.h>
 
-int psk_callback(void *p_cont, mbedtls_ssl_context *ssl, const unsigned char *name, size_t name_len)
+int psk_callback(void *context, mbedtls_ssl_context *ssl, const unsigned char *name, size_t name_len)
 {
-    coap_settings_t *coap = (coap_settings_t *)p_cont;
-    device_database_t *curr = (device_database_t *)(coap->security);
+    rest_list_t *device_list = context;
+    database_entry_t *device_data;
+    rest_list_entry_t *device_entry;
 
-    while (curr != NULL)
+    for (device_entry = device_list->head; device_entry != NULL; device_entry = device_entry->next)
     {
-        if (memcmp(name, curr->psk_id, name_len) == 0)
+        device_data = (database_entry_t *)device_entry->data;
+
+        if (memcmp(name, device_data->psk_id, name_len) == 0)
         {
-            return mbedtls_ssl_set_hs_psk(ssl, curr->psk, curr->psk_len);
+            return mbedtls_ssl_set_hs_psk(ssl, device_data->psk, device_data->psk_len);
         }
-        curr = curr->next;
     }
 
     return -1;

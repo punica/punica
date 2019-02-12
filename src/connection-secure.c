@@ -114,8 +114,10 @@ static struct mbedtls_options opt =
     .etm                 = -1,
 };
 
-int connection_create_secure(settings_t *options, int addressFamily)
+int connection_create_secure(settings_t *options, int addressFamily, void *pskCont)
 {
+//  TODO: specify address family
+    (void)addressFamily;
     int ret = 0;
 
 //    opt.server_addr = options->server_addr;
@@ -128,7 +130,7 @@ int connection_create_secure(settings_t *options, int addressFamily)
 //    opt.psk = options->psk;
 //    opt.psk_identity = options->psk_identity;
 //  pass whole coap structure in case the HEAD of linked list 'coap.security' changes
-    opt.psk_cont = &options->coap;
+    opt.psk_cont = pskCont;
 
     if (opt.crt_file == NULL && opt.psk == NULL)
     {
