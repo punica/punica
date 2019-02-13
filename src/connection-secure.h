@@ -202,16 +202,17 @@ int sni_callback(void *p_info, mbedtls_ssl_context *ssl, const unsigned char *na
 int unhexify(unsigned char *output, const char *input, size_t *olen);
 void psk_free(psk_entry *head);
 psk_entry *psk_parse(char *psk_string);
-int psk_callback(void *p_info, mbedtls_ssl_context *ssl, const unsigned char *name,
-                 size_t name_len);
+int psk_callback(gnutls_session_t session, const char *username, gnutls_datum_t *key);
 int mbedtls_status_is_ssl_in_progress(int ret);
 
-typedef struct _mbedtls_connection_t
+typedef struct _device_connection_t
 {
-    struct _mbedtls_connection_t   *next;
-    mbedtls_net_context    *sock;
-    mbedtls_ssl_context    *ssl;
-} mbedtls_connection_t;
+    struct _device_connection_t   *next;
+    int sock;
+    gnutls_session_t session;
+    struct sockaddr_in addr;
+    socklen_t addr_size;
+} device_connection_t;
 
 int connection_create_secure(settings_t *options, int addressFamily, void *context);
 
@@ -219,6 +220,8 @@ void connection_free_secure(void *connP);
 
 int connection_step_secure(void *ctx, struct timeval *tv);
 
-int connection_send_secure(void *sessionH, uint8_t *buffer, size_t length);
+ssize_t connection_send_secure(gnutls_transport_ptr_t context, const void *data, size_t size);
+
+ssize_t connection_receive_secure(gnutls_transport_ptr_t context, void *data, size_t size);
 
 #endif

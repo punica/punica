@@ -17,452 +17,245 @@
  *
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <sys/select.h>
+//  TODO: camel-case code to something else (uniform)
+#include <stdio.h>
+
+#include <gnutls/gnutls.h>
+#include <gnutls/dtls.h>
 
 #include "connection-secure.h"
-#include <liblwm2m.h>
 
-static mbedtls_connection_t *connectionList = NULL;
+#define BUFF_SIZE 1024
+#define CHECK_RET(func); \
+    do {                 \
+        if(func < 0)     \
+        {                \
+            fprintf(stderr, "%s returned error\n", #func); \
+        }                \
+    } while (0);         \
 
-mbedtls_net_context listen_fd;
-unsigned char *buf = 0;
-int version_suites[4][2];
-//TODO: MBEDTLS_PSK_MAX_LEN must be increased to 64 to satisfy RFC7925
-unsigned char psk[MBEDTLS_PSK_MAX_LEN];
-size_t psk_len = 0;
-const char *pers = "ssl_server2";
-unsigned char client_ip[16] = { 0 };
-size_t cliip_len;
-#if defined(MBEDTLS_SSL_COOKIE_C)
-mbedtls_ssl_cookie_ctx cookie_ctx;
-#endif
+static gnutls_certificate_credentials_t server_cert;
+static gnutls_priority_t priority_cache;
+static gnutls_datum_t cookie_key;
+static gnutls_psk_server_credentials_t server_psk;
 
-mbedtls_entropy_context entropy;
-mbedtls_ctr_drbg_context ctr_drbg;
-mbedtls_ssl_config conf;
-#if defined(MBEDTLS_TIMING_C)
-mbedtls_timing_delay_context timer;
-#endif
-#if defined(MBEDTLS_SSL_RENEGOTIATION)
-unsigned char renego_period[8] = { 0 };
-#endif
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
-uint32_t flags;
-mbedtls_x509_crt cacert;
-mbedtls_x509_crt srvcert;
-mbedtls_pk_context pkey;
-int key_cert_init = 0;
-#endif /* MBEDTLS_X509_CRT_PARSE_C */
-#if defined(MBEDTLS_DHM_C) && defined(MBEDTLS_FS_IO)
-mbedtls_dhm_context dhm;
-#endif
-#if defined(MBEDTLS_SSL_CACHE_C)
-mbedtls_ssl_cache_context cache;
-#endif
-#if defined(MBEDTLS_ECP_C)
-mbedtls_ecp_group_id curve_list[CURVE_LIST_SIZE];
-const mbedtls_ecp_curve_info *curve_cur;
-#endif
+static int listen_fd;
+static device_connection_t *connection_list = NULL;
 
-static struct mbedtls_options opt =
+static int connection_timeout_secure(gnutls_transport_ptr_t context, unsigned int ms);
+
+static int prv_new_socket(const char *host, const char *port, int address_family)
 {
-    .buffer_size         = 1024,
-    .server_addr         = "localhost",
-    .server_port         = 0,
-    .debug_level         = 0,
-    .event               = 0,
-    .response_size       = -1,
-    .nbio                = 0,
-    .read_timeout        = 0,
-    .ca_file             = "",
-    .crt_file            = "",
-    .key_file            = "",
-    .async_operations    = "-",
-    .async_private_delay1 = -1,
-    .async_private_error = 0,
-    .psk                 = "",
-    .psk_identity        = "",
-    .psk_cont            = NULL,
-    .version_suites      = NULL,
-    .renegotiation       = MBEDTLS_SSL_RENEGOTIATION_DISABLED,
-    .renegotiate         = 0,
-    .renego_delay        = -2,
-    .renego_period       = ((uint64_t) -1),
-    .exchanges           = 1,
-    .min_version         = -1,
-    .max_version         = -1,
-    .arc4                = -1,
-    .allow_sha1          = -1,
-    .auth_mode           = 1,
-    .cert_req_ca_list    = MBEDTLS_SSL_CERT_REQ_CA_LIST_ENABLED,
-    .trunc_hmac          = -1,
-    .ticket_timeout      = 86400,
-    .cache_max           = 1,
-    .cache_timeout       = 1,
-    .alpn_string         = NULL,
-    .dhm_file            = NULL,
-    .transport           = MBEDTLS_SSL_TRANSPORT_DATAGRAM,
-    .cookies             = 1,
-    .hs_to_min           = 0,
-    .hs_to_max           = 0,
-    .dtls_mtu            = -1,
-    .dgram_packing       = 1,
-    .badmac_limit        = -1,
-    .etm                 = -1,
-};
+    //TODO fix returns
+    int ret, sock;
+    struct addrinfo hints, *addr_list, *cur;
 
-int connection_create_secure(settings_t *options, int addressFamily, void *pskCont)
+//    if( ( ret = net_prepare() ) != 0 )
+//        return( ret );
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = address_family;
+    hints.ai_socktype = SOCK_DGRAM;
+    //hints.ai_protocol = IPPROTO_UDP;
+    hints.ai_protocol = 0;
+    hints.ai_flags = AI_ADDRCONFIG;
+
+    if (host == NULL)
+        hints.ai_flags |= AI_PASSIVE;
+
+    if (getaddrinfo(host, port, &hints, &addr_list) != 0)
+        return MBEDTLS_ERR_NET_UNKNOWN_HOST;
+
+    ret = MBEDTLS_ERR_NET_UNKNOWN_HOST;
+    for (cur = addr_list; cur != NULL; cur = cur->ai_next)
+    {
+        sock = socket(cur->ai_family, cur->ai_socktype, cur->ai_protocol);
+        if (sock < 0)
+        {
+            ret = MBEDTLS_ERR_NET_SOCKET_FAILED;
+            continue;
+        }
+
+        if (bind(sock, cur->ai_addr, cur->ai_addrlen))
+        {
+            close( sock );
+            ret = MBEDTLS_ERR_NET_BIND_FAILED;
+            continue;
+        }
+
+        ret = 0;
+        break;
+    }
+
+    freeaddrinfo(addr_list);
+    return sock;
+}
+
+int connection_create_secure(settings_t *options, int address_family, void *psk_context)
 {
-//  TODO: specify address family
-    (void)addressFamily;
-    int ret = 0;
+    char port_str[20];
+//  TODO: should check if already globally initialized
+//    gnutls_global_init();
 
-//    opt.server_addr = options->server_addr;
-    opt.server_port = options->coap.port;
-    opt.debug_level = options->logging.level;
-//    opt.auth_mode = options->auth_mode;
-    opt.ca_file = options->coap.certificate_file;
-    opt.crt_file = options->coap.certificate_file;
-    opt.key_file = options->coap.private_key_file;
-//    opt.psk = options->psk;
-//    opt.psk_identity = options->psk_identity;
-//  pass whole coap structure in case the HEAD of linked list 'coap.security' changes
-    opt.psk_cont = pskCont;
-
-    if (opt.crt_file == NULL && opt.psk == NULL)
+    if (options->coap.certificate_file)
     {
-        return -1;
+        gnutls_certificate_allocate_credentials(&server_cert);
+        gnutls_certificate_set_x509_trust_file(server_cert, options->coap.certificate_file, GNUTLS_X509_FMT_PEM);
+        
+        CHECK_RET(gnutls_certificate_set_x509_key_file(server_cert, options->coap.certificate_file, options->coap.private_key_file, GNUTLS_X509_FMT_PEM));
     }
 
-    mbedtls_net_init(&listen_fd);
-    mbedtls_ssl_config_init(&conf);
-    mbedtls_ctr_drbg_init(&ctr_drbg);
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
-    mbedtls_x509_crt_init(&cacert);
-    mbedtls_x509_crt_init(&srvcert);
-    mbedtls_pk_init(&pkey);
-#endif
-#if defined(MBEDTLS_DHM_C) && defined(MBEDTLS_FS_IO)
-    mbedtls_dhm_init(&dhm);
-#endif
-#if defined(MBEDTLS_SSL_CACHE_C)
-    mbedtls_ssl_cache_init(&cache);
-#endif
-#if defined(MBEDTLS_SSL_COOKIE_C)
-    mbedtls_ssl_cookie_init(&cookie_ctx);
-#endif
+//    gnutls_certificate_set_known_gh_params(server_cert, GNUTLS_SEC_PARAM_MEDIUM);
 
-#if defined(MBEDTLS_DEBUG_C)
-    mbedtls_debug_set_threshold(opt.debug_level);
-#endif
-    buf = calloc(1, opt.buffer_size + 1);
-    if (buf == NULL)
-    {
-        return -1;
-    }
+    CHECK_RET(gnutls_priority_init(&priority_cache, "NORMAL:+VERS-DTLS1.2:+AES-128-CCM-8:+PSK", NULL));
 
-    if (unhexify(psk, opt.psk, &psk_len) != 0)
-    {
-        return -1;
-    }
+    gnutls_key_generate(&cookie_key, GNUTLS_COOKIE_KEY_SIZE);
 
-    mbedtls_entropy_init(&entropy);
-    if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func,
-                                     &entropy, (const unsigned char *) pers,
-                                     strlen(pers))) != 0)
-    {
-        return -1;
-    }
+    gnutls_psk_allocate_server_credentials(&server_psk);
+    gnutls_psk_set_server_credentials_function(server_psk, psk_callback);
 
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
-#if defined(MBEDTLS_FS_IO)
-    if (opt.ca_file)
+    sprintf(port_str, "%d", options->coap.port);
+    listen_fd = prv_new_socket(NULL, port_str, address_family);
+//      {
+//          getaddrinfo
+//          socket
+//          sockopt
+//          bind
+//      }
+//    listen_fd = socket(address_family, SOCK_DGRAM, 0);
+//    mbedtls_net_bind
+    return 0;
+}
+
+//static int prv_session_init(device_connection_t *connP)
+//{
+//    mbedtls_ssl_init(connP->ssl);
+//#if defined(MBEDTLS_SSL_PROTO_DTLS)
+//    if (opt.dgram_packing != DFL_DGRAM_PACKING)
+//    {
+//        mbedtls_ssl_set_datagram_packing(connP->ssl, opt.dgram_packing);
+//    }
+//#endif /* MBEDTLS_SSL_PROTO_DTLS */
+//
+//    mbedtls_ssl_set_bio(connP->ssl, connP->sock, mbedtls_net_send, mbedtls_net_recv,
+//                        mbedtls_net_recv_timeout);
+//
+////    ret = mbedtls_ssl_setup(&connP->ssl, &conf);
+//    mbedtls_ssl_setup(connP->ssl, &conf);
+//
+//#if defined(MBEDTLS_SSL_PROTO_DTLS)
+//    if (opt.dtls_mtu != DFL_DTLS_MTU)
+//    {
+//        mbedtls_ssl_set_mtu(connP->ssl, opt.dtls_mtu);
+//    }
+//#endif
+//#if defined(MBEDTLS_TIMING_C)
+//    mbedtls_ssl_set_timer_cb(connP->ssl, &timer, mbedtls_timing_set_delay, mbedtls_timing_get_delay);
+//#endif
+//
+//    mbedtls_ssl_session_reset(connP->ssl);
+//
+//    return 0;
+//}
+
+static device_connection_t *connection_new_incoming(int sock)
+{
+    int ret;
+    char buffer[BUFF_SIZE];
+    gnutls_dtls_prestate_st prestate;
+    device_connection_t *connP;
+
+    connP = (device_connection_t *)malloc(sizeof(device_connection_t));
+    if (connP == NULL)
     {
-        ret = mbedtls_x509_crt_parse_file(&cacert, opt.ca_file);
+        return NULL;
     }
-    else
-#endif
+    connP->sock = sock;
+
+hello_verify:
+    connP->addr_size = sizeof(connP->addr);
+    // is MSG_PEEK needed?
+    ret = recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&connP->addr, &connP->addr_size);
+        char str[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &connP->addr.sin_addr, str, INET_ADDRSTRLEN);
+        printf("%s addr: %s\r\n", __func__, str);
+    //ret = recvfrom(sock, buffer, sizeof(buffer), MSG_PEEK, (struct sockaddr *)&client_addr, &client_addr_size);
+    if (ret > 0)
+    {
+        memset(&prestate, 0, sizeof(prestate));
+
+//      check if cookie is valid, if not send hello verify
+        ret = gnutls_dtls_cookie_verify(&cookie_key, &connP->addr, sizeof(connP->addr), buffer, ret, &prestate);
         if (ret < 0)
         {
-            return -1;
-        }
-
-#if defined(MBEDTLS_FS_IO)
-    if (opt.crt_file)
-    {
-        key_cert_init++;
-        if ((ret = mbedtls_x509_crt_parse_file(&srvcert, opt.crt_file)) != 0)
-        {
-            fprintf(stderr, "mbedtls_x509_crt_parse_file returned -0x%x\n\n", -ret);
-            return -1;
-        }
-    }
-    if (opt.key_file)
-    {
-        key_cert_init++;
-        if ((ret = mbedtls_pk_parse_keyfile(&pkey, opt.key_file, "")) != 0)
-        {
-            fprintf(stderr, "mbedtls_pk_parse_keyfile returned -0x%x\n\n", -ret);
-            return -1;
-        }
-    }
-    if (key_cert_init == 1)
-    {
-        fprintf(stderr, "crt_file without key_file or vice-versa\n\n");
-        return -1;
-    }
-#endif
-#endif /* MBEDTLS_X509_CRT_PARSE_C */
-
-#if defined(MBEDTLS_DHM_C) && defined(MBEDTLS_FS_IO)
-    if (opt.dhm_file != NULL)
-    {
-        if ((ret = mbedtls_dhm_parse_dhmfile(&dhm, opt.dhm_file)) != 0)
-        {
-            fprintf(stderr, "mbedtls_dhm_parse_dhmfile returned -0x%04X\n\n",
-                    -ret);
-            return -1;
-        }
-
-    }
-#endif
-
-    char server_port_string[6];
-    snprintf(server_port_string, sizeof(server_port_string), "%d", opt.server_port);
-
-    if ((ret = mbedtls_net_bind(&listen_fd, NULL, server_port_string, MBEDTLS_NET_PROTO_UDP)) != 0)
-    {
-        fprintf(stderr, "mbedtls_net_bind returned -0x%x\n\n", -ret);
-        return -1;
-    }
-
-    if ((ret = mbedtls_ssl_config_defaults(&conf,
-                                           MBEDTLS_SSL_IS_SERVER,
-                                           opt.transport,
-                                           MBEDTLS_SSL_PRESET_DEFAULT)) != 0)
-    {
-        fprintf(stderr, "mbedtls_ssl_config_defaults returned -0x%x\n\n", -ret);
-        return -1;
-    }
-
-    if (opt.auth_mode)
-    {
-        mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);
-    }
-
-    if (opt.cert_req_ca_list != DFL_CERT_REQ_CA_LIST)
-    {
-        mbedtls_ssl_conf_cert_req_ca_list(&conf, opt.cert_req_ca_list);
-    }
-
-#if defined(MBEDTLS_SSL_TRUNCATED_HMAC)
-    if (opt.trunc_hmac != DFL_TRUNC_HMAC)
-    {
-        mbedtls_ssl_conf_truncated_hmac(&conf, opt.trunc_hmac);
-    }
-#endif
-
-#if defined(MBEDTLS_SSL_ENCRYPT_THEN_MAC)
-    if (opt.etm != DFL_ETM)
-    {
-        mbedtls_ssl_conf_encrypt_then_mac(&conf, opt.etm);
-    }
-#endif
-
-    mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
-    mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
-
-#if defined(MBEDTLS_SSL_CACHE_C)
-    if (opt.cache_max != -1)
-    {
-        mbedtls_ssl_cache_set_max_entries(&cache, opt.cache_max);
-    }
-
-    if (opt.cache_timeout != -1)
-    {
-        mbedtls_ssl_cache_set_timeout(&cache, opt.cache_timeout);
-    }
-
-    mbedtls_ssl_conf_session_cache(&conf, &cache,
-                                   mbedtls_ssl_cache_get,
-                                   mbedtls_ssl_cache_set);
-#endif
-
-#if defined(MBEDTLS_SSL_PROTO_DTLS)
-    if (opt.transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM)
-    {
-#if defined(MBEDTLS_SSL_COOKIE_C)
-        if (opt.cookies > 0)
-        {
-            if ((ret = mbedtls_ssl_cookie_setup(&cookie_ctx,
-                                                mbedtls_ctr_drbg_random, &ctr_drbg)) != 0)
-            {
-                fprintf(stderr, "mbedtls_ssl_cookie_setup returned %d\n\n", ret);
-                return -1;
-            }
-
-            mbedtls_ssl_conf_dtls_cookies(&conf, mbedtls_ssl_cookie_write, mbedtls_ssl_cookie_check,
-                                          &cookie_ctx);
+            gnutls_dtls_cookie_send(&cookie_key, &connP->addr, sizeof(connP->addr), &prestate, connP, connection_send_secure);
+            //try verify again once
+            goto hello_verify;
         }
         else
-#endif /* MBEDTLS_SSL_COOKIE_C */
-#if defined(MBEDTLS_SSL_DTLS_HELLO_VERIFY)
-            if (opt.cookies == 0)
+        {
+            //init and so on
+            //create new socket for connection
+            gnutls_init(&connP->session, GNUTLS_SERVER | GNUTLS_DATAGRAM);
+//          might be used later
+//            CHECK_RET(gnutls_credentials_set());
+            gnutls_priority_set(connP->session, priority_cache);
+            gnutls_dtls_prestate_set(connP->session, &prestate);
+//            gnutls_dtls_set_mtu(connP->session, );
+
+            gnutls_transport_set_ptr(connP->session, connP);
+            gnutls_transport_set_push_function(connP->session, connection_send_secure);
+            gnutls_transport_set_pull_function(connP->session, connection_receive_secure);
+            gnutls_transport_set_pull_timeout_function(connP->session, connection_timeout_secure);
+
+            do {
+                ret = gnutls_handshake(connP->session);
+            } while (ret == GNUTLS_E_AGAIN || ret == GNUTLS_E_INTERRUPTED);
+
+            if (ret < 0)
             {
-                mbedtls_ssl_conf_dtls_cookies(&conf, NULL, NULL, NULL);
-            }
-            else
-#endif /* MBEDTLS_SSL_DTLS_HELLO_VERIFY */
-            {
-                ; /* Nothing to do */
+//              handshake failure
+//              deinit session
+//              free connP
+//              return NULL;
             }
 
-#if defined(MBEDTLS_SSL_DTLS_BADMAC_LIMIT)
-        if (opt.badmac_limit != DFL_BADMAC_LIMIT)
-        {
-            mbedtls_ssl_conf_dtls_badmac_limit(&conf, opt.badmac_limit);
-        }
-#endif
-    }
-#endif /* MBEDTLS_SSL_PROTO_DTLS */
-
-#if defined(MBEDTLS_SSL_RENEGOTIATION)
-    mbedtls_ssl_conf_renegotiation(&conf, opt.renegotiation);
-#endif
-
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
-    if (opt.ca_file)
-    {
-        mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
-    }
-    if (key_cert_init)
-    {
-        mbedtls_pk_context *pk = &pkey;
-        if ((ret = mbedtls_ssl_conf_own_cert(&conf, &srvcert, pk)) != 0)
-        {
-            fprintf(stderr, "mbedtls_ssl_conf_own_cert returned %d\n\n", ret);
-            return -1;
+            connP->next = connection_list;
+            connection_list = connP;
         }
     }
-
-#endif /* MBEDTLS_X509_CRT_PARSE_C */
-
-#if defined(MBEDTLS_ECP_C)
-    curve_list[0] = MBEDTLS_ECP_DP_SECP256R1;
-    curve_list[1] = MBEDTLS_ECP_DP_NONE;
-    mbedtls_ssl_conf_curves(&conf, curve_list);
-#endif
-
-    if (strlen(opt.psk) != 0 && strlen(opt.psk_identity) != 0)
+    else
     {
-        ret = mbedtls_ssl_conf_psk(&conf, psk, psk_len,
-                                   (const unsigned char *) opt.psk_identity,
-                                   strlen(opt.psk_identity));
-        if (ret != 0)
-        {
-            fprintf(stderr, "mbedtls_ssl_conf_psk returned -0x%04X\n\n", - ret);
-            return -1;
-        }
-    }
-
-    mbedtls_ssl_conf_psk_cb(&conf, psk_callback, opt.psk_cont);
-
-#if defined(MBEDTLS_DHM_C)
-    /*
-     * Use different group than default DHM group
-     */
-#if defined(MBEDTLS_FS_IO)
-    if (opt.dhm_file != NULL)
-    {
-        ret = mbedtls_ssl_conf_dh_param_ctx(&conf, &dhm);
-    }
-#endif
-    if (ret != 0)
-    {
-        fprintf(stderr, "mbedtls_ssl_conf_dh_param returned -0x%04X\n\n", - ret);
-        return -1;
-    }
-#endif
-
-    return 0;
-}
-
-static int prv_ssl_init(mbedtls_connection_t *connP)
-{
-    mbedtls_ssl_init(connP->ssl);
-#if defined(MBEDTLS_SSL_PROTO_DTLS)
-    if (opt.dgram_packing != DFL_DGRAM_PACKING)
-    {
-        mbedtls_ssl_set_datagram_packing(connP->ssl, opt.dgram_packing);
-    }
-#endif /* MBEDTLS_SSL_PROTO_DTLS */
-
-    mbedtls_ssl_set_bio(connP->ssl, connP->sock, mbedtls_net_send, mbedtls_net_recv,
-                        mbedtls_net_recv_timeout);
-
-//    ret = mbedtls_ssl_setup(&connP->ssl, &conf);
-    mbedtls_ssl_setup(connP->ssl, &conf);
-
-#if defined(MBEDTLS_SSL_PROTO_DTLS)
-    if (opt.dtls_mtu != DFL_DTLS_MTU)
-    {
-        mbedtls_ssl_set_mtu(connP->ssl, opt.dtls_mtu);
-    }
-#endif
-#if defined(MBEDTLS_TIMING_C)
-    mbedtls_ssl_set_timer_cb(connP->ssl, &timer, mbedtls_timing_set_delay, mbedtls_timing_get_delay);
-#endif
-
-    mbedtls_ssl_session_reset(connP->ssl);
-
-    return 0;
-}
-
-static mbedtls_connection_t *connection_new_incoming(void)
-{
-    mbedtls_connection_t *connP;
-
-    connP = (mbedtls_connection_t *)malloc(sizeof(mbedtls_connection_t));
-    if (connP != NULL)
-    {
-        connP->sock = (mbedtls_net_context *)malloc(sizeof(mbedtls_net_context));
-        mbedtls_net_init(connP->sock);
-
-        connP->ssl = (mbedtls_ssl_context *)malloc(sizeof(mbedtls_ssl_context));
-        prv_ssl_init(connP);
-
-        connP->next = connectionList;
-        connectionList = connP;
+        free(connP);
+        return NULL;
     }
 
     return connP;
 }
 
-int connection_step_secure(void *ctx, struct timeval *tv)
+int connection_step_secure(void *context, struct timeval *tv)
 {
+    uint8_t buffer[BUFF_SIZE];
     int ret, nfds = 0;
     fd_set read_fds;
-    mbedtls_connection_t *connP_curr = connectionList;
+    device_connection_t *connP_curr = connection_list;
 
     FD_ZERO(&read_fds);
 
     while (connP_curr != NULL)
     {
-        FD_SET(connP_curr->sock->fd, &read_fds);
-        if (connP_curr->sock->fd >= nfds)
+        FD_SET(connP_curr->sock, &read_fds);
+        if (connP_curr->sock >= nfds)
         {
-            nfds = connP_curr->sock->fd + 1;
+            nfds = connP_curr->sock + 1;
         }
         connP_curr = connP_curr->next;
     }
 
-    FD_SET(listen_fd.fd, &read_fds);
-    if (listen_fd.fd >= nfds)
+    FD_SET(listen_fd, &read_fds);
+    if (listen_fd >= nfds)
     {
-        nfds = listen_fd.fd + 1;
+        nfds = listen_fd + 1;
     }
 
     ret = select(nfds, &read_fds, NULL, NULL, tv);
@@ -477,45 +270,50 @@ int connection_step_secure(void *ctx, struct timeval *tv)
         return ret;
     }
 
-    connP_curr = connectionList;
+    connP_curr = connection_list;
     while (connP_curr != NULL)
     {
-        if (FD_ISSET(connP_curr->sock->fd, &read_fds))
+        if (FD_ISSET(connP_curr->sock, &read_fds))
         {
-            ret = mbedtls_ssl_read(connP_curr->ssl, buf, opt.buffer_size - 1);
+//            ret = mbedtls_ssl_read(connP_curr->ssl, buf, opt.buffer_size - 1);
             if (ret > 0)
             {
-                lwm2m_handle_packet(ctx, buf, ret, connP_curr);
+                lwm2m_handle_packet(context, buffer, ret, connP_curr);
             }
         }
         connP_curr = connP_curr->next;
     }
 
-    if (FD_ISSET(listen_fd.fd, &read_fds))
+    if (FD_ISSET(listen_fd, &read_fds))
     {
-        mbedtls_connection_t *connP = connection_new_incoming();
-        unsigned char client_ip[16] = { 0 };
-        size_t cliip_len;
-
-hello_verify:
-        mbedtls_net_accept(&listen_fd, connP->sock, client_ip, sizeof(client_ip), &cliip_len);
-        mbedtls_ssl_set_client_transport_id(connP->ssl, client_ip, cliip_len);
-
-        ret = mbedtls_ssl_read(connP->ssl, buf, opt.buffer_size - 1);
-        if (ret == MBEDTLS_ERR_SSL_HELLO_VERIFY_REQUIRED)
+        device_connection_t *connP = connection_new_incoming(listen_fd);
+        if (connP == NULL)
         {
-            mbedtls_net_free(connP->sock);
-            mbedtls_ssl_session_reset(connP->ssl);
-            goto hello_verify;
+//          TODO: add error
+            return -1;
         }
-        else if (ret > 0)
-        {
-            lwm2m_handle_packet(ctx, buf, ret, connP);
-        }
-        else
-        {
-            connection_free_secure(connP);
-        }
+//        unsigned char client_ip[16] = { 0 };
+//        size_t cliip_len;
+//
+//hello_verify:
+//        mbedtls_net_accept(&listen_fd, connP->sock, client_ip, sizeof(client_ip), &cliip_len);
+//        mbedtls_ssl_set_client_transport_id(connP->ssl, client_ip, cliip_len);
+//
+//        ret = mbedtls_ssl_read(connP->ssl, buf, opt.buffer_size - 1);
+//        if (ret == MBEDTLS_ERR_SSL_HELLO_VERIFY_REQUIRED)
+//        {
+//            mbedtls_net_free(connP->sock);
+//            mbedtls_ssl_session_reset(connP->ssl);
+//            goto hello_verify;
+//        }
+//        else if (ret > 0)
+//        {
+//            lwm2m_handle_packet(context, buf, ret, connP);
+//        }
+//        else
+//        {
+//            connection_free_secure(connP);
+//        }
     }
 
     return 0;
@@ -523,44 +321,95 @@ hello_verify:
 
 void connection_free_secure(void *connection)
 {
-    mbedtls_connection_t *connP = (mbedtls_connection_t *)connection;
-
-    if (connectionList == NULL)
-    {
-        return;
-    }
-
-    if (connP == connectionList)
-    {
-        connectionList = connP->next;
-        goto free;
-    }
-
-    mbedtls_connection_t *connP_curr = connectionList;
-
-    do
-    {
-        if (connP_curr->next == connP)
-        {
-            connP_curr->next = connP->next;
-            goto free;
-        }
-        connP_curr = connP_curr->next;
-    } while (connP_curr->next != NULL);
-
-free:
-//  check if NULL to avoid double free?
-    mbedtls_ssl_close_notify(connP->ssl);
-    mbedtls_net_free(connP->sock);
-    free(connP->sock);
-    mbedtls_ssl_free(connP->ssl);
-    free(connP->ssl);
-    free(connP);
+//    device_connection_t *connP = (device_connection_t *)connection;
+//
+//    if (connection_list == NULL)
+//    {
+//        return;
+//    }
+//
+//    if (connP == connection_list)
+//    {
+//        connection_list = connP->next;
+//        goto free;
+//    }
+//
+//    device_connection_t *connP_curr = connection_list;
+//
+//    do
+//    {
+//        if (connP_curr->next == connP)
+//        {
+//            connP_curr->next = connP->next;
+//            goto free;
+//        }
+//        connP_curr = connP_curr->next;
+//    } while (connP_curr->next != NULL);
+//
+//free:
+////  check if NULL to avoid double free?
+//    mbedtls_ssl_close_notify(connP->ssl);
+//    mbedtls_net_free(connP->sock);
+//    free(connP->sock);
+//    mbedtls_ssl_free(connP->ssl);
+//    free(connP->ssl);
+//    free(connP);
 }
 
-int connection_send_secure(void *sessionH, uint8_t *buffer, size_t length)
+ssize_t connection_send_secure(gnutls_transport_ptr_t context, const void *data, size_t size)
+//int connection_send_secure(void *sessionH, uint8_t *buffer, size_t length)
 {
-    mbedtls_connection_t *connP = (mbedtls_connection_t *)sessionH;
+    int ret;
+    device_connection_t *connP = (device_connection_t *)context;
 
-    return mbedtls_ssl_write(connP->ssl, buffer, length);
+    inet_pton(AF_INET, "127.0.0.1", &connP->addr.sin_addr);
+    //return mbedtls_ssl_write(connP->ssl, buffer, length);
+    ret = sendto(connP->sock, data, size, 0, (struct sockaddr *)&connP->addr, connP->addr_size);
+    if (errno)
+    {
+        char str[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &connP->addr.sin_addr, str, INET_ADDRSTRLEN);
+        printf("addr: %s\r\n", str);
+        char s[50];
+        sprintf(s, "ret = %d: ", ret);
+        perror(s);
+    }
+    return ret;
+}
+
+ssize_t connection_receive_secure(gnutls_transport_ptr_t context, void *data, size_t size)
+{
+    device_connection_t *connP = (device_connection_t *)context;
+
+    connP->addr_size = sizeof(connP->addr);
+    return recvfrom(connP->sock, data, size, 0, (struct sockaddr *)&connP->addr, &connP->addr_size);
+}
+
+static int connection_timeout_secure(gnutls_transport_ptr_t context, unsigned int ms)
+{
+    device_connection_t *connP = (device_connection_t *)context;
+    int ret;
+    fd_set fds;
+    struct timeval tv;
+    char dummy_buff[1];
+
+    FD_ZERO(&fds);
+    FD_SET(connP->sock, &fds);
+
+    tv.tv_sec = ms / 1000;
+    tv.tv_usec = (ms % 1000) * 1000;
+
+    ret = select(connP->sock + 1, &fds, NULL, NULL, &tv);
+    if (ret <= 0)
+        return ret;
+
+    connP->addr_size = sizeof(connP->addr);
+
+    ret = recvfrom(connP->sock, dummy_buff, sizeof(dummy_buff), MSG_PEEK, (struct sockaddr *)&connP->addr, &connP->addr_size);
+    if (ret > 0)
+    {
+        return 1;
+    }
+
+    return 0;
 }
