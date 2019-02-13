@@ -20,8 +20,15 @@
 #ifndef REST_AUTHENTICATION_H
 #define REST_AUTHENTICATION_H
 
-#define HEADER_AUTHORIZATION   "Authorization"
-#define HEADER_UNAUTHORIZED    "WWW-Authenticate"
-#define HEADER_PREFIX_BEARER   "Bearer "
+#define HEADER_AUTHORIZATION "Authorization"
+#define HEADER_UNAUTHORIZED "WWW-Authenticate"
+#define HEADER_PREFIX_BEARER "Bearer "
+
+#define ERROR_DESCRIPTION_INVALID_TOKEN \
+"error=\"invalid_request\",error_description=\"The access token is missing\""
+#define ERROR_DESCRIPTION_INVALID_SCOPE \
+"error=\"invalid_token\",error_description=\"The access token is invalid\""
+#define ERROR_DESCRIPTION_INSUFFICIENT_SCOPE \
+"error=\"invalid_scope\",error_description=\"The scope is invalid\""
 
 #endif // REST_AUTHENTICATION_H

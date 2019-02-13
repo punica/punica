@@ -22,6 +22,7 @@
 #include "linked_list.h"
 #include "rest_core_types.h"
 #include "security.h"
+#include "utils.h"
 #include "version.h"
 
 #define DATABASE_UUID_KEY_BIT       0x1
@@ -31,15 +32,16 @@
 
 const char *argp_program_version = PUNICA_FULL_VERSION;
 
-static char doc[] = "Punica - interface to LwM2M server and all clients connected to it";
+static char description[] =
+    "Punica - interface to LwM2M server and all clients connected to it";
 
 static struct argp_option options[] =
 {
-    {"log",   'l', "LOGGING_LEVEL", 0, "Specify logging level (0-5)" },
-    {"config",   'c', "FILE", 0, "Specify parameters configuration file" },
-    {"database",   'd', "FILE", 0, "Specify device database file" },
-    {"private_key",   'k', "PRIVATE_KEY", 0, "Specify TLS security private key file" },
-    {"certificate",   'C', "CERTIFICATE", 0, "Specify TLS security certificate file" },
+    {"log", 'l', "LOGGING_LEVEL", 0, "Specify logging level (0-5)" },
+    {"config", 'c', "FILE", 0, "Specify parameters configuration file" },
+    {"database", 'd', "FILE", 0, "Specify device database file" },
+    {"private_key", 'k', "FILE", 0, "Specify TLS security private key file" },
+    {"certificate", 'C', "FILE", 0, "Specify TLS security certificate file" },
     { 0 }
 };
 
@@ -63,19 +65,22 @@ static void set_coap_settings(json_t *j_section, coap_settings_t *settings)
             }
             else
             {
-                fprintf(stdout, "value at key %s:%s must be a string",
-                        section_name, key);
+                log_message(LOG_LEVEL_WARN,
+                            "[SETTINGS] value at key %s:%s must be a string",
+                            section_name, key);
             }
         }
         else
         {
-            fprintf(stdout, "Unrecognised configuration file key: %s.%s\n",
-                    section_name, key);
+            log_message(LOG_LEVEL_WARN,
+                        "[SETTINGS] Unrecognised configuration file key: %s.%s\n",
+                        section_name, key);
         }
     }
 }
 
-static int set_user_settings(json_t *j_user_settings, linked_list_t *users_list)
+static int set_user_settings(json_t *j_user_settings,
+                             linked_list_t *users_list)
 {
     user_t *user, *user_entry;
     linked_list_entry_t *entry;
@@ -90,7 +95,8 @@ static int set_user_settings(json_t *j_user_settings, linked_list_t *users_list)
 
     if (!json_is_string(j_name) || strlen(json_string_value(j_name)) < 1)
     {
-        fprintf(stdout, "User configured without name.\n");
+        log_message(LOG_LEVEL_WARN,
+                    "[SETTINGS] User configured without name.\n");
         return 1;
     }
 
@@ -98,7 +104,8 @@ static int set_user_settings(json_t *j_user_settings, linked_list_t *users_list)
     user_name_length = strnlen(user_name, J_MAX_LENGTH_USER_NAME);
     if (user_name_length == 0 || user_name_length == J_MAX_LENGTH_USER_NAME)
     {
-        fprintf(stdout, "User name length is invalid\n");
+        log_message(LOG_LEVEL_WARN,
+                    "[SETTINGS] User name length is invalid.\n");
         return 1;
     }
 
@@ -108,14 +115,18 @@ static int set_user_settings(json_t *j_user_settings, linked_list_t *users_list)
 
         if (strncmp(user_entry->name, user_name, J_MAX_LENGTH_USER_NAME) == 0)
         {
-            fprintf(stdout, "Found duplicate \"%s\" user name in config\n", user_name);
+            log_message(LOG_LEVEL_WARN,
+                        "[SETTINGS] Found duplicate \"%s\" user name in config.\n",
+                        user_name);
             return 1;
         }
     }
 
     if (!json_is_string(j_secret))
     {
-        fprintf(stdout, "User \"%s\" configured without valid secret key.\n", user_name);
+        log_message(LOG_LEVEL_WARN,
+                    "[SETTINGS] User \"%s\" configured without valid secret key.\n",
+                    user_name);
         return 1;
     }
 
@@ -123,13 +134,18 @@ static int set_user_settings(json_t *j_user_settings, linked_list_t *users_list)
     user_secret_length = strnlen(user_secret, J_MAX_LENGTH_USER_SECRET);
     if (user_secret_length == J_MAX_LENGTH_USER_NAME)
     {
-        fprintf(stdout, "User secret length is invalid\n");
+        log_message(LOG_LEVEL_WARN,
+                    "[SETTINGS] User secret length is invalid.\n");
         return 1;
     }
 
     if (!json_is_array(j_scope))
     {
-        fprintf(stdout, "User \"%s\" configured without valid scope. Setting default scope.\n", user_name);
+        log_message(LOG_LEVEL_WARN,
+                    "[SETTINGS] User \"%s\" configured without valid scope. ",
+                    user_name);
+        log_message(LOG_LEVEL_WARN,
+                    "Setting default scope: \"[]\".\n");
         j_scope = json_array();
     }
 
@@ -137,15 +153,21 @@ static int set_user_settings(json_t *j_user_settings, linked_list_t *users_list)
     {
         if (!json_is_string(j_scope_value))
         {
-            fprintf(stdout, "User %s scope list configuration contains invalid type value\n", user_name);
+            log_message(LOG_LEVEL_WARN,
+                        "[SETTINGS] User %s scopes contains invalid type value\n",
+                        user_name);
             return 1;
         }
 
         scope_value = (char *) json_string_value(j_scope_value);
-        scope_length = strnlen(scope_value, J_MAX_LENGTH_METHOD + 1 + J_MAX_LENGTH_URL);
-        if (scope_length == 0 || scope_length == J_MAX_LENGTH_METHOD + 1 + J_MAX_LENGTH_URL)
+        scope_length = strnlen(scope_value,
+                               J_MAX_LENGTH_METHOD + 1 + J_MAX_LENGTH_URL);
+        if (scope_length == 0
+            || scope_length == J_MAX_LENGTH_METHOD + 1 + J_MAX_LENGTH_URL)
         {
-            fprintf(stdout, "User %s scope list configuration contains invalid length value\n", user_name);
+            log_message(LOG_LEVEL_WARN,
+                        "[SETTINGS] User \"%s\" scopes contain invalid length value\n",
+                        user_name);
             return 1;
         }
     }
@@ -165,7 +187,7 @@ static void set_jwt_settings(json_t *j_section, jwt_settings_t *settings)
     const char *key, *string_value;
     const char *section_name = "http.security.jwt";
     json_t *j_value, *j_user_settings;
-    jwt_init(settings);
+    jwt_initialize(settings);
 
     json_object_foreach(j_section, key, j_value)
     {
@@ -181,14 +203,16 @@ static void set_jwt_settings(json_t *j_section, jwt_settings_t *settings)
             }
             else
             {
-                fprintf(stdout, "Token %s must be an integer\n", key);
+                log_message(LOG_LEVEL_WARN,
+                            "[SETTINGS] JWT Token %s must be an integer\n", key);
             }
         }
         else if (strcasecmp(key, "secret_key") == 0)
         {
             if (!json_is_string(j_value))
             {
-                fprintf(stdout, "Token %s must be a string\n", key);
+                log_message(LOG_LEVEL_WARN,
+                            "[SETTINGS] JWT Token %s must be a string\n", key);
                 continue;
             }
 
@@ -196,7 +220,8 @@ static void set_jwt_settings(json_t *j_section, jwt_settings_t *settings)
             value_length = strnlen(string_value, J_MAX_LENGTH_SECRET_KEY);
             if (value_length == 0 || value_length == J_MAX_LENGTH_SECRET_KEY)
             {
-                fprintf(stdout, "Token %s length is invalid\n", key);
+                log_message(LOG_LEVEL_WARN,
+                            "[SETTINGS] JWT Token %s length is invalid\n", key);
                 continue;
             }
 
@@ -210,7 +235,7 @@ static void set_jwt_settings(json_t *j_section, jwt_settings_t *settings)
                                                                 unsigned char));
             if (settings->secret_key == NULL)
             {
-                fprintf(stderr, "Failed to allocate %s!\n", key);
+                log_message(LOG_LEVEL_FATAL, "Failed to allocate %s!\n", key);
                 settings->secret_key_length = 0;
                 continue;
             }
@@ -228,19 +253,22 @@ static void set_jwt_settings(json_t *j_section, jwt_settings_t *settings)
                     }
                     else
                     {
-                        fprintf(stdout, "User settings must be stored in an object\n");
+                        log_message(LOG_LEVEL_WARN,
+                                    "[SETTINGS] User settings must be stored in an object\n");
                     }
                 }
             }
             else
             {
-                fprintf(stdout, "Users settings must be stored in objects list\n");
+                log_message(LOG_LEVEL_WARN,
+                            "[SETTINGS] Users settings must be stored in objects list\n");
             }
         }
         else
         {
-            fprintf(stdout, "Unrecognised configuration file key: %s.%s\n",
-                    section_name, key);
+            log_message(LOG_LEVEL_WARN,
+                        "[SETTINGS] Unrecognised configuration file key: %s.%s\n",
+                        section_name, key);
         }
     }
 }
@@ -267,8 +295,9 @@ static void set_http_security_settings(json_t *j_section, http_security_settings
         }
         else
         {
-            fprintf(stdout, "Unrecognised configuration file key: %s.%s\n",
-                    section_name, key);
+            log_message(LOG_LEVEL_WARN,
+                        "[SETTINGS] Unrecognised configuration file key: %s.%s\n",
+                        section_name, key);
         }
     }
 }
@@ -290,8 +319,9 @@ static void set_http_settings(json_t *j_section, http_settings_t *settings)
         }
         else
         {
-            fprintf(stdout, "Unrecognised configuration file key: %s.%s\n",
-                    section_name, key);
+            log_message(LOG_LEVEL_WARN,
+                        "[SETTINGS] Unrecognised configuration file key: %s.%s\n",
+                        section_name, key);
         }
     }
 }
@@ -316,26 +346,30 @@ static void set_logging_settings(json_t *j_section, logging_settings_t *settings
             }
             else
             {
-                fprintf(stdout, "%s.%s must be set to a boolean value!\n",
-                        section_name, key);
+                log_message(LOG_LEVEL_WARN,
+                            "[SETTINGS] %s.%s must be set to a boolean value!\n",
+                            section_name, key);
             }
         }
         else if (strcasecmp(key, "human_readable_timestamp") == 0)
         {
             if (json_is_boolean(j_value))
             {
-                settings->human_readable_timestamp = json_is_true(j_value) ? true : false;
+                settings->human_readable_timestamp =
+                    json_is_true(j_value) ? true : false;
             }
             else
             {
-                fprintf(stdout, "%s.%s must be set to a boolean value!\n",
-                        section_name, key);
+                log_message(LOG_LEVEL_WARN,
+                            "[SETTINGS] %s.%s must be set to a boolean value!\n",
+                            section_name, key);
             }
         }
         else
         {
-            fprintf(stdout, "Unrecognised configuration file key: %s.%s\n",
-                    section_name, key);
+            log_message(LOG_LEVEL_WARN,
+                        "[SETTINGS] Unrecognised configuration file key: %s.%s\n",
+                        section_name, key);
         }
     }
 }
@@ -350,8 +384,8 @@ static int read_config(char *config_name, settings_t *settings)
 
     if (j_settings == NULL)
     {
-        fprintf(stderr, "%s:%d:%d error:%s \n",
-                config_name, error.line, error.column, error.text);
+        log_message(LOG_LEVEL_ERROR, "[SETTINGS] %s:%d:%d error:%s \n",
+                    config_name, error.line, error.column, error.text);
         return 1;
     }
 
@@ -371,14 +405,16 @@ static int read_config(char *config_name, settings_t *settings)
         }
         else
         {
-            fprintf(stdout, "Unrecognised configuration file section: %s\n", section);
+            log_message(LOG_LEVEL_WARN,
+                        "[SETTINGS] Unrecognised configuration file section: %s\n",
+                        section);
         }
     }
 
     return 0;
 }
 
-error_t parse_opt(int key, char *arg, struct argp_state *state)
+static error_t parse_arguments(int key, char *arg, struct argp_state *state)
 {
     settings_t *settings = state->input;
 
@@ -419,9 +455,23 @@ error_t parse_opt(int key, char *arg, struct argp_state *state)
     return 0;
 }
 
-static struct argp argp = { options, parse_opt, 0, doc };
+static struct argp argp = { options, parse_arguments, 0, description };
 
-int settings_init(int argc, char *argv[], settings_t *settings)
+
+int settings_initialize(settings_t *settings)
+{
+    *settings = DEFAULT_PUNICA_SETTINGS;
+
+    settings->http.security.jwt.users_list = linked_list_new();
+    settings->http.security.jwt.secret_key = (unsigned char *) malloc(
+                                                 settings->http.security.jwt.secret_key_length * sizeof(unsigned char));
+    utils_get_random(settings->http.security.jwt.secret_key,
+                     settings->http.security.jwt.secret_key_length);
+
+    return 0;
+}
+
+int settings_load(settings_t *settings, int argc, char *argv[])
 {
     return argp_parse(&argp, argc, argv, 0, 0, settings);
 }

@@ -1,5 +1,6 @@
 /*
  * Punica - LwM2M server with REST API
+
  * Copyright (C) 2018 8devices
  *
  * This program is free software: you can redistribute it and/or modify it
@@ -36,6 +37,7 @@
 #include <string.h>
 #include <sys/socket.h>
 
+static char *logging_section = "";
 static volatile int punica_quit;
 static void sigint_handler(int signo)
 {
@@ -45,60 +47,75 @@ static void sigint_handler(int signo)
 /**
  * Function called if we get a SIGPIPE. Does counting.
  * exmp. killall -13  punica
- * @param sig will be SIGPIPE (ignored)
+ * @param signal will be SIGPIPE (ignored)
  */
-static void sigpipe_handler(int sig)
+static void sigpipe_handler(int signal)
 {
     static volatile int sigpipe_cnt;
     sigpipe_cnt++;
-    log_message(LOG_LEVEL_ERROR, "SIGPIPE occurs: %d times.\n", sigpipe_cnt);
+
+    logging_section = "[SIGNAL]";
+    log_message(LOG_LEVEL_ERROR,
+                "%s SIGPIPE occurs: %d times.\n", logging_section, sigpipe_cnt);
 }
 
 /**
- * setup handlers to ignore SIGPIPE, handle SIGINT...
+ * initialize handlers for SIGINT, SIGPIPE and SIGTERM.
  */
-static void init_signals(void)
+static void signals_initialize(void)
 {
-    struct sigaction oldsig;
-    struct sigaction sig;
+    struct sigaction old_signal, signal;
 
-    //signal(SIGINT, sigint_handler);//automaticaly do SA_RESTART, we must break system functions exmp. select
-    memset(&sig, 0, sizeof(sig));
-    sig.sa_handler = &sigint_handler;
-    sigemptyset(&sig.sa_mask);
-    sig.sa_flags = 0;//break system functions open, read ... if SIGINT occurs
-    if (0 != sigaction(SIGINT, &sig, &oldsig))
+    logging_section = "[SIGNAL]";
+    // signal(SIGINT, sigint_handler); //automaticaly do SA_RESTART, we must break system functions exmp. select
+    memset(&signal, 0, sizeof(signal));
+    signal.sa_handler = &sigint_handler;
+    sigemptyset(&signal.sa_mask);
+    signal.sa_flags = 0; // break system functions open, read ... if SIGINT occurs
+    if (0 != sigaction(SIGINT, &signal, &old_signal))
     {
-        log_message(LOG_LEVEL_FATAL, "Failed to install SIGINT handler: %s\n", strerror(errno));
+        log_message(LOG_LEVEL_FATAL,
+                    "%s Failed to install SIGINT handler: %s\n",
+                    logging_section, strerror(errno));
     }
 
     //to stop valgrind
-    if (0 != sigaction(SIGTERM, &sig, &oldsig))
+    if (0 != sigaction(SIGTERM, &signal, &old_signal))
     {
-        log_message(LOG_LEVEL_FATAL, "Failed to install SIGTERM handler: %s\n", strerror(errno));
+        log_message(LOG_LEVEL_FATAL,
+                    "%s Failed to install SIGTERM handler: %s\n",
+                    logging_section, strerror(errno));
     }
 
-    memset(&sig, 0, sizeof(sig));
-    sig.sa_handler = &sigpipe_handler;
-    sigemptyset(&sig.sa_mask);
-    sig.sa_flags = SA_RESTART;
-    if (0 != sigaction(SIGPIPE, &sig, &oldsig))
+    memset(&signal, 0, sizeof(signal));
+    signal.sa_handler = &sigpipe_handler;
+    sigemptyset(&signal.sa_mask);
+    signal.sa_flags = SA_RESTART;
+    if (0 != sigaction(SIGPIPE, &signal, &old_signal))
     {
-        log_message(LOG_LEVEL_FATAL, "Failed to install SIGPIPE handler: %s\n", strerror(errno));
+        log_message(LOG_LEVEL_FATAL,
+                    "Failed to install SIGPIPE handler: %s\n",
+                    logging_section, strerror(errno));
     }
 }
 
-void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
-                       lwm2m_media_type_t format, uint8_t *data, int dataLength,
+void client_monitor_cb(uint16_t l_client_id, lwm2m_uri_t *l_uri_path,
+                       int status, lwm2m_media_type_t l_format,
+                       uint8_t *data, int dataLength,
                        void *userData)
 {
     punica_context_t *punica = (punica_context_t *)userData;
-    lwm2m_context_t *lwm2m = punica->lwm2m;
-    lwm2m_client_t *client;
-    lwm2m_client_object_t *obj;
-    lwm2m_list_t *ins;
+    rest_notif_registration_t *registration_notification;
+    rest_notif_deregistration_t *deregistration_notification;
+    lwm2m_context_t *lwm2m = punica->lwm2m;;
+    lwm2m_client_t *l_client;
+    lwm2m_client_object_t *l_object;
+    lwm2m_list_t *l_object_instance;
 
-    client = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)lwm2m->clientList, clientID);
+    logging_section = "[LwM2M]";
+
+    l_client = (lwm2m_client_t *) lwm2m_list_find(
+                   (lwm2m_list_t *)lwm2m->clientList, l_client_id);
 
     switch (status)
     {
@@ -106,52 +123,64 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
     case COAP_204_CHANGED:
         if (status == COAP_201_CREATED)
         {
-            rest_notif_registration_t *regNotif = rest_notif_registration_new();
+            registration_notification = rest_notif_registration_new();
 
-            if (regNotif != NULL)
+            if (registration_notification != NULL)
             {
-                rest_notif_registration_set(regNotif, client->name);
-                rest_notify_registration(punica, regNotif);
+                rest_notif_registration_set(registration_notification,
+                                            l_client->name);
+                rest_notify_registration(punica, registration_notification);
             }
             else
             {
-                log_message(LOG_LEVEL_ERROR, "[MONITOR] Failed to allocate registration notification!\n");
+                log_message(LOG_LEVEL_ERROR,
+                            "%s Failed to allocate registration notification!\n",
+                            logging_section);
             }
 
-            log_message(LOG_LEVEL_INFO, "[MONITOR] Client %d registered.\n", clientID);
+            log_message(LOG_LEVEL_INFO, "%s Client %d registered.\n",
+                        logging_section, l_client_id);
         }
         else
         {
-            rest_notif_update_t *updateNotif = rest_notif_update_new();
+            rest_notif_update_t *update_notification = rest_notif_update_new();
 
-            if (updateNotif != NULL)
+            if (update_notification != NULL)
             {
-                rest_notif_update_set(updateNotif, client->name);
-                rest_notify_update(punica, updateNotif);
+                rest_notif_update_set(update_notification, l_client->name);
+                rest_notify_update(punica, update_notification);
             }
             else
             {
-                log_message(LOG_LEVEL_ERROR, "[MONITOR] Failed to allocate update notification!\n");
+                log_message(LOG_LEVEL_ERROR,
+                            "%s Failed to allocate update notification!\n",
+                            logging_section);
             }
 
-            log_message(LOG_LEVEL_INFO, "[MONITOR] Client %d updated.\n", clientID);
+            log_message(LOG_LEVEL_INFO, "%s Client %d updated.\n",
+                        logging_section, l_client_id);
         }
 
-        log_message(LOG_LEVEL_DEBUG, "\tname: '%s'\n", client->name);
-        log_message(LOG_LEVEL_DEBUG, "\tbind: '%s'\n", binding_to_string(client->binding));
-        log_message(LOG_LEVEL_DEBUG, "\tlifetime: %d\n", client->lifetime);
-        log_message(LOG_LEVEL_DEBUG, "\tobjects: ");
-        for (obj = client->objectList; obj != NULL; obj = obj->next)
+        log_message(LOG_LEVEL_DEBUG,
+                    "\tname: \"%s\"\n\tbind: \"%s\"\n\tlifetime: %d\n\tobjects: ",
+                    l_client->name, binding_to_string(l_client->binding),
+                    l_client->lifetime);
+
+        for (l_object = l_client->objectList;
+             l_object != NULL; l_object = l_object->next)
         {
-            if (obj->instanceList == NULL)
+            if (l_object->instanceList == NULL)
             {
-                log_message(LOG_LEVEL_DEBUG, "/%d, ", obj->id);
+                log_message(LOG_LEVEL_DEBUG, "/%d, ", l_object->id);
             }
             else
             {
-                for (ins = obj->instanceList; ins != NULL; ins = ins->next)
+                for (l_object_instance = l_object->instanceList;
+                     l_object_instance != NULL;
+                     l_object_instance = l_object_instance->next)
                 {
-                    log_message(LOG_LEVEL_DEBUG, "/%d/%d, ", obj->id, ins->id);
+                    log_message(LOG_LEVEL_DEBUG, "/%d/%d, ",
+                                l_object->id, l_object_instance->id);
                 }
             }
         }
@@ -160,59 +189,75 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
 
     case COAP_202_DELETED:
     {
-        rest_notif_deregistration_t *deregNotif = rest_notif_deregistration_new();
+        deregistration_notification = rest_notif_deregistration_new();
 
-        if (deregNotif != NULL)
+        if (deregistration_notification != NULL)
         {
-            rest_notif_deregistration_set(deregNotif, client->name);
-            rest_notify_deregistration(punica, deregNotif);
+            rest_notif_deregistration_set(deregistration_notification,
+                                          l_client->name);
+            rest_notify_deregistration(punica, deregistration_notification);
         }
         else
         {
-            log_message(LOG_LEVEL_ERROR, "[MONITOR] Failed to allocate deregistration notification!\n");
+            log_message(LOG_LEVEL_ERROR,
+                        "%s Failed to allocate deregistration notification!\n",
+                        logging_section);
         }
 
-        log_message(LOG_LEVEL_INFO, "[MONITOR] Client %d deregistered.\n", clientID);
+        log_message(LOG_LEVEL_INFO,
+                    "%s Client %d deregistered.\n", logging_section, l_client_id);
         break;
     }
     default:
-        log_message(LOG_LEVEL_INFO, "[MONITOR] Client %d status update %d.\n", clientID, status);
+        log_message(LOG_LEVEL_INFO,
+                    "%s Client %d status update %d.\n",
+                    logging_section, l_client_id, status);
         break;
     }
 }
 
-int socket_receive(lwm2m_context_t *lwm2m, int sock)
+int socket_receive(lwm2m_context_t *lwm2m, int coap_socket)
 {
-    int nbytes;
-    uint8_t buf[1500];
-    struct sockaddr_storage addr;
-    socklen_t addrLen = sizeof(addr);
-    connection_t *con;
-    static connection_t *connectionList = NULL;
+    int buffer_length;
+    uint8_t buffer[1500];
+    struct sockaddr_storage socket_address;
+    socklen_t socket_address_size = sizeof(socket_address);
+    connection_t *connection;
+    static connection_t *connections = NULL;
 
-    memset(buf, 0, sizeof(buf));
+    memset(buffer, 0, sizeof(buffer));
 
-    nbytes = recvfrom(sock, buf, sizeof(buf), 0, (struct sockaddr *)&addr, &addrLen);
+    buffer_length = recvfrom(coap_socket, buffer, sizeof(buffer),
+                             0, (struct sockaddr *)&socket_address, &socket_address_size);
 
-    if (nbytes < 0)
+    if (buffer_length < 0)
     {
-        log_message(LOG_LEVEL_FATAL, "recvfrom() error: %d\n", nbytes);
+        log_message(LOG_LEVEL_ERROR,
+                    "%s Failed to receive coap packet!\n", logging_section);
+
+        log_message(LOG_LEVEL_DEBUG,
+                    "%s recvfrom() returned error code: \"%d\"\n",
+                    logging_section, buffer_length);
         return -1;
     }
 
-    con = connection_find(connectionList, &addr, addrLen);
-    if (con == NULL)
+    connection = connection_find(connections,
+                                 &socket_address, socket_address_size);
+
+    if (connection == NULL)
     {
-        con = connection_new_incoming(connectionList, sock, (struct sockaddr *)&addr, addrLen);
-        if (con)
+        connection = connection_new_incoming(connections, coap_socket,
+                                             (struct sockaddr *)&socket_address, socket_address_size);
+
+        if (connection)
         {
-            connectionList = con;
+            connections = connection;
         }
     }
 
-    if (con)
+    if (connection != NULL)
     {
-        lwm2m_handle_packet(lwm2m, buf, nbytes, con);
+        lwm2m_handle_packet(lwm2m, buffer, buffer_length, connection);
     }
 
     return 0;
@@ -220,87 +265,71 @@ int socket_receive(lwm2m_context_t *lwm2m, int sock)
 
 int main(int argc, char *argv[])
 {
-    int sock;
-    fd_set readfds;
-    struct timeval tv;
-    int res;
     punica_context_t punica;
+    static settings_t settings;
+    fd_set read_fds;
     char coap_port[6];
-
-    static settings_t settings =
+    int status_code, coap_socket;
+    static struct _u_instance u_instance;
+    static struct timeval tv_timeout_interval =
     {
-        .http = {
-            .port = 8888,
-            .security = {
-                .private_key = NULL,
-                .certificate = NULL,
-                .private_key_file = NULL,
-                .certificate_file = NULL,
-                .jwt = {
-                    .initialised = false,
-                    .algorithm = JWT_ALG_HS512,
-                    .secret_key = NULL,
-                    .secret_key_length = 32,
-                    .users_list = NULL,
-                    .expiration_time = 3600,
-                },
-            },
-        },
-        .coap = {
-            .port = 5555,
-            .database_file = NULL,
-        },
-        .logging = {
-            .level = LOG_LEVEL_WARN,
-            .timestamp = false,
-            .human_readable_timestamp = false,
-        },
+        .tv_sec = 5,
+        .tv_usec = 0,
     };
 
-    settings.http.security.jwt.users_list = linked_list_new();
-    settings.http.security.jwt.secret_key = (unsigned char *) malloc(
-                                                settings.http.security.jwt.secret_key_length * sizeof(unsigned char));
-    utils_get_random(settings.http.security.jwt.secret_key,
-                     settings.http.security.jwt.secret_key_length);
-
-    if (settings_init(argc, argv, &settings) != 0)
+    logging_section = "[SETTINGS]";
+    if (settings_initialize(&settings) != 0)
     {
+        log_message(LOG_LEVEL_FATAL,
+                    "%s Failed to initialize settings!\n", logging_section);
         return -1;
     }
+    logging_initialize(&settings.logging);
 
-    logging_init(&settings.logging);
+    if (settings_load(&settings, argc, argv) != 0)
+    {
+        log_message(LOG_LEVEL_FATAL,
+                    "%s Failed to load settings!\n", logging_section);
+        return -1;
+    }
+    logging_initialize(&settings.logging);
 
-    init_signals();
+    signals_initialize();
 
-    punica_init(&punica, &settings);
+    punica_initialize(&punica, &settings);
 
-    /* Socket section */
+    logging_section = "[LwM2M]";
     snprintf(coap_port, sizeof(coap_port), "%d", settings.coap.port);
-    log_message(LOG_LEVEL_INFO, "Creating coap socket on port %s\n", coap_port);
-    sock = create_socket(coap_port, AF_INET6);
-    if (sock < 0)
+    log_message(LOG_LEVEL_INFO,
+                "%s Creating CoAP socket on port %s...\n",
+                logging_section, coap_port);
+    coap_socket = create_socket(coap_port, AF_INET6);
+    if (coap_socket < 0)
     {
-        log_message(LOG_LEVEL_FATAL, "Failed to create socket!\n");
+        log_message(LOG_LEVEL_FATAL,
+                    "%s Failed to create socket!\n", logging_section);
         return -1;
     }
 
-    /* Server section */
     punica.lwm2m = lwm2m_init(NULL);
     if (punica.lwm2m == NULL)
     {
-        log_message(LOG_LEVEL_FATAL, "Failed to create LwM2M server!\n");
+        log_message(LOG_LEVEL_FATAL,
+                    "%s Failed to initialize server instance!\n", logging_section);
         return -1;
     }
 
     lwm2m_set_monitoring_callback(punica.lwm2m, client_monitor_cb, &punica);
 
-    /* REST server section */
-    struct _u_instance instance;
-
-    log_message(LOG_LEVEL_INFO, "Creating http socket on port %u\n", settings.http.port);
-    if (ulfius_init_instance(&instance, settings.http.port, NULL, NULL) != U_OK)
+    logging_section = "[REST API]";
+    log_message(LOG_LEVEL_INFO,
+                "%s Creating HTTP socket on port %u...\n",
+                logging_section, settings.http.port);
+    if (ulfius_init_instance(&u_instance, settings.http.port,
+                             NULL, NULL) != U_OK)
     {
-        log_message(LOG_LEVEL_FATAL, "Failed to initialize REST server!\n");
+        log_message(LOG_LEVEL_FATAL,
+                    "%s Failed to initialize server instance!\n", logging_section);
         return -1;
     }
 
@@ -310,137 +339,171 @@ int main(int argc, char *argv[])
      */
 
     // Endpoints
-    ulfius_add_endpoint_by_val(&instance, "GET", "/endpoints", NULL, 10,
-                               &rest_endpoints_cb, &punica);
-    ulfius_add_endpoint_by_val(&instance, "GET", "/endpoints", ":name", 10,
-                               &rest_endpoints_name_cb, &punica);
+    ulfius_add_endpoint_by_val(&u_instance,
+                               "GET", "/endpoints", NULL, 10, &rest_endpoints_cb, &punica);
+    ulfius_add_endpoint_by_val(&u_instance,
+                               "GET", "/endpoints", ":name", 10, &rest_endpoints_name_cb, &punica);
 
     // Resources
-    ulfius_add_endpoint_by_val(&instance, "*", "/endpoints", ":name/*", 10,
-                               &rest_resources_rwe_cb, &punica);
+    ulfius_add_endpoint_by_val(&u_instance,
+                               "*", "/endpoints", ":name/*", 10, &rest_resources_rwe_cb, &punica);
 
     // Notifications
-    ulfius_add_endpoint_by_val(&instance, "GET", "/notification/callback", NULL, 10,
+    ulfius_add_endpoint_by_val(&u_instance,
+                               "GET", "/notification/callback", NULL, 10,
                                &rest_notifications_get_callback_cb, &punica);
-    ulfius_add_endpoint_by_val(&instance, "PUT", "/notification/callback", NULL, 10,
+    ulfius_add_endpoint_by_val(&u_instance,
+                               "PUT", "/notification/callback", NULL, 10,
                                &rest_notifications_put_callback_cb, &punica);
-    ulfius_add_endpoint_by_val(&instance, "DELETE", "/notification/callback", NULL, 10,
+    ulfius_add_endpoint_by_val(&u_instance,
+                               "DELETE", "/notification/callback", NULL, 10,
                                &rest_notifications_delete_callback_cb, &punica);
-    ulfius_add_endpoint_by_val(&instance, "GET", "/notification/pull", NULL, 10,
+    ulfius_add_endpoint_by_val(&u_instance,
+                               "GET", "/notification/pull", NULL, 10,
                                &rest_notifications_pull_cb, &punica);
 
     // Subscriptions
-    ulfius_add_endpoint_by_val(&instance, "PUT", "/subscriptions", ":name/*", 10,
+    ulfius_add_endpoint_by_val(&u_instance,
+                               "PUT", "/subscriptions", ":name/*", 10,
                                &rest_subscriptions_put_cb, &punica);
-    ulfius_add_endpoint_by_val(&instance, "DELETE", "/subscriptions", ":name/*", 10,
+    ulfius_add_endpoint_by_val(&u_instance,
+                               "DELETE", "/subscriptions", ":name/*", 10,
                                &rest_subscriptions_delete_cb, &punica);
 
     // Version
-    ulfius_add_endpoint_by_val(&instance, "GET", "/version", NULL, 1, &rest_version_cb, NULL);
+    ulfius_add_endpoint_by_val(&u_instance,
+                               "GET", "/version", NULL, 1, &rest_version_cb, NULL);
 
     // JWT authentication
-    ulfius_add_endpoint_by_val(&instance, "POST", "/authenticate", NULL, 1, &rest_authenticate_cb,
+    ulfius_add_endpoint_by_val(&u_instance,
+                               "POST", "/authenticate", NULL, 1, &rest_authenticate_cb,
                                (void *)&settings.http.security.jwt);
-    ulfius_add_endpoint_by_val(&instance, "*", "*", NULL, 3, &rest_validate_jwt_cb,
+    ulfius_add_endpoint_by_val(&u_instance,
+                               "*", "*", NULL, 3, &rest_validate_jwt_cb,
                                (void *)&settings.http.security.jwt);
 
-    if (settings.http.security.private_key != NULL || settings.http.security.certificate != NULL)
+    if (settings.http.security.private_key != NULL
+        || settings.http.security.certificate != NULL)
     {
         if (security_load(&(settings.http.security)) != 0)
         {
+            log_message(LOG_LEVEL_FATAL,
+                        "%s Failed to load server security!\n", logging_section);
             return -1;
         }
 
-        if (ulfius_start_secure_framework(&instance,
+        if (ulfius_start_secure_framework(&u_instance,
                                           settings.http.security.private_key_file,
                                           settings.http.security.certificate_file) != U_OK)
         {
-            log_message(LOG_LEVEL_FATAL, "Failed to start REST server!\n");
+            log_message(LOG_LEVEL_FATAL,
+                        "%s Failed to start secure server!\n", logging_section);
             return -1;
         }
 
-        if (!settings.http.security.jwt.initialised)
+        if (!settings.http.security.jwt.initialized)
         {
-            log_message(LOG_LEVEL_WARN, "Encryption without authentication is unadvisable!\n");
+            log_message(LOG_LEVEL_WARN,
+                        "%s Encryption without authentication is unadvisable!\n",
+                        logging_section);
         }
     }
     else
     {
-        if (ulfius_start_framework(&instance) != U_OK)
+        if (ulfius_start_framework(&u_instance) != U_OK)
         {
-            log_message(LOG_LEVEL_FATAL, "Failed to start REST server!\n");
+            log_message(LOG_LEVEL_FATAL,
+                        "%s Failed to start server!\n", logging_section);
             return -1;
         }
 
-        if (settings.http.security.jwt.initialised)
+        if (settings.http.security.jwt.initialized)
         {
-            log_message(LOG_LEVEL_WARN, "Authentication without encryption is unadvisable!\n");
+            log_message(LOG_LEVEL_WARN,
+                        "%s Authentication without encryption is unadvisable!\n",
+                        logging_section);
         }
     }
 
-    if (settings.http.security.jwt.initialised)
+    if (settings.http.security.jwt.initialized)
     {
         if (settings.http.security.jwt.users_list->head == NULL)
         {
-            log_message(LOG_LEVEL_WARN, "JWT is initialised but no users are configured properly!\n");
+            log_message(LOG_LEVEL_WARN,
+                        "%s JWT is initialized, but users list is empty!\n",
+                        logging_section);
         }
         if (settings.http.security.jwt.secret_key == NULL)
         {
-            log_message(LOG_LEVEL_WARN, "JWT is initialised but secret key is unavalable!\n");
+            log_message(LOG_LEVEL_WARN,
+                        "%s JWT is initialized, but secret key is unavailable!\n",
+                        logging_section);
         }
     }
 
     /* Main section */
     while (!punica_quit)
     {
-        FD_ZERO(&readfds);
-        FD_SET(sock, &readfds);
-
-        tv.tv_sec = 5;
-        tv.tv_usec = 0;
+        FD_ZERO(&read_fds);
+        FD_SET(coap_socket, &read_fds);
 
         punica_lock(&punica);
-        res = lwm2m_step(punica.lwm2m, &tv.tv_sec);
-        if (res)
+        status_code = lwm2m_step(punica.lwm2m, &tv_timeout_interval.tv_sec);
+        if (status_code)
         {
-            log_message(LOG_LEVEL_ERROR, "lwm2m_step() error: %d\n", res);
+            logging_section = "[LwM2M]";
+            log_message(LOG_LEVEL_ERROR,
+                        "%s Failed to perform pending operations!\n",
+                        logging_section);
+            log_message(LOG_LEVEL_DEBUG,
+                        "%s lwm2m_step() error: \"%d\".\n",
+                        logging_section, status_code);
         }
 
-        res = rest_step(&punica, &tv);
-        if (res)
+        status_code = rest_step(&punica, &tv_timeout_interval);
+        if (status_code)
         {
-            log_message(LOG_LEVEL_ERROR, "punica_step() error: %d\n", res);
+            logging_section = "[REST API]";
+            log_message(LOG_LEVEL_ERROR,
+                        "%s Failed to perform pending operations!\n",
+                        logging_section);
+            log_message(LOG_LEVEL_DEBUG,
+                        "%s rest_step() error: %d\n",
+                        logging_section, status_code);
         }
         punica_unlock(&punica);
 
-        res = select(FD_SETSIZE, &readfds, NULL, NULL, &tv);
-        if (res < 0)
+        status_code = select(
+                          FD_SETSIZE, &read_fds, NULL, NULL, &tv_timeout_interval);
+        if (status_code < 0)
         {
             if (errno == EINTR)
             {
                 continue;
             }
 
-            log_message(LOG_LEVEL_ERROR, "select() error: %d\n", res);
+            log_message(LOG_LEVEL_ERROR,
+                        "%s Failed to read\n", logging_section);
+            log_message(LOG_LEVEL_DEBUG,
+                        "%s select() error: %d\n", logging_section, status_code);
         }
 
-        if (FD_ISSET(sock, &readfds))
+        if (FD_ISSET(coap_socket, &read_fds))
         {
             punica_lock(&punica);
-            socket_receive(punica.lwm2m, sock);
+            socket_receive(punica.lwm2m, coap_socket);
             punica_unlock(&punica);
         }
 
     }
 
-    ulfius_stop_framework(&instance);
-    ulfius_clean_instance(&instance);
+    ulfius_stop_framework(&u_instance);
+    ulfius_clean_instance(&u_instance);
 
     lwm2m_close(punica.lwm2m);
-    punica_cleanup(&punica);
+    punica_terminate(&punica);
 
-    jwt_cleanup(&settings.http.security.jwt);
+    jwt_terminate(&settings.http.security.jwt);
 
     return 0;
 }
-

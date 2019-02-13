@@ -39,7 +39,7 @@ typedef struct
     bool human_readable_timestamp;
 } logging_settings_t;
 
-int logging_init(logging_settings_t *settings);
+int logging_initialize(logging_settings_t *settings);
 
 int log_message(logging_level_t level, char *format, ...);
 

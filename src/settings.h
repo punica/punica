@@ -49,9 +49,38 @@ typedef struct
     logging_settings_t logging;
 } settings_t;
 
-error_t parse_opt(int key, char *arg, struct argp_state *state);
+static const settings_t DEFAULT_PUNICA_SETTINGS =
+{
+    .http = {
+        .port = 8888,
+        .security = {
+            .private_key = NULL,
+            .certificate = NULL,
+            .private_key_file = NULL,
+            .certificate_file = NULL,
+            .jwt = {
+                .initialized = false,
+                .algorithm = JWT_ALG_HS512,
+                .secret_key = NULL,
+                .secret_key_length = 32,
+                .users_list = NULL,
+                .expiration_time = 3600,
+            },
+        },
+    },
+    .coap = {
+        .port = 5555,
+        .database_file = NULL,
+    },
+    .logging = {
+        .level = LOG_LEVEL_WARN,
+        .timestamp = false,
+        .human_readable_timestamp = false,
+    },
+};
 
-int settings_init(int argc, char *argv[], settings_t *settings);
+int settings_initialize(settings_t *settings);
+int settings_load(settings_t *settings, int argc, char *argv[]);
 
 #endif // SETTINGS_H
 

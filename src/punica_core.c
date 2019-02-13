@@ -17,17 +17,16 @@
  *
  */
 
-#include "logging.h"
 #include "punica.h"
+#include "logging.h"
+#include "settings.h"
 #include "rest.h"
 
 #include <assert.h>
 #include <string.h>
 
-void punica_init(punica_context_t *punica, settings_t *settings)
+void punica_initialize(punica_context_t *punica, settings_t *settings)
 {
-    memset(punica, 0, sizeof(punica_context_t));
-
     punica->rest_registrations = linked_list_new();
     punica->rest_updates = linked_list_new();
     punica->rest_deregistrations = linked_list_new();
@@ -36,16 +35,17 @@ void punica_init(punica_context_t *punica, settings_t *settings)
     punica->rest_pending_responses = linked_list_new();
     punica->rest_observations = linked_list_new();
     punica->settings = settings;
+    punica->j_rest_callback = NULL;
 
     assert(pthread_mutex_init(&punica->mutex, NULL) == 0);
 }
 
-void punica_cleanup(punica_context_t *punica)
+void punica_terminate(punica_context_t *punica)
 {
-    if (punica->j_callback)
+    if (punica->j_rest_callback)
     {
-        json_decref(punica->j_callback);
-        punica->j_callback = NULL;
+        json_decref(punica->j_rest_callback);
+        punica->j_rest_callback = NULL;
     }
 
     rest_notifications_clear(punica);

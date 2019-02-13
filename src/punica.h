@@ -33,11 +33,8 @@ typedef struct
 
     lwm2m_context_t *lwm2m;
 
-    // rest-core
-    json_t *j_callback;
+    json_t *j_rest_callback;
 
-    // rest-notifications
-    // linked_list_t *registrationList;
     linked_list_t *rest_registrations;
     // linked_list_t *updateList;
     linked_list_t *rest_updates;
@@ -63,8 +60,8 @@ typedef struct
     settings_t *settings;
 } punica_context_t;
 
-void punica_init(punica_context_t *punica, settings_t *settings);
-void punica_cleanup(punica_context_t *punica);
+void punica_initialize(punica_context_t *punica, settings_t *settings);
+void punica_terminate(punica_context_t *punica);
 
 void punica_lock(punica_context_t *punica);
 void punica_unlock(punica_context_t *punica);

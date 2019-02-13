@@ -57,7 +57,7 @@ typedef struct
 
 typedef struct
 {
-    bool initialised;
+    bool initialized;
     jwt_alg_t algorithm;
     unsigned char *secret_key;
     size_t secret_key_length;
@@ -77,11 +77,14 @@ typedef struct
 int security_load(http_security_settings_t *settings);
 int security_unload(http_security_settings_t *settings);
 
-void jwt_init(jwt_settings_t *settings);
-void jwt_cleanup(jwt_settings_t *settings);
+void jwt_initialize(jwt_settings_t *settings);
+void jwt_load(jwt_settings_t *settings);
+void jwt_unload(jwt_settings_t *settings);
+void jwt_terminate(jwt_settings_t *settings);
 
 user_t *security_user_new();
-int security_user_set(user_t *user, const char *name, const char *secret, json_t *j_scope);
+int security_user_set(user_t *user, const char *name,
+                      const char *secret, json_t *j_scope);
 void security_user_delete(user_t *user);
 
 int security_user_check_scope(user_t *user, char *required_scope);

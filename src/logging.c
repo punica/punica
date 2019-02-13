@@ -27,15 +27,22 @@
 
 static logging_settings_t logging_settings;
 
-int logging_init(logging_settings_t *settings)
+int logging_initialize(logging_settings_t *settings)
 {
     memcpy(&logging_settings, settings, sizeof(logging_settings_t));
-    log_message(LOG_LEVEL_TRACE, "Logging timestamp: %s\n", logging_settings.timestamp ? "ON" : "OFF");
-    log_message(LOG_LEVEL_TRACE, "Logging level set to %d\n", logging_settings.level);
+
+    log_message(LOG_LEVEL_TRACE,
+                "[LOGGING] Timestamp set to %s\n",
+                logging_settings.timestamp ? "ON" : "OFF");
+    log_message(LOG_LEVEL_TRACE,
+                "[LOGGING] Level set to %d\n",
+                logging_settings.level);
 
     if (logging_settings.level > LOG_LEVEL_TRACE)
     {
-        log_message(LOG_LEVEL_WARN, "Unexpected high log level \"%d\".\n", logging_settings.level);
+        log_message(LOG_LEVEL_WARN,
+                    "[LOGGING] Unexpected high logging level \"%d\".\n",
+                    logging_settings.level);
     }
 
     return 0;
@@ -80,12 +87,15 @@ int log_message(logging_level_t level, char *format, ...)
             time_time = time_timeval.tv_sec;
             time_tm = localtime(&time_time);
 
-            strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%d %H:%M:%S", time_tm);
-            fprintf(stream, "%s.%03lu ", time_buffer, time_timeval.tv_usec / 1000);
+            strftime(time_buffer, sizeof(time_buffer),
+                     "%Y-%m-%d %H:%M:%S", time_tm);
+            fprintf(stream, "%s.%03lu ",
+                    time_buffer, time_timeval.tv_usec / 1000);
         }
         else
         {
-            fprintf(stream, "%lu.%03lu ", time_timeval.tv_sec, time_timeval.tv_usec / 1000);
+            fprintf(stream, "%lu.%03lu ",
+                    time_timeval.tv_sec, time_timeval.tv_usec / 1000);
         }
     }
 

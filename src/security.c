@@ -30,22 +30,22 @@ static char *read_file(const char *filename)
 {
     char *buffer = NULL;
     long length;
-    FILE *f = fopen(filename, "rb");
+    FILE *file = fopen(filename, "rb");
+
     if (filename != NULL)
     {
-
-        if (f)
+        if (file)
         {
-            fseek(f, 0, SEEK_END);
-            length = ftell(f);
-            fseek(f, 0, SEEK_SET);
+            fseek(file, 0, SEEK_END);
+            length = ftell(file);
+            fseek(file, 0, SEEK_SET);
             buffer = malloc(length + 1);
             if (buffer)
             {
-                fread(buffer, 1, length, f);
+                fread(buffer, 1, length, file);
                 buffer[length] = '\0';
             }
-            fclose(f);
+            fclose(file);
         }
         return buffer;
     }
@@ -59,19 +59,23 @@ int security_load(http_security_settings_t *settings)
 {
     if (settings->private_key == NULL || settings->certificate == NULL)
     {
-        log_message(LOG_LEVEL_ERROR, "Not enough security files provided\n");
+        log_message(LOG_LEVEL_ERROR,
+                    "[HTTPS] Not enough security files provided\n");
         return 1;
     }
 
     settings->private_key_file = read_file(settings->private_key);
     settings->certificate_file = read_file(settings->certificate);
 
-    if (settings->private_key_file == NULL || settings->certificate_file == NULL)
+    if (settings->private_key_file == NULL
+        || settings->certificate_file == NULL)
     {
-        log_message(LOG_LEVEL_ERROR, "Failed to read security files\n");
+        log_message(LOG_LEVEL_ERROR,
+                    "[HTTPS] Failed to read security files\n");
         return 1;
     }
-    log_message(LOG_LEVEL_TRACE, "Successfully loaded security configuration\n");
+    log_message(LOG_LEVEL_TRACE,
+                "[HTTPS] Successfully loaded security configuration\n");
 
     return 0;
 }
@@ -93,12 +97,14 @@ void security_user_delete(user_t *user)
 {
     if (user->name)
     {
-        memset(user->name, 0, strnlen(user->name, J_MAX_LENGTH_USER_NAME));
+        memset(user->name, 0,
+               strnlen(user->name, J_MAX_LENGTH_USER_NAME));
     }
 
     if (user->secret)
     {
-        memset(user->secret, 0, strnlen(user->secret, J_MAX_LENGTH_USER_SECRET));
+        memset(user->secret, 0,
+               strnlen(user->secret, J_MAX_LENGTH_USER_SECRET));
     }
 
     if (user->j_scope_list)
@@ -110,7 +116,8 @@ void security_user_delete(user_t *user)
     free(user);
 }
 
-int security_user_set(user_t *user, const char *name, const char *secret, json_t *j_scope)
+int security_user_set(user_t *user, const char *name,
+                      const char *secret, json_t *j_scope)
 {
     user->name = strdup(name);
     user->secret = strdup(secret);
@@ -119,12 +126,12 @@ int security_user_set(user_t *user, const char *name, const char *secret, json_t
     return 0;
 }
 
-void jwt_init(jwt_settings_t *settings)
+void jwt_initialize(jwt_settings_t *settings)
 {
-    settings->initialised = true;
+    settings->initialized = true;
 }
 
-void jwt_cleanup(jwt_settings_t *settings)
+void jwt_terminate(jwt_settings_t *settings)
 {
     linked_list_entry_t *entry;
 
@@ -133,13 +140,14 @@ void jwt_cleanup(jwt_settings_t *settings)
         free(settings->secret_key);
     }
 
-    for (entry = settings->users_list->head; entry != NULL; entry = entry->next)
+    for (entry = settings->users_list->head;
+         entry != NULL; entry = entry->next)
     {
         security_user_delete((user_t *) entry->data);
     }
 
     linked_list_delete(settings->users_list);
-    settings->initialised = false;
+    settings->initialized = false;
 }
 
 int security_user_check_scope(user_t *user, char *required_scope)

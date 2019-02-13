@@ -45,6 +45,10 @@ void rest_notify_async_response(
 json_t *rest_notifications_json(punica_context_t *punica);
 void rest_notifications_clear(punica_context_t *punica);
 
+int rest_initialize(punica_context_t *punica, http_settings_t *settings);
+int rest_setup_callbacks(punica_context_t *punica);
+int rest_terminate(punica_context_t *punica);
+
 int rest_step(punica_context_t *punica, struct timeval *tv);
 
 #endif // REST_H
