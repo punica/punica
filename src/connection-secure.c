@@ -75,10 +75,13 @@ static int prv_net_receive_timeout(gnutls_transport_ptr_t context, unsigned int 
 
     ret = select(connP->sock + 1, &fds, NULL, NULL, &tv);
     if (ret <= 0)
+    {
         return ret;
+    }
 
     connP->addr_size = sizeof(connP->addr);
-    ret = recvfrom(connP->sock, dummy_buff, sizeof(dummy_buff), MSG_PEEK, (struct sockaddr *)&connP->addr, &connP->addr_size);
+    ret = recvfrom(connP->sock, dummy_buff, sizeof(dummy_buff), MSG_PEEK,
+                   (struct sockaddr *)&connP->addr, &connP->addr_size);
     if (ret > 0)
     {
         return 1;
@@ -102,10 +105,14 @@ static int prv_new_socket(const char *host, const char *port, int address_family
     hints.ai_flags = AI_ADDRCONFIG;
 
     if (host == NULL)
+    {
         hints.ai_flags |= AI_PASSIVE;
+    }
 
     if (getaddrinfo(host, port, &hints, &addr_list) != 0)
+    {
         return -1;
+    }
 
     for (cur = addr_list; cur != NULL; cur = cur->ai_next)
     {
@@ -139,15 +146,18 @@ int connection_create_secure(settings_t *options, int address_family, void *cont
     if (options->coap.certificate_file)
     {
         gnutls_certificate_allocate_credentials(&server_cert);
-        gnutls_certificate_set_x509_trust_file(server_cert, options->coap.certificate_file, GNUTLS_X509_FMT_PEM);
-        
-        CHECK_RET(gnutls_certificate_set_x509_key_file(server_cert, options->coap.certificate_file, options->coap.private_key_file, GNUTLS_X509_FMT_PEM));
+        gnutls_certificate_set_x509_trust_file(server_cert, options->coap.certificate_file,
+                                               GNUTLS_X509_FMT_PEM);
+
+        CHECK_RET(gnutls_certificate_set_x509_key_file(server_cert, options->coap.certificate_file,
+                                                       options->coap.private_key_file, GNUTLS_X509_FMT_PEM));
     }
 
 //    gnutls_certificate_set_known_gh_params(server_cert, GNUTLS_SEC_PARAM_MEDIUM);
 
 //  TODO: should DTLS be only 1.2?
-    CHECK_RET(gnutls_priority_init(&priority_cache, "NORMAL:+VERS-DTLS-ALL:+AES-128-CCM-8:+PSK:+ECDHE-ECDSA", NULL));
+    CHECK_RET(gnutls_priority_init(&priority_cache,
+                                   "NORMAL:+VERS-DTLS-ALL:+AES-128-CCM-8:+PSK:+ECDHE-ECDSA", NULL));
 
     gnutls_key_generate(&cookie_key, GNUTLS_COOKIE_KEY_SIZE);
 
@@ -216,10 +226,12 @@ hello_verify:
         memset(&prestate, 0, sizeof(prestate));
 
 //      check if cookie is valid, if not send hello verify
-        ret = gnutls_dtls_cookie_verify(&cookie_key, &connP->addr, sizeof(connP->addr), buffer, ret, &prestate);
+        ret = gnutls_dtls_cookie_verify(&cookie_key, &connP->addr, sizeof(connP->addr), buffer, ret,
+                                        &prestate);
         if (ret < 0)
         {
-            gnutls_dtls_cookie_send(&cookie_key, &connP->addr, sizeof(connP->addr), &prestate, connP, prv_net_send);
+            gnutls_dtls_cookie_send(&cookie_key, &connP->addr, sizeof(connP->addr), &prestate, connP,
+                                    prv_net_send);
 //          TODO: try verify again once
             goto hello_verify;
         }
@@ -239,7 +251,8 @@ hello_verify:
             gnutls_transport_set_pull_function(connP->session, prv_net_receive);
             gnutls_transport_set_pull_timeout_function(connP->session, prv_net_receive_timeout);
 
-            do {
+            do
+            {
                 ret = gnutls_handshake(connP->session);
             } while (ret == GNUTLS_E_AGAIN);
 
