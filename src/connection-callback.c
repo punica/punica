@@ -23,23 +23,36 @@
 #include <mbedtls/ssl.h>
 #include <mbedtls/oid.h>
 
-//int psk_callback(void *context, mbedtls_ssl_context *ssl, const unsigned char *name, size_t name_len)
+static void *psk_context;
+
+void set_psk_callback_context(void *context)
+{
+    psk_context = context;
+}
+
 int psk_callback(gnutls_session_t session, const char *username, gnutls_datum_t *key)
 {
-//    rest_list_t *device_list = context;
-//    database_entry_t *device_data;
-//    rest_list_entry_t *device_entry;
-//
-//    for (device_entry = device_list->head; device_entry != NULL; device_entry = device_entry->next)
-//    {
-//        device_data = (database_entry_t *)device_entry->data;
-//
-//        if (memcmp(name, device_data->psk_id, name_len) == 0)
-//        {
-//            return mbedtls_ssl_set_hs_psk(ssl, device_data->psk, device_data->psk_len);
-//        }
-//    }
-//
+    rest_list_t *device_list = psk_context;
+    database_entry_t *device_data;
+    rest_list_entry_t *device_entry;
+
+    for (device_entry = device_list->head; device_entry != NULL; device_entry = device_entry->next)
+    {
+        device_data = (database_entry_t *)device_entry->data;
+
+        if (memcmp(username, device_data->psk_id, device_data->psk_id_len) == 0)
+        {
+            key->data = gnutls_malloc(device_data->psk_len);
+            if (key->data == NULL)
+            {
+                return -1;
+            }
+            key->size = device_data->psk_len;
+            memcpy(key->data, device_data->psk, device_data->psk_len);
+            return 0;
+        }
+    }
+
     return -1;
 }
 

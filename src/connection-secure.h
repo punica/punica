@@ -203,11 +203,12 @@ int unhexify(unsigned char *output, const char *input, size_t *olen);
 void psk_free(psk_entry *head);
 psk_entry *psk_parse(char *psk_string);
 int psk_callback(gnutls_session_t session, const char *username, gnutls_datum_t *key);
+void set_psk_callback_context(void *context);
 int mbedtls_status_is_ssl_in_progress(int ret);
 
 typedef struct _device_connection_t
 {
-    struct _device_connection_t   *next;
+    struct _device_connection_t *next;
     int sock;
     gnutls_session_t session;
     struct sockaddr_in addr;
@@ -220,8 +221,6 @@ void connection_free_secure(void *connP);
 
 int connection_step_secure(void *ctx, struct timeval *tv);
 
-ssize_t connection_send_secure(gnutls_transport_ptr_t context, const void *data, size_t size);
-
-ssize_t connection_receive_secure(gnutls_transport_ptr_t context, void *data, size_t size);
+int connection_send_secure(void *session, uint8_t *buffer, size_t length);
 
 #endif

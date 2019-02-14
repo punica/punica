@@ -26,6 +26,7 @@
 #include "connection-secure.h"
 
 #define BUFF_SIZE 1024
+//  TODO: extract function name from 'func'
 #define CHECK_RET(func); \
     do {                 \
         if(func < 0)     \
@@ -42,19 +43,59 @@ static gnutls_psk_server_credentials_t server_psk;
 static int listen_fd;
 static device_connection_t *connection_list = NULL;
 
-static int connection_timeout_secure(gnutls_transport_ptr_t context, unsigned int ms);
+static ssize_t prv_net_send(gnutls_transport_ptr_t context, const void *data, size_t size)
+{
+    device_connection_t *connP = (device_connection_t *)context;
+
+    return sendto(connP->sock, data, size, 0, (struct sockaddr *)&connP->addr, connP->addr_size);
+}
+
+static ssize_t prv_net_receive(gnutls_transport_ptr_t context, void *data, size_t size)
+{
+    device_connection_t *connP = (device_connection_t *)context;
+
+    connP->addr_size = sizeof(connP->addr);
+    return recvfrom(connP->sock, data, size, 0, (struct sockaddr *)&connP->addr, &connP->addr_size);
+}
+
+static int prv_net_receive_timeout(gnutls_transport_ptr_t context, unsigned int ms)
+{
+//  TODO: review
+    device_connection_t *connP = (device_connection_t *)context;
+    int ret;
+    fd_set fds;
+    struct timeval tv;
+    char dummy_buff[1];
+
+    FD_ZERO(&fds);
+    FD_SET(connP->sock, &fds);
+
+    tv.tv_sec = ms / 1000;
+    tv.tv_usec = (ms % 1000) * 1000;
+
+    ret = select(connP->sock + 1, &fds, NULL, NULL, &tv);
+    if (ret <= 0)
+        return ret;
+
+    connP->addr_size = sizeof(connP->addr);
+    ret = recvfrom(connP->sock, dummy_buff, sizeof(dummy_buff), MSG_PEEK, (struct sockaddr *)&connP->addr, &connP->addr_size);
+    if (ret > 0)
+    {
+        return 1;
+    }
+
+    return 0;
+}
 
 static int prv_new_socket(const char *host, const char *port, int address_family)
 {
-    //TODO fix returns
-    int ret, sock;
+    int sock;
     struct addrinfo hints, *addr_list, *cur;
 
-//    if( ( ret = net_prepare() ) != 0 )
-//        return( ret );
-
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = address_family;
+//  TODO: fails to write if family ipv6
+//    hints.ai_family = address_family;
+    hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_DGRAM;
     //hints.ai_protocol = IPPROTO_UDP;
     hints.ai_protocol = 0;
@@ -66,24 +107,21 @@ static int prv_new_socket(const char *host, const char *port, int address_family
     if (getaddrinfo(host, port, &hints, &addr_list) != 0)
         return MBEDTLS_ERR_NET_UNKNOWN_HOST;
 
-    ret = MBEDTLS_ERR_NET_UNKNOWN_HOST;
     for (cur = addr_list; cur != NULL; cur = cur->ai_next)
     {
         sock = socket(cur->ai_family, cur->ai_socktype, cur->ai_protocol);
         if (sock < 0)
         {
-            ret = MBEDTLS_ERR_NET_SOCKET_FAILED;
             continue;
         }
 
         if (bind(sock, cur->ai_addr, cur->ai_addrlen))
         {
-            close( sock );
-            ret = MBEDTLS_ERR_NET_BIND_FAILED;
+            close(sock);
+            sock = -1;
             continue;
         }
 
-        ret = 0;
         break;
     }
 
@@ -91,11 +129,12 @@ static int prv_new_socket(const char *host, const char *port, int address_family
     return sock;
 }
 
-int connection_create_secure(settings_t *options, int address_family, void *psk_context)
+int connection_create_secure(settings_t *options, int address_family, void *context)
 {
-    char port_str[20];
+    char port_str[16];
+
 //  TODO: should check if already globally initialized
-//    gnutls_global_init();
+    CHECK_RET(gnutls_global_init());
 
     if (options->coap.certificate_file)
     {
@@ -107,24 +146,19 @@ int connection_create_secure(settings_t *options, int address_family, void *psk_
 
 //    gnutls_certificate_set_known_gh_params(server_cert, GNUTLS_SEC_PARAM_MEDIUM);
 
-    CHECK_RET(gnutls_priority_init(&priority_cache, "NORMAL:+VERS-DTLS1.2:+AES-128-CCM-8:+PSK", NULL));
+//  TODO: should DTLS be only 1.2?
+    CHECK_RET(gnutls_priority_init(&priority_cache, "NORMAL:+VERS-DTLS-ALL:+AES-128-CCM-8:+PSK:+ECDHE-ECDSA", NULL));
 
     gnutls_key_generate(&cookie_key, GNUTLS_COOKIE_KEY_SIZE);
 
     gnutls_psk_allocate_server_credentials(&server_psk);
     gnutls_psk_set_server_credentials_function(server_psk, psk_callback);
+    set_psk_callback_context(context);
 
     sprintf(port_str, "%d", options->coap.port);
     listen_fd = prv_new_socket(NULL, port_str, address_family);
-//      {
-//          getaddrinfo
-//          socket
-//          sockopt
-//          bind
-//      }
-//    listen_fd = socket(address_family, SOCK_DGRAM, 0);
-//    mbedtls_net_bind
-    return 0;
+
+    return listen_fd;
 }
 
 //static int prv_session_init(device_connection_t *connP)
@@ -162,6 +196,7 @@ static device_connection_t *connection_new_incoming(int sock)
 {
     int ret;
     char buffer[BUFF_SIZE];
+    const char *err_str;
     gnutls_dtls_prestate_st prestate;
     device_connection_t *connP;
 
@@ -172,14 +207,10 @@ static device_connection_t *connection_new_incoming(int sock)
     }
     connP->sock = sock;
 
+//  TODO: prv_cookie_verify()
 hello_verify:
     connP->addr_size = sizeof(connP->addr);
-    // is MSG_PEEK needed?
     ret = recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&connP->addr, &connP->addr_size);
-        char str[INET_ADDRSTRLEN];
-        inet_ntop(AF_INET, &connP->addr.sin_addr, str, INET_ADDRSTRLEN);
-        printf("%s addr: %s\r\n", __func__, str);
-    //ret = recvfrom(sock, buffer, sizeof(buffer), MSG_PEEK, (struct sockaddr *)&client_addr, &client_addr_size);
     if (ret > 0)
     {
         memset(&prestate, 0, sizeof(prestate));
@@ -188,36 +219,38 @@ hello_verify:
         ret = gnutls_dtls_cookie_verify(&cookie_key, &connP->addr, sizeof(connP->addr), buffer, ret, &prestate);
         if (ret < 0)
         {
-            gnutls_dtls_cookie_send(&cookie_key, &connP->addr, sizeof(connP->addr), &prestate, connP, connection_send_secure);
-            //try verify again once
+            gnutls_dtls_cookie_send(&cookie_key, &connP->addr, sizeof(connP->addr), &prestate, connP, prv_net_send);
+//          TODO: try verify again once
             goto hello_verify;
         }
         else
         {
-            //init and so on
-            //create new socket for connection
+//          TODO: create new socket for client connection
             gnutls_init(&connP->session, GNUTLS_SERVER | GNUTLS_DATAGRAM);
-//          might be used later
-//            CHECK_RET(gnutls_credentials_set());
+            CHECK_RET(gnutls_credentials_set(connP->session, GNUTLS_CRD_PSK, server_psk));
+            CHECK_RET(gnutls_credentials_set(connP->session, GNUTLS_CRD_CERTIFICATE, server_cert));
             gnutls_priority_set(connP->session, priority_cache);
             gnutls_dtls_prestate_set(connP->session, &prestate);
 //            gnutls_dtls_set_mtu(connP->session, );
 
             gnutls_transport_set_ptr(connP->session, connP);
-            gnutls_transport_set_push_function(connP->session, connection_send_secure);
-            gnutls_transport_set_pull_function(connP->session, connection_receive_secure);
-            gnutls_transport_set_pull_timeout_function(connP->session, connection_timeout_secure);
+//          TODO: might not be needed
+            gnutls_transport_set_push_function(connP->session, prv_net_send);
+            gnutls_transport_set_pull_function(connP->session, prv_net_receive);
+            gnutls_transport_set_pull_timeout_function(connP->session, prv_net_receive_timeout);
 
             do {
                 ret = gnutls_handshake(connP->session);
-            } while (ret == GNUTLS_E_AGAIN || ret == GNUTLS_E_INTERRUPTED);
+            } while (ret == GNUTLS_E_AGAIN);
 
             if (ret < 0)
             {
-//              handshake failure
-//              deinit session
-//              free connP
-//              return NULL;
+                err_str = gnutls_strerror(ret);
+                log_message(LOG_LEVEL_WARN, "Handshake failed with message: '%s'\r\n", err_str);
+
+                gnutls_deinit(connP->session);
+                free(connP);
+                return NULL;
             }
 
             connP->next = connection_list;
@@ -276,6 +309,7 @@ int connection_step_secure(void *context, struct timeval *tv)
         if (FD_ISSET(connP_curr->sock, &read_fds))
         {
 //            ret = mbedtls_ssl_read(connP_curr->ssl, buf, opt.buffer_size - 1);
+            ret = gnutls_record_recv(connP_curr->session, buffer, ret);
             if (ret > 0)
             {
                 lwm2m_handle_packet(context, buffer, ret, connP_curr);
@@ -321,6 +355,9 @@ int connection_step_secure(void *context, struct timeval *tv)
 
 void connection_free_secure(void *connection)
 {
+//  gnutls_bye()
+//  gnutls_deinit()
+
 //    device_connection_t *connP = (device_connection_t *)connection;
 //
 //    if (connection_list == NULL)
@@ -356,60 +393,9 @@ void connection_free_secure(void *connection)
 //    free(connP);
 }
 
-ssize_t connection_send_secure(gnutls_transport_ptr_t context, const void *data, size_t size)
-//int connection_send_secure(void *sessionH, uint8_t *buffer, size_t length)
+int connection_send_secure(void *session, uint8_t *buffer, size_t length)
 {
-    int ret;
-    device_connection_t *connP = (device_connection_t *)context;
+    device_connection_t *connP = (device_connection_t *)session;
 
-    inet_pton(AF_INET, "127.0.0.1", &connP->addr.sin_addr);
-    //return mbedtls_ssl_write(connP->ssl, buffer, length);
-    ret = sendto(connP->sock, data, size, 0, (struct sockaddr *)&connP->addr, connP->addr_size);
-    if (errno)
-    {
-        char str[INET_ADDRSTRLEN];
-        inet_ntop(AF_INET, &connP->addr.sin_addr, str, INET_ADDRSTRLEN);
-        printf("addr: %s\r\n", str);
-        char s[50];
-        sprintf(s, "ret = %d: ", ret);
-        perror(s);
-    }
-    return ret;
-}
-
-ssize_t connection_receive_secure(gnutls_transport_ptr_t context, void *data, size_t size)
-{
-    device_connection_t *connP = (device_connection_t *)context;
-
-    connP->addr_size = sizeof(connP->addr);
-    return recvfrom(connP->sock, data, size, 0, (struct sockaddr *)&connP->addr, &connP->addr_size);
-}
-
-static int connection_timeout_secure(gnutls_transport_ptr_t context, unsigned int ms)
-{
-    device_connection_t *connP = (device_connection_t *)context;
-    int ret;
-    fd_set fds;
-    struct timeval tv;
-    char dummy_buff[1];
-
-    FD_ZERO(&fds);
-    FD_SET(connP->sock, &fds);
-
-    tv.tv_sec = ms / 1000;
-    tv.tv_usec = (ms % 1000) * 1000;
-
-    ret = select(connP->sock + 1, &fds, NULL, NULL, &tv);
-    if (ret <= 0)
-        return ret;
-
-    connP->addr_size = sizeof(connP->addr);
-
-    ret = recvfrom(connP->sock, dummy_buff, sizeof(dummy_buff), MSG_PEEK, (struct sockaddr *)&connP->addr, &connP->addr_size);
-    if (ret > 0)
-    {
-        return 1;
-    }
-
-    return 0;
+    return gnutls_record_send(connP->session, buffer, length);
 }
