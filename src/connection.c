@@ -101,7 +101,7 @@ static int socket_receive(void *ctx)
     return 0;
 }
 
-int connection_create(settings_t *options, int addressFamily)
+int connection_create(settings_t *options, int addressFamily, void *context)
 {
     struct addrinfo hints;
     struct addrinfo *res;

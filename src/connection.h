@@ -46,7 +46,7 @@ typedef struct _connection_t
     size_t                  addrLen;
 } connection_t;
 
-int connection_create(settings_t *options, int addressFamily);
+int connection_create(settings_t *options, int addressFamily, void *context);
 
 void connection_free(void *connP);
 
