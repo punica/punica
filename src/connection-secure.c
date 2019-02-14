@@ -90,10 +90,11 @@ static int prv_net_receive_timeout(gnutls_transport_ptr_t context, unsigned int 
     return 0;
 }
 
-static int prv_new_socket(const char *host, const char *port, int address_family)
+static int prv_new_socket(const char *host, int port, int address_family)
 {
-    int sock;
+    int sock, enable;
     struct addrinfo hints, *addr_list, *cur;
+    char port_str[16];
 
     memset(&hints, 0, sizeof(hints));
 //  TODO: fails to write if family ipv6
@@ -109,7 +110,8 @@ static int prv_new_socket(const char *host, const char *port, int address_family
         hints.ai_flags |= AI_PASSIVE;
     }
 
-    if (getaddrinfo(host, port, &hints, &addr_list) != 0)
+    sprintf(port_str, "%d", port);
+    if (getaddrinfo(host, port_str, &hints, &addr_list) != 0)
     {
         return -1;
     }
@@ -121,6 +123,9 @@ static int prv_new_socket(const char *host, const char *port, int address_family
         {
             continue;
         }
+
+        enable = 1;
+        setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const char *)&enable, sizeof(enable));
 
         if (bind(sock, cur->ai_addr, cur->ai_addrlen))
         {
@@ -136,10 +141,31 @@ static int prv_new_socket(const char *host, const char *port, int address_family
     return sock;
 }
 
+static int prv_switch_sockets(int *local_socket, int *client_socket, struct sockaddr_in *client_address, socklen_t address_length)
+{
+    socklen_t size;
+    struct sockaddr_in local_address;
+
+    if (connect(*local_socket, (struct sockaddr *)client_address, sizeof(struct sockaddr_in)))
+    {
+        return -1;
+    }
+
+    *client_socket = *local_socket;
+
+    size = sizeof(struct sockaddr_in);
+    if (getsockname(*local_socket, (struct sockaddr *)&local_address, &size))
+    {
+        return -1;
+    }
+
+    *local_socket = prv_new_socket(NULL, ntohs(local_address.sin_port), local_address.sin_family);
+
+    return *local_socket;
+}
+
 int connection_create_secure(settings_t *options, int address_family, void *context)
 {
-    char port_str[16];
-
 //  TODO: should check if already globally initialized
     CHECK_RET(gnutls_global_init());
 
@@ -165,8 +191,7 @@ int connection_create_secure(settings_t *options, int address_family, void *cont
     gnutls_psk_set_server_credentials_function(server_psk, psk_callback);
     set_psk_callback_context(context);
 
-    sprintf(port_str, "%d", options->coap.port);
-    listen_fd = prv_new_socket(NULL, port_str, address_family);
+    listen_fd = prv_new_socket(NULL, options->coap.port, address_family);
 
     return listen_fd;
 }
@@ -202,7 +227,7 @@ int connection_create_secure(settings_t *options, int address_family, void *cont
 //    return 0;
 //}
 
-static device_connection_t *connection_new_incoming(int sock)
+static device_connection_t *connection_new_incoming(int *sock)
 {
     int ret;
     char buffer[BUFF_SIZE];
@@ -215,12 +240,12 @@ static device_connection_t *connection_new_incoming(int sock)
     {
         return NULL;
     }
-    connP->sock = sock;
+    connP->sock = *sock;
 
 //  TODO: prv_cookie_verify()
 hello_verify:
     connP->addr_size = sizeof(connP->addr);
-    ret = recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&connP->addr, &connP->addr_size);
+    ret = recvfrom(*sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&connP->addr, &connP->addr_size);
     if (ret > 0)
     {
         memset(&prestate, 0, sizeof(prestate));
@@ -237,7 +262,8 @@ hello_verify:
         }
         else
         {
-//          TODO: create new socket for client connection
+//          TODO: explain this function call
+            CHECK_RET(prv_switch_sockets(sock, &connP->sock, &connP->addr, connP->addr_size));
             gnutls_init(&connP->session, GNUTLS_SERVER | GNUTLS_DATAGRAM);
             CHECK_RET(gnutls_credentials_set(connP->session, GNUTLS_CRD_PSK, server_psk));
             CHECK_RET(gnutls_credentials_set(connP->session, GNUTLS_CRD_CERTIFICATE, server_cert));
@@ -333,7 +359,7 @@ int connection_step_secure(void *context, struct timeval *tv)
 
     if (FD_ISSET(listen_fd, &read_fds))
     {
-        device_connection_t *connP = connection_new_incoming(listen_fd);
+        device_connection_t *connP = connection_new_incoming(&listen_fd);
         if (connP == NULL)
         {
 //          TODO: add error
