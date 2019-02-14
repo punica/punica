@@ -141,7 +141,8 @@ static int prv_new_socket(const char *host, int port, int address_family)
     return sock;
 }
 
-static int prv_switch_sockets(int *local_socket, int *client_socket, struct sockaddr_in *client_address, socklen_t address_length)
+static int prv_switch_sockets(int *local_socket, int *client_socket,
+                              struct sockaddr_in *client_address, socklen_t address_length)
 {
     socklen_t size;
     struct sockaddr_in local_address;
@@ -245,7 +246,8 @@ static device_connection_t *connection_new_incoming(int *sock)
 //  TODO: prv_cookie_verify()
 hello_verify:
     connP->addr_size = sizeof(connP->addr);
-    ret = recvfrom(*sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&connP->addr, &connP->addr_size);
+    ret = recvfrom(*sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&connP->addr,
+                   &connP->addr_size);
     if (ret > 0)
     {
         memset(&prestate, 0, sizeof(prestate));
@@ -336,7 +338,7 @@ int connection_step_secure(void *context, struct timeval *tv)
 //      errno
         return ret;
     }
-    else if (ret == 0)
+    if (ret == 0)
     {
 //      keep this in case we want to manage ret < 0 error
         return ret;
@@ -347,7 +349,10 @@ int connection_step_secure(void *context, struct timeval *tv)
     {
         if (FD_ISSET(connP_curr->sock, &read_fds))
         {
-//            ret = mbedtls_ssl_read(connP_curr->ssl, buf, opt.buffer_size - 1);
+//          TODO: something smarter
+            connP_curr->addr_size = sizeof(connP_curr->addr);
+            ret = recvfrom(connP_curr->sock, buffer, sizeof(buffer), MSG_PEEK,
+                           (struct sockaddr *)&connP_curr->addr, &connP_curr->addr_size);
             ret = gnutls_record_recv(connP_curr->session, buffer, ret);
             if (ret > 0)
             {
