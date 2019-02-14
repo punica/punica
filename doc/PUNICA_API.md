@@ -454,3 +454,151 @@ The code in this directory is licensed under the MIT license, however please not
     **Content:** Empty body, ``WWW-Authenticate`` header containing error code and description <br />
   
 [More information about JWT](https://jwt.io)
+
+
+
+**Manage registered devices with devices REST API**
+  ----  
+  
+  
+  
+**List registered devices entries**
+----
+  Returns a JSON array of registered device entries. Sensitive device information, such as the pre-shared keys (`psk`) is excluded.
+
+* **URL**
+
+  `/devices`
+
+* **Method:**
+  
+  `GET`
+
+* **Success Response:**
+
+  * **Code:** 200 <br />
+    **Content:** `[{"psk_id": "cHNraWQx", "uuid": "ABC"}, {"psk_id": "cHNraWQy", "uuid": "DEF"}, {"psk_id": "cHNraWQz", "uuid": "GHI"}]`
+
+* **Sample Call:**
+
+  ```shell
+  $ curl -X GET http://localhost:8888/devices
+  ```
+  
+  
+**Get single registered device entry**
+  ----
+  Returns the device entry of a single registered device (a JSON object).
+
+* **URL**
+
+  `/devices/:uuid`
+
+* **Method:**
+  
+  `GET`
+
+* **Success Response:**
+
+  * **Code:** 200 <br />
+    **Content:** `{"psk_id": "cHNraWQy", "uuid": "DEF"}`
+
+* **Sample Call:**
+
+  ```shell
+  $ curl -X GET http://localhost:8888/devices/DEF
+  ```
+  
+  
+**Register device**
+----
+  Register a new device. A new device entry is appended to the existing database. If database file name is provided, database is saved to that file.
+
+* **URL**
+
+  `/devices`
+
+* **Method:**
+  
+  `POST`
+  
+* **Data Params**
+
+  A JSON object representing the device entry, such as in a database file.
+
+* **Success Response:**
+
+  * **Code:** 201 <br />
+  
+* **Error Response:**
+
+  * **Code:** 415 UNSUPPORTED MEDIA TYPE - user provided wrong content type <br />
+  
+  OR
+  
+  * **Code:** 400 BAD REQUEST - sent data was not a JSON object or contains invalid parameters, such as invalid base64 strings, invalid data types etc. <br />
+
+* **Sample Call:**
+
+  ```shell
+  $ curl http://localhost:8888/devices -X POST -H "Content-Type: application/json" --data '{"psk":"cHNrMQ==","psk_id":"cHNraWQx"}'
+  
+  
+**Update device entry**
+----
+  Update the entry of a specific device.
+
+* **URL**
+
+  `/devices/:uuid`
+
+* **Method:**
+  
+  `PUT`
+  
+* **Data Params**
+
+  A JSON object with updated `psk` and `psk_id`.
+
+* **Success Response:**
+
+  * **Code:** 201 <br />
+  
+* **Error Response:**
+
+  * **Code:** 415 UNSUPPORTED MEDIA TYPE - user provided wrong content type <br />
+  
+  OR
+  
+  * **Code:** 400 BAD REQUEST - sent data was not a JSON object or is missing 'psk' and/or 'psk_id' keys <br />
+
+* **Sample Call:**
+
+  ```shell
+  $ curl http://localhost:8888/devices/ABC -X PUT -H "Content-Type: application/json" --data '{"psk":"cHNrMQ==","psk_id":"cHNraWQa"}'
+  
+  
+**Delete device entry**
+----
+  Remove specific device entry from registered devices list.
+
+* **URL**
+
+  `/devices/:uuid`
+
+* **Method:**
+  
+  `DELETE`
+  
+* **Success Response:**
+
+  * **Code:** 200 <br />
+  
+* **Error Response:**
+  
+  * **Code:** 404 NOT FOUND - device not found in list <br />
+
+* **Sample Call:**
+
+  ```shell
+  $ curl http://localhost:8888/devices/ABC -X DELETE
