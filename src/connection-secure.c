@@ -105,7 +105,7 @@ static int prv_new_socket(const char *host, const char *port, int address_family
         hints.ai_flags |= AI_PASSIVE;
 
     if (getaddrinfo(host, port, &hints, &addr_list) != 0)
-        return MBEDTLS_ERR_NET_UNKNOWN_HOST;
+        return -1;
 
     for (cur = addr_list; cur != NULL; cur = cur->ai_next)
     {

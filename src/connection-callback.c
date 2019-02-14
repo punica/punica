@@ -20,9 +20,6 @@
 #include "restserver.h"
 #include "connection-secure.h"
 
-#include <mbedtls/ssl.h>
-#include <mbedtls/oid.h>
-
 static void *psk_context;
 
 void set_psk_callback_context(void *context)
