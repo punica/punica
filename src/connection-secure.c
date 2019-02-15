@@ -41,7 +41,7 @@ static gnutls_priority_t priority_cache;
 static gnutls_datum_t cookie_key;
 static gnutls_psk_server_credentials_t server_psk;
 
-static int listen_fd;
+static int listen_socket;
 static device_connection_t *connection_list = NULL;
 
 static ssize_t prv_net_send(gnutls_transport_ptr_t context, const void *data, size_t size)
@@ -233,9 +233,9 @@ int connection_create_secure(settings_t *options, int address_family, void *cont
     gnutls_psk_set_server_credentials_function(server_psk, psk_callback);
     set_psk_callback_context(context);
 
-    listen_fd = prv_new_socket(NULL, options->coap.port, address_family);
+    listen_socket = prv_new_socket(NULL, options->coap.port, address_family);
 
-    return listen_fd;
+    return listen_socket;
 }
 
 static device_connection_t *connection_new_incoming(int *sock)
@@ -301,10 +301,10 @@ int connection_step_secure(void *context, struct timeval *tv)
         conn_curr = conn_curr->next;
     }
 
-    FD_SET(listen_fd, &read_fds);
-    if (listen_fd >= nfds)
+    FD_SET(listen_socket, &read_fds);
+    if (listen_socket >= nfds)
     {
-        nfds = listen_fd + 1;
+        nfds = listen_socket + 1;
     }
 
     ret = select(nfds, &read_fds, NULL, NULL, tv);
@@ -330,9 +330,9 @@ int connection_step_secure(void *context, struct timeval *tv)
         conn_curr = conn_curr->next;
     }
 
-    if (FD_ISSET(listen_fd, &read_fds))
+    if (FD_ISSET(listen_socket, &read_fds))
     {
-        device_connection_t *conn_new = connection_new_incoming(&listen_fd);
+        device_connection_t *conn_new = connection_new_incoming(&listen_socket);
         if (conn_new == NULL)
         {
             log_message(LOG_LEVEL_WARN, "Failed to connect to device\n");
