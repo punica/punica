@@ -30,6 +30,7 @@
 #include "connection-secure.h"
 #include "restserver.h"
 #include "logging.h"
+#include "settings.h"
 #include "version.h"
 #include "security.h"
 #include "rest-list.h"

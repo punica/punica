@@ -31,13 +31,6 @@
 
 #include "settings.h"
 
-#define LWM2M_STANDARD_PORT_STR "5683"
-#define LWM2M_STANDARD_PORT      5683
-#define LWM2M_DTLS_PORT_STR     "5684"
-#define LWM2M_DTLS_PORT          5684
-#define LWM2M_BSSERVER_PORT_STR "5685"
-#define LWM2M_BSSERVER_PORT      5685
-
 typedef struct _connection_t
 {
     struct _connection_t   *next;

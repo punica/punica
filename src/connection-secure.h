@@ -37,16 +37,6 @@
 
 #include "settings.h"
 
-#define LWM2M_STANDARD_PORT_STR "5683"
-#define LWM2M_STANDARD_PORT      5683
-#define LWM2M_DTLS_PORT_STR     "5684"
-#define LWM2M_DTLS_PORT          5684
-#define LWM2M_BSSERVER_PORT_STR "5685"
-#define LWM2M_BSSERVER_PORT      5685
-
-#define CURVE_LIST_SIZE 20
-#define MEMORY_HEAP_SIZE        120000
-
 int psk_callback(gnutls_session_t session, const char *username, gnutls_datum_t *key);
 void set_psk_callback_context(void *context);
 
