@@ -31,6 +31,13 @@ ulfius_callback_t rest_validate_jwt_cb;
 
 ulfius_callback_t rest_endpoints_cb;
 ulfius_callback_t rest_endpoints_name_cb;
+
+ulfius_callback_t rest_devices_get_cb;
+ulfius_callback_t rest_devices_get_name_cb;
+ulfius_callback_t rest_devices_put_cb;
+ulfius_callback_t rest_devices_post_cb;
+ulfius_callback_t rest_devices_delete_cb;
+
 ulfius_callback_t rest_resources_rwe_cb;
 
 ulfius_callback_t rest_notifications_get_callback_cb;

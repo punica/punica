@@ -16,7 +16,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  */
-#include <string.h>
 
 #ifndef UTILS_H
 #define UTILS_H
@@ -37,4 +36,3 @@ lwm2m_client_t *utils_find_client(lwm2m_client_t *list, const char *name);
 const char *binding_to_string(lwm2m_binding_t bind);
 
 #endif // UTILS_H
-

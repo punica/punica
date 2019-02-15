@@ -344,6 +344,18 @@ int main(int argc, char *argv[])
     ulfius_add_endpoint_by_val(&u_instance,
                                "GET", "/endpoints", ":name", 10, &rest_endpoints_name_cb, &punica);
 
+    // Devices
+    ulfius_add_endpoint_by_val(&u_instance, "GET", "/devices", NULL, 10,
+                               &rest_devices_get_cb, &punica);
+    ulfius_add_endpoint_by_val(&u_instance, "GET", "/devices", ":id", 10,
+                               &rest_devices_get_name_cb, &punica);
+    ulfius_add_endpoint_by_val(&u_instance, "PUT", "/devices", ":id", 10,
+                               &rest_devices_put_cb, &punica);
+    ulfius_add_endpoint_by_val(&u_instance, "POST", "/devices", NULL, 10,
+                               &rest_devices_post_cb, &punica);
+    ulfius_add_endpoint_by_val(&u_instance, "DELETE", "/devices", ":id", 10,
+                               &rest_devices_delete_cb, &punica);
+
     // Resources
     ulfius_add_endpoint_by_val(&u_instance,
                                "*", "/endpoints", ":name/*", 10, &rest_resources_rwe_cb, &punica);

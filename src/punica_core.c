@@ -18,6 +18,7 @@
  */
 
 #include "punica.h"
+#include "database.h"
 #include "logging.h"
 #include "settings.h"
 #include "rest.h"
@@ -36,6 +37,8 @@ void punica_initialize(punica_context_t *punica, settings_t *settings)
     punica->rest_observations = linked_list_new();
     punica->settings = settings;
     punica->j_rest_callback = NULL;
+
+    database_load_file(punica);
 
     assert(pthread_mutex_init(&punica->mutex, NULL) == 0);
 }
@@ -56,6 +59,7 @@ void punica_terminate(punica_context_t *punica)
     linked_list_delete(punica->rest_async_responses);
     linked_list_delete(punica->rest_pending_responses);
     linked_list_delete(punica->rest_observations);
+    linked_list_delete(punica->rest_devices);
 
     assert(pthread_mutex_destroy(&punica->mutex) == 0);
 }

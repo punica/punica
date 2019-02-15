@@ -24,7 +24,6 @@
 int rest_version_cb(const struct _u_request *u_request,
                     struct _u_response *u_response,
                     void *context)
-
 {
     ulfius_set_string_body_response(u_response, HTTP_200_OK, PUNICA_VERSION);
 

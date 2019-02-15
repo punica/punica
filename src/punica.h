@@ -36,25 +36,12 @@ typedef struct
     json_t *j_rest_callback;
 
     linked_list_t *rest_registrations;
-    // linked_list_t *updateList;
     linked_list_t *rest_updates;
-    // linked_list_t *deregistrationList;
     linked_list_t *rest_deregistrations;
-    // linked_list_t *timeoutList;
     linked_list_t *rest_timeouts;
-    // linked_list_t *asyncResponseList;
     linked_list_t *rest_async_responses;
-
-    // rest-resources
-    // linked_list_t *pendingResponseList;
     linked_list_t *rest_pending_responses;
-
-    // rest-subsciptions
-    // linked_list_t *observeList;
     linked_list_t *rest_observations;
-
-    // rest-devices
-    // linked_list_t *devicesList;
     linked_list_t *rest_devices;
 
     settings_t *settings;
