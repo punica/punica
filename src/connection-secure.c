@@ -81,12 +81,9 @@ static int prv_new_socket(const char *host, int port, int address_family)
     char port_str[16];
 
     memset(&hints, 0, sizeof(hints));
-//  TODO: fails to write if family ipv6
-//    hints.ai_family = address_family;
-    hints.ai_family = AF_UNSPEC;
+    hints.ai_family = address_family;
     hints.ai_socktype = SOCK_DGRAM;
-    //hints.ai_protocol = IPPROTO_UDP;
-    hints.ai_protocol = 0;
+    hints.ai_protocol = IPPROTO_UDP;
     hints.ai_flags = AI_ADDRCONFIG;
 
     if (host == NULL)
@@ -126,13 +123,14 @@ static int prv_new_socket(const char *host, int port, int address_family)
 }
 
 static int prv_switch_sockets(int *local_socket, int *client_socket,
-                              struct sockaddr_in *client_address, socklen_t address_length)
+                              struct sockaddr_storage *client_address, socklen_t address_length)
 {
     socklen_t size;
-    struct sockaddr_in local_address;
+    struct sockaddr_storage local_address;
+    char service[16];
+    int port;
 
-//  connect socket to address so that all sending and receiving defaults to that address
-    if (connect(*local_socket, (struct sockaddr *)client_address, sizeof(struct sockaddr_in)))
+    if (connect(*local_socket, (struct sockaddr *)client_address, sizeof(struct sockaddr_storage)))
     {
         return -1;
     }
@@ -142,14 +140,19 @@ static int prv_switch_sockets(int *local_socket, int *client_socket,
 //  TODO: server should check if it needs to create new socket
     *local_socket = -1;
 
-//  fill sockaddr structure with address that the socket is bound to
-    size = sizeof(struct sockaddr_in);
+    size = sizeof(struct sockaddr_storage);
     if (getsockname(*client_socket, (struct sockaddr *)&local_address, &size))
     {
         return -1;
     }
 
-    *local_socket = prv_new_socket(NULL, ntohs(local_address.sin_port), local_address.sin_family);
+    if (getnameinfo((struct sockaddr *)&local_address, size, NULL, 0, service, sizeof(service), NI_NUMERICSERV))
+    {
+        return -1;
+    }
+    port = atoi(service);
+
+    *local_socket = prv_new_socket(NULL, port, local_address.ss_family);
 
     return *local_socket;
 }

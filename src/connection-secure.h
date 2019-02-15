@@ -55,7 +55,7 @@ typedef struct _device_connection_t
     struct _device_connection_t *next;
     int sock;
     gnutls_session_t session;
-    struct sockaddr_in addr;
+    struct sockaddr_storage addr;
     socklen_t addr_size;
 } device_connection_t;
 
