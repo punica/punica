@@ -138,7 +138,7 @@ int connection_create(settings_t *options, int addressFamily, void *context)
     return sock;
 }
 
-void connection_free(void *fromSessionH)
+int connection_free(void *fromSessionH)
 {
     connection_t *connP = (connection_t *)fromSessionH;
     connection_t *connCurr = connectionList;
@@ -146,14 +146,14 @@ void connection_free(void *fromSessionH)
 
     if (connectionList == NULL)
     {
-        return;
+        return 0;
     }
     else if (connP == connectionList)
     {
         next = connectionList->next;
         free(connP);
         connectionList = next;
-        return;
+        return 0;
     }
 
     while (connCurr->next != connP)
@@ -163,6 +163,7 @@ void connection_free(void *fromSessionH)
 
     connCurr->next = connP->next;
     free(connP);
+    return 0;
 }
 
 int connection_send(void *sessionH, uint8_t *buffer, size_t length)

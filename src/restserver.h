@@ -31,7 +31,7 @@
 typedef int (*f_socket_t)(settings_t *, int, void *);
 typedef int (*f_step_t)(void *, struct timeval *);
 typedef int (*f_send_t)(void *, uint8_t *, size_t);
-typedef void (*f_free_t)(void *);
+typedef int (*f_free_t)(void *);
 
 typedef struct connection_api_t
 {

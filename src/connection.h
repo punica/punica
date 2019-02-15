@@ -48,7 +48,7 @@ typedef struct _connection_t
 
 int connection_create(settings_t *options, int addressFamily, void *context);
 
-void connection_free(void *connP);
+int connection_free(void *connP);
 
 int connection_step(void *ctx, struct timeval *tv);
 

@@ -61,10 +61,10 @@ typedef struct _device_connection_t
 
 int connection_create_secure(settings_t *options, int addressFamily, void *context);
 
-void connection_free_secure(void *connP);
+int connection_free_secure(void *connection);
 
 int connection_step_secure(void *ctx, struct timeval *tv);
 
-int connection_send_secure(void *session, uint8_t *buffer, size_t length);
+int connection_send_secure(void *connection, uint8_t *buffer, size_t length);
 
 #endif
