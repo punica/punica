@@ -287,19 +287,18 @@ int connection_step_secure(void *context, struct timeval *tv)
     uint8_t buffer[BUFFER_SIZE];
     int ret, nfds = 0;
     fd_set read_fds;
-    device_connection_t *connP_curr = connection_list;
+    device_connection_t *conn_curr = connection_list;
 
-    //prv_listen()
     FD_ZERO(&read_fds);
 
-    while (connP_curr != NULL)
+    while (conn_curr != NULL)
     {
-        FD_SET(connP_curr->sock, &read_fds);
-        if (connP_curr->sock >= nfds)
+        FD_SET(conn_curr->sock, &read_fds);
+        if (conn_curr->sock >= nfds)
         {
-            nfds = connP_curr->sock + 1;
+            nfds = conn_curr->sock + 1;
         }
-        connP_curr = connP_curr->next;
+        conn_curr = conn_curr->next;
     }
 
     FD_SET(listen_fd, &read_fds);
@@ -309,47 +308,39 @@ int connection_step_secure(void *context, struct timeval *tv)
     }
 
     ret = select(nfds, &read_fds, NULL, NULL, tv);
-    if (ret < 0)
+    if (ret <= 0)
     {
-//      errno
-        return ret;
-    }
-    else if (ret == 0)
-    {
-//      keep this in case we want to manage ret < 0 error
         return ret;
     }
 
-    connP_curr = connection_list;
-    while (connP_curr != NULL)
+    conn_curr = connection_list;
+    while (conn_curr != NULL)
     {
-        if (FD_ISSET(connP_curr->sock, &read_fds))
+        if (FD_ISSET(conn_curr->sock, &read_fds))
         {
-//          TODO: something smarter
-            connP_curr->addr_size = sizeof(connP_curr->addr);
-            ret = recvfrom(connP_curr->sock, buffer, sizeof(buffer), MSG_PEEK,
-                           (struct sockaddr *)&connP_curr->addr, &connP_curr->addr_size);
-            ret = gnutls_record_recv(connP_curr->session, buffer, sizeof(buffer));
+            conn_curr->addr_size = sizeof(conn_curr->addr);
+            ret = recvfrom(conn_curr->sock, buffer, sizeof(buffer), MSG_PEEK,
+                           (struct sockaddr *)&conn_curr->addr, &conn_curr->addr_size);
+            ret = gnutls_record_recv(conn_curr->session, buffer, ret);
             if (ret > 0)
             {
-                lwm2m_handle_packet(context, buffer, ret, connP_curr);
+                lwm2m_handle_packet(context, buffer, ret, conn_curr);
             }
         }
-        connP_curr = connP_curr->next;
+        conn_curr = conn_curr->next;
     }
 
     if (FD_ISSET(listen_fd, &read_fds))
     {
-        device_connection_t *connP = connection_new_incoming(&listen_fd);
-        if (connP == NULL)
+        device_connection_t *conn_new = connection_new_incoming(&listen_fd);
+        if (conn_new == NULL)
         {
-//          TODO: add error
             log_message(LOG_LEVEL_WARN, "Failed to connect to device\n");
             return -1;
         }
 
-        connP->next = connection_list;
-        connection_list = connP;
+        conn_new->next = connection_list;
+        connection_list = conn_new;
     }
 
     return 0;
