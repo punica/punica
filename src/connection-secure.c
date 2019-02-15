@@ -146,7 +146,8 @@ static int prv_switch_sockets(int *local_socket, int *client_socket,
         return -1;
     }
 
-    if (getnameinfo((struct sockaddr *)&local_address, size, NULL, 0, service, sizeof(service), NI_NUMERICSERV))
+    if (getnameinfo((struct sockaddr *)&local_address, size, NULL, 0, service, sizeof(service),
+                    NI_NUMERICSERV))
     {
         return -1;
     }
