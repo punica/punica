@@ -19,11 +19,14 @@
 
 #include "database.h"
 #include "linked_list.h"
+#include "logging.h"
 #include "punica.h"
 #include "rest_core_types.h"
 #include "settings.h"
 
 #include <uuid/uuid.h>
+
+static char *logging_section = "[DEVICES DATABASE]";
 
 void free_database_entry(database_entry_t *device)
 {
@@ -162,7 +165,7 @@ int database_validate_entry(json_t *j_device_object)
         }
     }
 
-//  function does not check for duplicate keys
+    /* function does not check for duplicate keys */
     if (key_check != DATABASE_ALL_KEYS_SET)
     {
         return -1;
@@ -318,8 +321,9 @@ int database_load_file(punica_context_t *punica)
     linked_list_t *device_list = linked_list_new();
     if (device_list == 0)
     {
-        fprintf(stderr, "%s:%d - failed to allocate device list\r\n",
-                __FILE__, __LINE__);
+        log_message(LOG_LEVEL_ERROR,
+                    "%s %s:%d - failed to allocate device list\r\n",
+                    logging_section, __FILE__, __LINE__);
         goto exit;
     }
 
@@ -335,18 +339,19 @@ int database_load_file(punica_context_t *punica)
                      punica->settings->coap.database_file, 0, &error);
     if (j_database == NULL)
     {
-        fprintf(stdout, "%s:%d - database file not found,",
-                __FILE__, __LINE__);
-        fprintf(stdout, " must be created with /devices REST API\r\n");
+        log_message(LOG_LEVEL_INFO, "%s %s:%d - database file not found,",
+                    logging_section, __FILE__, __LINE__);
+        log_message(LOG_LEVEL_INFO,
+                    " must be created with /devices REST API\r\n");
         ret = 0;
         goto exit;
     }
 
     if (!json_is_array(j_database))
     {
-        fprintf(stderr,
-                "%s:%d - database file must contain a json array\r\n",
-                __FILE__, __LINE__);
+        log_message(LOG_LEVEL_ERROR,
+                    "%s %s:%d - database file must contain a json array\r\n",
+                    logging_section, __FILE__, __LINE__);
         linked_list_delete(device_list);
         goto exit;
     }
@@ -363,9 +368,9 @@ int database_load_file(punica_context_t *punica)
     {
         if (database_validate_entry(j_entry))
         {
-            fprintf(stdout,
-                    "Found error(s) in device entry no. %ld\n",
-                    index);
+            log_message(LOG_LEVEL_INFO,
+                        "%s Found error(s) in device entry no. %ld\n",
+                        logging_section, index);
             continue;
         }
 
@@ -377,8 +382,9 @@ int database_load_file(punica_context_t *punica)
 
         if (database_populate_entry(curr, j_entry))
         {
-            fprintf(stdout,
-                    "Internal server error while managing device entry\n");
+            log_message(LOG_LEVEL_INFO,
+                        "%s Failed to parse entry to JSON.\n",
+                        logging_section);
             goto free_device;
         }
 
