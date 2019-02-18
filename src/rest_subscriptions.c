@@ -21,7 +21,7 @@
 
 #include "http_codes.h"
 #include "logging.h"
-#include "punica.h"
+#include "punica_core.h"
 #include "rest.h"
 #include "rest_callbacks.h"
 
@@ -107,7 +107,7 @@ static int rest_subscriptions_put_cb_unsafe(const struct _u_request *u_request,
      * the end of the function.
      */
 
-    logging_section = "[REST API]"
+    logging_section = "[REST API]";
 
     /* Find requested client */
     name = u_map_get(u_request->map_url, "name");
