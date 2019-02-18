@@ -251,8 +251,8 @@ int devices_database_entry_from_json(json_t *j_device,
 int devices_database_entry_new_from_json(json_t *j_new_device,
                                          database_entry_t *new_device)
 {
-    json_t *j_device = json_deep_copy(j_new_device);
-    char *uuid = malloc(37);
+    json_t *j_device;
+    char uuid[37];
     int return_code;
 
     if (j_new_device == NULL
@@ -263,17 +263,15 @@ int devices_database_entry_new_from_json(json_t *j_new_device,
 
     if (utils_generate_uuid(uuid) != 0
         || json_object_set_new(j_new_device, "uuid",
-                               json_stringn(uuid, 37)) != 0)
+                               json_stringn(uuid, sizeof(uuid))) != 0)
     {
-        return_code = -1;
-        goto exit;
+        return -1;
     }
 
-    return_code = devices_database_entry_from_json(j_new_device, new_device);
-
-exit:
-    free(uuid);
+    j_device = json_deep_copy(j_new_device);
+    return_code = devices_database_entry_from_json(j_device, new_device);
     json_decref(j_device);
+
     return return_code;
 }
 
