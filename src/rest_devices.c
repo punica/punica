@@ -18,12 +18,10 @@
  */
 
 #include "devices_database.h"
-#include "linked_list.h"
 #include "http_codes.h"
+#include "linked_list.h"
 #include "punica.h"
-#include "settings.h"
-
-#include <string.h>
+#include "rest_callbacks.h"
 
 int rest_devices_get_cb(const struct _u_request *u_request,
                         struct _u_response *u_response, void *context)
