@@ -77,39 +77,50 @@ bool lwm2m_session_is_equal(void *session1, void *session2, void *userData)
     return (session1 == session2);
 }
 
-int lwm2m_client_validate(char *name, void *fromSessionH)
+int lwm2m_client_validate(char *name, void *session)
 {
-//    device_connection_t *conn = (device_connection_t *)fromSessionH;
-//    const char *short_name;
-//    int ret;
-//
-//    //check if using cipher with certificate
-//    if ((conn->ssl->session->ciphersuite != MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8) &&
-//        (conn->ssl->session->ciphersuite != MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256))
-//    {
-//        return 0;
-//    }
-//
-//    mbedtls_x509_name *subject = &conn->ssl->session->peer_cert->subject;
-//    while (subject != NULL)
-//    {
-//        ret = mbedtls_oid_get_attr_short_name(&subject->oid, &short_name);
-//
-//        if (ret == 0)
-//        {
-//            if (strcmp(short_name, "CN") == 0)
-//            {
-//                if (strncmp((const char *)subject->val.p, name, subject->val.len) == 0)
-//                {
-//                    return 0;
-//                }
-//
-//                return COAP_400_BAD_REQUEST;
-//            }
-//        }
-//
-//        subject = subject->next;
-//    }
-//
-    return COAP_500_INTERNAL_SERVER_ERROR;
+    device_connection_t *conn = (device_connection_t *)session;
+    gnutls_x509_crt_t cert;
+    const gnutls_datum_t *cert_list;
+    char common_name[256];
+    size_t size;
+    gnutls_cipher_algorithm_t cipher;
+    gnutls_kx_algorithm_t key_ex;
+
+    cipher = gnutls_cipher_get(conn->session);
+    key_ex = gnutls_kx_get(conn->session);
+
+    if (!(key_ex == GNUTLS_KX_ECDHE_ECDSA && (cipher == GNUTLS_CIPHER_AES_128_CCM_8 ||
+                                              cipher == GNUTLS_CIPHER_AES_128_CBC)))
+    {
+        return 0;
+    }
+
+    cert_list = gnutls_certificate_get_peers(conn->session, NULL);
+    if (cert_list == NULL)
+    {
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+    if (gnutls_x509_crt_init(&cert) != GNUTLS_E_SUCCESS)
+    {
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+    if (gnutls_x509_crt_import(cert, &cert_list[0], GNUTLS_X509_FMT_DER))
+    {
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
+    size = sizeof(common_name);
+    if (gnutls_x509_crt_get_dn_by_oid(cert, GNUTLS_OID_X520_COMMON_NAME, 0, 0, common_name, &size))
+    {
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
+    if (strcmp(name, common_name) == 0)
+    {
+        printf("IS OK!!\r\n");
+        return 0;
+    }
+
+    return COAP_400_BAD_REQUEST;
 }

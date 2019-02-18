@@ -184,6 +184,7 @@ static int prv_connection_init(device_connection_t *connection, gnutls_dtls_pres
         goto exit;
     }
 
+    gnutls_certificate_server_set_request(connection->session, GNUTLS_CERT_REQUIRE);
     gnutls_dtls_prestate_set(connection->session, prestate);
     gnutls_transport_set_ptr(connection->session, (void *)((intptr_t)connection->sock));
 
