@@ -211,12 +211,12 @@ describe('Devices interface', () => {
   });
 
   describe('DELETE /devices:uuid', function() {
-    it('should return 200', (done) => {
+    it('should return 204', (done) => {
       chai.request(server)
         .delete('/devices/' + test_uuid)
         .end((err, res) => {
           should.not.exist(err);
-          res.should.have.status(200);
+          res.should.have.status(204);
 
           chai.request(server)
             .get('/devices/' + test_uuid)
@@ -237,4 +237,3 @@ describe('Devices interface', () => {
     });
   });
 });
-

@@ -31,6 +31,9 @@
 #define DATABASE_ALL_NEW_KEYS_SET   0x6
 #define DATABASE_ALL_KEYS_SET       0x7
 
+#define MAX_LENGTH_PSK 512
+#define MAX_LENGTH_PSK_ID 512
+
 typedef struct
 {
     char *uuid;
@@ -40,28 +43,27 @@ typedef struct
     size_t psk_id_len;
 } database_entry_t;
 
-// void database_free_entry(database_entry_t *device_entry);
 void devices_database_entry_free(database_entry_t *device);
 
-// int database_validate_new_entry(json_t *j_new_device_object);
+database_entry_t *devices_database_get_by_uuid(linked_list_t *devices,
+                                               const char *uuid);
+int devices_database_delete_by_uuid(linked_list_t *devices, const char *uuid);
+
 int devices_database_new_entry_validate(json_t *j_new_entry);
-// int database_validate_entry(json_t *j_device_object);
 int devices_database_entry_validate(json_t *j_device);
 
-// int database_populate_entry(
-//     database_entry_t *device_entry, json_t *j_device_object);
 int devices_database_entry_from_json(json_t *j_device,
                                      database_entry_t *device);
-
-// int database_populate_new_entry(
-//     database_entry_t *device_entry, json_t *j_new_device_object);
 int devices_database_entry_new_from_json(json_t *j_new_device,
                                          database_entry_t *device);
 
-// int database_prepare_array(json_t *j_array, linked_list_t *device_list);
-int devices_database_to_json(linked_list_t *devices, json_t *j_devices);
+json_t *devices_database_entry_get_json(database_entry_t *device);
+json_t *devices_database_entry_get_public_json(database_entry_t *device);
 
-// int database_load_file(punica_context_t *punica);
+int devices_database_to_json(linked_list_t *devices, json_t *j_devices);
+int devices_database_to_public_json(linked_list_t *devices, json_t *j_devices);
+
 int devices_database_from_file(punica_context_t *punica);
+int devices_database_to_file(linked_list_t *devices, const char *file_name);
 
 #endif //DATABASE_H

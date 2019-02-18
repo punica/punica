@@ -592,7 +592,7 @@ The code in this directory is licensed under the MIT license, however please not
   
 * **Success Response:**
 
-  * **Code:** 200 <br />
+  * **Code:** 204 SUCCESS - Successfully removed device <br />
   
 * **Error Response:**
   

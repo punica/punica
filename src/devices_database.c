@@ -29,10 +29,9 @@
 
 static char *logging_section = "[DEVICES DATABASE]";
 
-void devices_database_entry_free(database_entry_t *device)
+static void devices_database_entry_free_data(database_entry_t *device)
 {
-
-    if (device)
+    if (device != NULL)
     {
         if (device->uuid)
         {
@@ -46,9 +45,53 @@ void devices_database_entry_free(database_entry_t *device)
         {
             free(device->psk_id);
         }
+    }
+}
 
+void devices_database_entry_free(database_entry_t *device)
+{
+    devices_database_entry_free_data(device);
+
+    if (device != NULL)
+    {
         free(device);
     }
+}
+
+database_entry_t *devices_database_get_by_uuid(linked_list_t *devices,
+                                               const char *uuid)
+{
+    database_entry_t *device = NULL;
+    linked_list_entry_t *list_entry;
+
+    for (list_entry = devices->head;
+         list_entry != NULL; list_entry = list_entry->next)
+    {
+        device = (database_entry_t *)list_entry->data;
+
+        if (strcasecmp(uuid, device->uuid) == 0)
+        {
+            return device;
+            device = (database_entry_t *)list_entry->data;
+        }
+    }
+
+    return NULL;
+}
+
+int devices_database_delete_by_uuid(linked_list_t *devices, const char *uuid)
+{
+    database_entry_t *device = devices_database_get_by_uuid(devices, uuid);
+
+    if (device == NULL)
+    {
+        return -1;
+    }
+
+    devices_database_entry_free_data(device);
+    linked_list_remove(devices, (void *) device);
+
+    return 0;
 }
 
 int devices_database_new_entry_validate(json_t *j_new_device)
@@ -233,15 +276,54 @@ exit:
     return return_code;
 }
 
-int devices_database_to_json(linked_list_t *devices, json_t *j_devices)
+json_t *devices_database_entry_get_public_json(database_entry_t *device)
+{
+    char psk_string[MAX_LENGTH_PSK], psk_id_string[MAX_LENGTH_PSK_ID];
+    size_t psk_string_length = sizeof(psk_string),
+           psk_id_string_length = sizeof(psk_id_string);
+
+    if (device == NULL)
+    {
+        return NULL;
+    }
+
+    base64_encode(device->psk, device->psk_len,
+                  psk_string, &psk_string_length);
+    base64_encode(device->psk_id, device->psk_id_len,
+                  psk_id_string, &psk_id_string_length);
+
+    return json_pack("{s:s, s:s}",
+                     "psk_id", psk_id_string,
+                     "uuid", device->uuid);
+}
+
+json_t *devices_database_entry_get_json(database_entry_t *device)
+{
+    char psk_string[MAX_LENGTH_PSK], psk_id_string[MAX_LENGTH_PSK_ID];
+    size_t psk_string_length = sizeof(psk_string),
+           psk_id_string_length = sizeof(psk_id_string);
+
+    if (device == NULL)
+    {
+        return NULL;
+    }
+
+    base64_encode(device->psk, device->psk_len,
+                  psk_string, &psk_string_length);
+    base64_encode(device->psk_id, device->psk_id_len,
+                  psk_id_string, &psk_id_string_length);
+
+    return json_pack("{s:s, s:s, s:s}",
+                     "psk", psk_string,
+                     "psk_id", psk_id_string,
+                     "uuid", device->uuid);
+}
+
+int devices_database_to_public_json(linked_list_t *devices, json_t *j_devices)
 {
     linked_list_entry_t *list_entry;
     database_entry_t *device;
-    json_t *j_entry;
-    char psk_string[256];
-    char psk_id_string[256];
-    size_t psk_string_len;
-    size_t psk_id_string_len;
+    json_t *j_device = NULL;
 
     if (devices == NULL
         || !json_is_array(j_devices))
@@ -252,27 +334,47 @@ int devices_database_to_json(linked_list_t *devices, json_t *j_devices)
     for (list_entry = devices->head;
          list_entry != NULL; list_entry = list_entry->next)
     {
-        psk_string_len = sizeof(psk_string);
-        psk_id_string_len = sizeof(psk_id_string);
-
         device = (database_entry_t *)list_entry->data;
+        j_device = devices_database_entry_get_public_json(device);
 
-        base64_encode(device->psk, device->psk_len,
-                      psk_string, &psk_string_len);
-        base64_encode(device->psk_id, device->psk_id_len,
-                      psk_id_string, &psk_id_string_len);
+        if (j_device == NULL)
+        {
+            continue;
+        }
 
-        j_entry = json_pack("{s:s, s:s, s:s}",
-                            "uuid", device->uuid,
-                            "psk", psk_string,
-                            "psk_id", psk_id_string);
-
-        if (j_entry == NULL)
+        if (json_array_append_new(j_devices, j_device))
         {
             return -1;
         }
+    }
 
-        if (json_array_append_new(j_devices, j_entry))
+    return 0;
+}
+
+int devices_database_to_json(linked_list_t *devices, json_t *j_devices)
+{
+    linked_list_entry_t *list_entry;
+    database_entry_t *device;
+    json_t *j_device = NULL;
+
+    if (devices == NULL
+        || !json_is_array(j_devices))
+    {
+        return -1;
+    }
+
+    for (list_entry = devices->head;
+         list_entry != NULL; list_entry = list_entry->next)
+    {
+        device = (database_entry_t *)list_entry->data;
+        j_device = devices_database_entry_get_json(device);
+
+        if (j_device == NULL)
+        {
+            continue;
+        }
+
+        if (json_array_append_new(j_devices, j_device))
         {
             return -1;
         }
@@ -285,7 +387,7 @@ int devices_database_from_file(punica_context_t *punica)
 {
     json_error_t error;
     size_t index;
-    json_t *j_entry;
+    json_t *j_device;
     json_t *j_devices = NULL;
     int ret = 1;
     database_entry_t *curr;
@@ -302,7 +404,7 @@ int devices_database_from_file(punica_context_t *punica)
     punica->rest_devices = devices;
     if (punica->settings->coap.database_file == NULL)
     {
-        // internal list created, nothing more to do here
+        /* internal list created, nothing more to do here */
         ret = 0;
         goto exit;
     }
@@ -336,9 +438,9 @@ int devices_database_from_file(punica_context_t *punica)
         goto exit;
     }
 
-    json_array_foreach(j_devices, index, j_entry)
+    json_array_foreach(j_devices, index, j_device)
     {
-        if (devices_database_entry_validate(j_entry))
+        if (devices_database_entry_validate(j_device))
         {
             log_message(LOG_LEVEL_INFO,
                         "%s Found error(s) in device entry no. %ld\n",
@@ -352,7 +454,7 @@ int devices_database_from_file(punica_context_t *punica)
             goto exit;
         }
 
-        if (devices_database_entry_from_json(j_entry, curr))
+        if (devices_database_entry_from_json(j_device, curr))
         {
             log_message(LOG_LEVEL_INFO,
                         "%s Failed to parse entry to JSON.\n",
@@ -371,4 +473,30 @@ free_device:
 exit:
     json_decref(j_devices);
     return ret;
+}
+
+int devices_database_to_file(linked_list_t *devices, const char *file_name)
+{
+    json_t *j_devices = json_array();
+
+    if (file_name == NULL
+        || !json_is_array(j_devices))
+    {
+        return -1;
+    }
+
+    if (devices_database_to_json(devices, j_devices) != 0)
+    {
+        json_decref(j_devices);
+        return -1;
+    }
+
+    if (json_dump_file(j_devices, file_name, 0) != 0)
+    {
+        json_decref(j_devices);
+        return -1;
+    }
+
+    json_decref(j_devices);
+    return 0;
 }
