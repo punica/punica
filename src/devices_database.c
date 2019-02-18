@@ -365,7 +365,7 @@ int devices_database_to_json(linked_list_t *devices, json_t *j_devices)
     for (list_entry = devices->head;
          list_entry != NULL; list_entry = list_entry->next)
     {
-        device = (database_entry_t *)list_entry->data;
+        device = (database_entry_t *) list_entry->data;
         j_device = devices_database_entry_get_json(device);
 
         if (j_device == NULL)
@@ -384,56 +384,60 @@ int devices_database_to_json(linked_list_t *devices, json_t *j_devices)
 
 int devices_database_from_file(punica_context_t *punica)
 {
-    database_entry_t *database;
+    linked_list_t *devices;
+    database_entry_t *device;
     json_error_t error;
     json_t *j_device, *j_devices = NULL;
-    int ret = 1;
     size_t index;
 
-    linked_list_t *devices = linked_list_new();
-    if (devices == 0)
+    devices = linked_list_new();
+    if (devices == NULL)
     {
         log_message(LOG_LEVEL_ERROR,
-                    "%s %s:%d - failed to allocate device list\r\n",
-                    logging_section, __FILE__, __LINE__);
-        goto exit;
+                    "%s Failed to allocate device database at %s:%s:%d\n",
+                    logging_section, __FILE__, __func__, __LINE__);
+        return 0;
     }
 
     punica->rest_devices = devices;
     if (punica->settings->coap.database_file == NULL)
     {
         /* internal list created, nothing more to do here */
-        ret = 0;
-        goto exit;
+        return 0;
     }
 
-    j_devices = json_load_file(
-                    punica->settings->coap.database_file, 0, &error);
+    j_devices = json_load_file(punica->settings->coap.database_file, 0, &error);
     if (j_devices == NULL)
     {
-        log_message(LOG_LEVEL_INFO, "%s %s:%d - database file not found,",
-                    logging_section, __FILE__, __LINE__);
         log_message(LOG_LEVEL_INFO,
-                    " must be created with /devices REST API\r\n");
-        ret = 0;
-        goto exit;
+                    "%s Failed to load JSON from devices database file.\n",
+                    logging_section);
+        log_message(LOG_LEVEL_DEBUG, "\t%s:%d:%d error:%s\n",
+                    punica->settings->coap.database_file, error.line, error.column,
+                    error.text);
+
+        return -1;
     }
 
     if (!json_is_array(j_devices))
     {
-        log_message(LOG_LEVEL_ERROR,
-                    "%s %s:%d - database file must contain a json array\r\n",
-                    logging_section, __FILE__, __LINE__);
+        log_message(LOG_LEVEL_INFO,
+                    "%s Database file must contain a JSON array.\n",
+                    logging_section);
         linked_list_delete(devices);
-        goto exit;
+
+        json_decref(j_devices);
+        return -1;
     }
 
-    int array_size = json_array_size(j_devices);
-    if (array_size == 0)
+    if (json_array_size(j_devices) == 0)
     {
         /* empty array, must be populated with /devices REST API */
-        ret = 0;
-        goto exit;
+        log_message(LOG_LEVEL_INFO,
+                    "%s Created empty devices database file.\n",
+                    logging_section);
+        json_decref(j_devices);
+        return 0;
     }
 
     json_array_foreach(j_devices, index, j_device)
@@ -441,36 +445,36 @@ int devices_database_from_file(punica_context_t *punica)
         if (devices_database_entry_validate(j_device))
         {
             log_message(LOG_LEVEL_INFO,
-                        "%s Found error(s) in device entry no. %ld\n",
+                        "%s Found error(s) in devices database entry no. %ld\n",
                         logging_section, index);
             continue;
         }
 
-        database = malloc(sizeof(database_entry_t));
-        if (database == NULL)
+        device = malloc(sizeof(database_entry_t));
+        if (device == NULL)
         {
-            goto exit;
+            log_message(LOG_LEVEL_ERROR,
+                        "%s Failed to allocate device entry memory at %s.\n",
+                        logging_section, __func__);
+            json_decref(j_devices);
+            return -1;
         }
 
-        if (devices_database_entry_from_json(j_device, database))
+        if (devices_database_entry_from_json(j_device, device) == 0)
+        {
+            linked_list_add(devices, (void *) device);
+        }
+        else
         {
             log_message(LOG_LEVEL_INFO,
                         "%s Failed to parse entry to JSON.\n",
                         logging_section);
-            goto free_device;
+            devices_database_entry_free(device);
         }
-
-        linked_list_add(devices, (void *)database);
-        continue;
-
-free_device:
-        devices_database_entry_free(database);
     }
-    ret = 0;
 
-exit:
     json_decref(j_devices);
-    return ret;
+    return 0;
 }
 
 int devices_database_to_file(linked_list_t *devices, const char *file_name)
