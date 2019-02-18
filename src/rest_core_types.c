@@ -29,8 +29,8 @@
 rest_async_response_t *rest_async_response_new(void)
 {
     rest_async_response_t *response;
-    uint32_t ts;
-    uint16_t r[6];
+    uint32_t timestamp;
+    uint16_t random_data[6];
 
     response = malloc(sizeof(rest_async_response_t));
     if (response == NULL)
@@ -39,19 +39,23 @@ rest_async_response_t *rest_async_response_new(void)
     }
     memset(response, 0, sizeof(rest_async_response_t));
 
-    ts = time(NULL);
-    if (utils_get_random(r, sizeof(r)) != sizeof(r))
+    timestamp = time(NULL);
+    if (utils_get_random(random_data,
+                         sizeof(random_data)) != sizeof(random_data))
     {
         return NULL;
     }
 
-    snprintf(response->id, sizeof(response->id), "%u#%04x%04x-%04x-%04x-%04x-%04x",
-             ts, r[0], r[1], r[2], r[3], r[4], r[5]);
+    snprintf(response->id, sizeof(response->id),
+             "%u#%04x%04x-%04x-%04x-%04x-%04x",
+             timestamp, random_data[0], random_data[1], random_data[2],
+             random_data[3], random_data[4], random_data[5]);
 
     return response;
 }
 
-rest_async_response_t *rest_async_response_clone(const rest_async_response_t *response)
+rest_async_response_t *rest_async_response_clone(
+    const rest_async_response_t *response)
 {
     rest_async_response_t *clone;
 
@@ -101,7 +105,8 @@ int rest_async_response_set(rest_async_response_t *response, int status,
         return -1;
     }
 
-    if (base64_encode(payload, length, (char *)response->payload, &base64_length))
+    if (base64_encode(payload, length, (char *)response->payload,
+                      &base64_length))
     {
         return -1;
     }
@@ -135,7 +140,8 @@ void rest_notif_registration_delete(rest_notif_registration_t *registration)
     free(registration);
 }
 
-int rest_notif_registration_set(rest_notif_registration_t *registration, const char *name)
+int rest_notif_registration_set(rest_notif_registration_t *registration,
+                                const char *name)
 {
     if (registration->name)
     {
@@ -216,7 +222,8 @@ rest_notif_deregistration_t *rest_notif_deregistration_new(void)
     return deregistration;
 }
 
-void rest_notif_deregistration_delete(rest_notif_deregistration_t *deregistration)
+void rest_notif_deregistration_delete(
+    rest_notif_deregistration_t *deregistration)
 {
     if (deregistration->name)
     {
@@ -227,7 +234,8 @@ void rest_notif_deregistration_delete(rest_notif_deregistration_t *deregistratio
     free(deregistration);
 }
 
-int rest_notif_deregistration_set(rest_notif_deregistration_t *deregistration, const char *name)
+int rest_notif_deregistration_set(
+    rest_notif_deregistration_t *deregistration, const char *name)
 {
     if (deregistration->name)
     {

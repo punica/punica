@@ -32,24 +32,27 @@
 
 const char *argp_program_version = PUNICA_FULL_VERSION;
 
+static char *logging_section = "[SETTINGS]";
+
 static char description[] =
     "Punica - interface to LwM2M server and all clients connected to it";
 
 static struct argp_option options[] =
 {
-    {"log", 'l', "LOGGING_LEVEL", 0, "Specify logging level (0-5)" },
-    {"config", 'c', "FILE", 0, "Specify parameters configuration file" },
-    {"database", 'd', "FILE", 0, "Specify device database file" },
-    {"private_key", 'k', "FILE", 0, "Specify TLS security private key file" },
-    {"certificate", 'C', "FILE", 0, "Specify TLS security certificate file" },
-    { 0 }
+    {"log", 'l', "LOGGING_LEVEL", 0, "Specify logging level (0-5)"},
+    {"config", 'c', "FILE", 0, "Specify parameters configuration file"},
+    {"database", 'd', "FILE", 0, "Specify device database file"},
+    {"private_key", 'k', "FILE", 0, "Specify TLS security private key"},
+    {"certificate", 'C', "FILE", 0, "Specify TLS security certificate"},
+    {0}
 };
 
 static void set_coap_settings(json_t *j_section, coap_settings_t *settings)
 {
-    const char *key;
-    const char *section_name = "coap";
+    const char *key, *section_name = "coap";
     json_t *j_value;
+
+    logging_section = "[SETTINGS / CoAP]";
 
     json_object_foreach(j_section, key, j_value)
     {
@@ -66,15 +69,15 @@ static void set_coap_settings(json_t *j_section, coap_settings_t *settings)
             else
             {
                 log_message(LOG_LEVEL_WARN,
-                            "[SETTINGS] value at key %s:%s must be a string",
-                            section_name, key);
+                            "%s value at key %s:%s must be a string",
+                            logging_section, section_name, key);
             }
         }
         else
         {
             log_message(LOG_LEVEL_WARN,
-                        "[SETTINGS] Unrecognised configuration file key: %s.%s\n",
-                        section_name, key);
+                        "%s Unrecognised configuration file key: %s.%s\n",
+                        logging_section, section_name, key);
         }
     }
 }
@@ -93,19 +96,23 @@ static int set_user_settings(json_t *j_user_settings,
     j_secret = json_object_get(j_user_settings, "secret");
     j_scope = json_object_get(j_user_settings, "scope");
 
-    if (!json_is_string(j_name) || strlen(json_string_value(j_name)) < 1)
+    if (!json_is_string(j_name)
+        || strlen(json_string_value(j_name)) < 1)
     {
         log_message(LOG_LEVEL_WARN,
-                    "[SETTINGS] User configured without name.\n");
+                    "%s User configured without name.\n",
+                    logging_section);
         return 1;
     }
 
     user_name = json_string_value(j_name);
     user_name_length = strnlen(user_name, J_MAX_LENGTH_USER_NAME);
-    if (user_name_length == 0 || user_name_length == J_MAX_LENGTH_USER_NAME)
+
+    if (user_name_length == 0
+        || user_name_length == J_MAX_LENGTH_USER_NAME)
     {
         log_message(LOG_LEVEL_WARN,
-                    "[SETTINGS] User name length is invalid.\n");
+                    "%s User name length is invalid.\n", logging_section);
         return 1;
     }
 
@@ -113,11 +120,12 @@ static int set_user_settings(json_t *j_user_settings,
     {
         user_entry = entry->data;
 
-        if (strncmp(user_entry->name, user_name, J_MAX_LENGTH_USER_NAME) == 0)
+        if (strncmp(user_entry->name, user_name,
+                    J_MAX_LENGTH_USER_NAME) == 0)
         {
             log_message(LOG_LEVEL_WARN,
-                        "[SETTINGS] Found duplicate \"%s\" user name in config.\n",
-                        user_name);
+                        "%s Found duplicate \"%s\" user name in config.\n",
+                        logging_section, user_name);
             return 1;
         }
     }
@@ -125,8 +133,8 @@ static int set_user_settings(json_t *j_user_settings,
     if (!json_is_string(j_secret))
     {
         log_message(LOG_LEVEL_WARN,
-                    "[SETTINGS] User \"%s\" configured without valid secret key.\n",
-                    user_name);
+                    "%s User \"%s\" configured without valid secret key.\n",
+                    logging_section, user_name);
         return 1;
     }
 
@@ -135,17 +143,18 @@ static int set_user_settings(json_t *j_user_settings,
     if (user_secret_length == J_MAX_LENGTH_USER_NAME)
     {
         log_message(LOG_LEVEL_WARN,
-                    "[SETTINGS] User secret length is invalid.\n");
+                    "%s User secret length is invalid.\n", logging_section);
         return 1;
     }
 
     if (!json_is_array(j_scope))
     {
         log_message(LOG_LEVEL_WARN,
-                    "[SETTINGS] User \"%s\" configured without valid scope. ",
-                    user_name);
+                    "%s User \"%s\" scope list %s.\n"
+                    logging_section, user_name, 
+                    "contains invalid scope",);
         log_message(LOG_LEVEL_WARN,
-                    "Setting default scope: \"[]\".\n");
+                    "%s Setting default scope: \"[]\".\n", logging_section);
         j_scope = json_array();
     }
 
@@ -154,8 +163,9 @@ static int set_user_settings(json_t *j_user_settings,
         if (!json_is_string(j_scope_value))
         {
             log_message(LOG_LEVEL_WARN,
-                        "[SETTINGS] User %s scopes contains invalid type value\n",
-                        user_name);
+                        "%s User \"%s\" scope list %s.\n"
+                        logging_section, user_name, 
+                        "contains invalid type value",);
             return 1;
         }
 
@@ -166,8 +176,9 @@ static int set_user_settings(json_t *j_user_settings,
             || scope_length == J_MAX_LENGTH_METHOD + 1 + J_MAX_LENGTH_URL)
         {
             log_message(LOG_LEVEL_WARN,
-                        "[SETTINGS] User \"%s\" scopes contain invalid length value\n",
-                        user_name);
+                        "%s User \"%s\" scope list %s.\n"
+                        logging_section, user_name, 
+                        "contains invalid length value",);
             return 1;
         }
     }
@@ -204,7 +215,8 @@ static void set_jwt_settings(json_t *j_section, jwt_settings_t *settings)
             else
             {
                 log_message(LOG_LEVEL_WARN,
-                            "[SETTINGS] JWT Token %s must be an integer\n", key);
+                            "%s JWT Token %s must be an integer\n",
+                            logging_section, key);
             }
         }
         else if (strcasecmp(key, "secret_key") == 0)
@@ -212,16 +224,19 @@ static void set_jwt_settings(json_t *j_section, jwt_settings_t *settings)
             if (!json_is_string(j_value))
             {
                 log_message(LOG_LEVEL_WARN,
-                            "[SETTINGS] JWT Token %s must be a string\n", key);
+                            "%s JWT Token %s must be a string\n",
+                            logging_section, key);
                 continue;
             }
 
             string_value = json_string_value(j_value);
             value_length = strnlen(string_value, J_MAX_LENGTH_SECRET_KEY);
-            if (value_length == 0 || value_length == J_MAX_LENGTH_SECRET_KEY)
+            if (value_length == 0
+                || value_length == J_MAX_LENGTH_SECRET_KEY)
             {
                 log_message(LOG_LEVEL_WARN,
-                            "[SETTINGS] JWT Token %s length is invalid\n", key);
+                            "%s JWT Token %s length is invalid\n",
+                            logging_section, key);
                 continue;
             }
 
@@ -231,11 +246,13 @@ static void set_jwt_settings(json_t *j_section, jwt_settings_t *settings)
             }
 
             settings->secret_key_length = value_length;
-            settings->secret_key = (unsigned char *) malloc(settings->secret_key_length * sizeof(
-                                                                unsigned char));
+            settings->secret_key = (unsigned char *) malloc(
+                settings->secret_key_length * sizeof(unsigned char));
             if (settings->secret_key == NULL)
             {
-                log_message(LOG_LEVEL_FATAL, "Failed to allocate %s!\n", key);
+                log_message(LOG_LEVEL_FATAL,
+                            "%s Failed to allocate %s!\n",
+                            logging_section, key);
                 settings->secret_key_length = 0;
                 continue;
             }
@@ -249,31 +266,37 @@ static void set_jwt_settings(json_t *j_section, jwt_settings_t *settings)
                 {
                     if (json_is_object(j_user_settings))
                     {
-                        set_user_settings(j_user_settings, settings->users_list);
+                        set_user_settings(j_user_settings,
+                                          settings->users_list);
                     }
                     else
                     {
                         log_message(LOG_LEVEL_WARN,
-                                    "[SETTINGS] User settings must be stored in an object\n");
+                                    "%s User settings %s.\n",
+                                    logging_section,
+                                    "must be stored in an object");
                     }
                 }
             }
             else
             {
                 log_message(LOG_LEVEL_WARN,
-                            "[SETTINGS] Users settings must be stored in objects list\n");
+                            "%s Users settings %s.\n",
+                            logging_section,
+                            "must be stored in a list of objects");
             }
         }
         else
         {
             log_message(LOG_LEVEL_WARN,
-                        "[SETTINGS] Unrecognised configuration file key: %s.%s\n",
-                        section_name, key);
+                        "%s Unrecognised configuration file key: %s.%s\n",
+                        logging_section, section_name, key);
         }
     }
 }
 
-static void set_http_security_settings(json_t *j_section, http_security_settings_t *settings)
+static void set_http_security_settings(json_t *j_section,
+                                       http_security_settings_t *settings)
 {
     const char *key;
     const char *section_name = "http.security";
@@ -296,8 +319,8 @@ static void set_http_security_settings(json_t *j_section, http_security_settings
         else
         {
             log_message(LOG_LEVEL_WARN,
-                        "[SETTINGS] Unrecognised configuration file key: %s.%s\n",
-                        section_name, key);
+                        "%s Unrecognised configuration file key: %s.%s\n",
+                        logging_section, section_name, key);
         }
     }
 }
@@ -320,13 +343,14 @@ static void set_http_settings(json_t *j_section, http_settings_t *settings)
         else
         {
             log_message(LOG_LEVEL_WARN,
-                        "[SETTINGS] Unrecognised configuration file key: %s.%s\n",
-                        section_name, key);
+                        "%s Unrecognised configuration file key: %s.%s\n",
+                        logging_section, section_name, key);
         }
     }
 }
 
-static void set_logging_settings(json_t *j_section, logging_settings_t *settings)
+static void set_logging_settings(json_t *j_section,
+                                 logging_settings_t *settings)
 {
     const char *key;
     const char *section_name = "logging";
@@ -347,8 +371,8 @@ static void set_logging_settings(json_t *j_section, logging_settings_t *settings
             else
             {
                 log_message(LOG_LEVEL_WARN,
-                            "[SETTINGS] %s.%s must be set to a boolean value!\n",
-                            section_name, key);
+                            "%s %s.%s must be set to a boolean value!\n",
+                            logging_section, section_name, key);
             }
         }
         else if (strcasecmp(key, "human_readable_timestamp") == 0)
@@ -361,15 +385,15 @@ static void set_logging_settings(json_t *j_section, logging_settings_t *settings
             else
             {
                 log_message(LOG_LEVEL_WARN,
-                            "[SETTINGS] %s.%s must be set to a boolean value!\n",
-                            section_name, key);
+                            "%s %s.%s must be set to a boolean value!\n",
+                            logging_section, section_name, key);
             }
         }
         else
         {
             log_message(LOG_LEVEL_WARN,
-                        "[SETTINGS] Unrecognised configuration file key: %s.%s\n",
-                        section_name, key);
+                        "%s Unrecognised configuration file key: %s.%s\n",
+                        logging_section, section_name, key);
         }
     }
 }
@@ -384,8 +408,9 @@ static int read_config(char *config_name, settings_t *settings)
 
     if (j_settings == NULL)
     {
-        log_message(LOG_LEVEL_ERROR, "[SETTINGS] %s:%d:%d error:%s \n",
-                    config_name, error.line, error.column, error.text);
+        log_message(LOG_LEVEL_ERROR, "%s %s:%d:%d error:%s \n",
+                    logging_section, config_name, error.line,
+                    error.column, error.text);
         return 1;
     }
 
@@ -406,8 +431,8 @@ static int read_config(char *config_name, settings_t *settings)
         else
         {
             log_message(LOG_LEVEL_WARN,
-                        "[SETTINGS] Unrecognised configuration file section: %s\n",
-                        section);
+                        "%s Unrecognised configuration file section: %s\n",
+                        logging_section, section);
         }
     }
 
@@ -461,12 +486,14 @@ static struct argp argp = { options, parse_arguments, 0, description };
 int settings_initialize(settings_t *settings)
 {
     *settings = DEFAULT_PUNICA_SETTINGS;
+    jwt_settings_t *jwt_settings = &settings->http.security.jwt;
 
-    settings->http.security.jwt.users_list = linked_list_new();
-    settings->http.security.jwt.secret_key = (unsigned char *) malloc(
-                                                 settings->http.security.jwt.secret_key_length * sizeof(unsigned char));
-    utils_get_random(settings->http.security.jwt.secret_key,
-                     settings->http.security.jwt.secret_key_length);
+    jwt_settings->users_list = linked_list_new();
+    jwt_settings->secret_key = (unsigned char *) malloc(
+        jwt_settings->secret_key_length * sizeof(unsigned char));
+
+    utils_get_random(jwt_settings->secret_key,
+                     jwt_settings->secret_key_length);
 
     return 0;
 }

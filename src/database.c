@@ -97,7 +97,8 @@ int database_validate_new_entry(json_t *j_new_device_object)
 
         if (strcasecmp(key, "psk") == 0)
         {
-            if (base64_decode(json_string_value(j_value), buffer, &buffer_len))
+            if (base64_decode(json_string_value(j_value),
+                              buffer, &buffer_len))
             {
                 return -1;
             }
@@ -106,7 +107,8 @@ int database_validate_new_entry(json_t *j_new_device_object)
         }
         else if (strcasecmp(key, "psk_id") == 0)
         {
-            if (base64_decode(json_string_value(j_value), buffer, &buffer_len))
+            if (base64_decode(json_string_value(j_value),
+                              buffer, &buffer_len))
             {
                 return -1;
             }
@@ -148,7 +150,8 @@ int database_validate_entry(json_t *j_device_object)
         }
         else if (strcasecmp(key, "psk") == 0)
         {
-            if (base64_decode(json_string_value(j_value), buffer, &buffer_len))
+            if (base64_decode(json_string_value(j_value),
+                              buffer, &buffer_len))
             {
                 return -1;
             }
@@ -156,7 +159,8 @@ int database_validate_entry(json_t *j_device_object)
         }
         else if (strcasecmp(key, "psk_id") == 0)
         {
-            if (base64_decode(json_string_value(j_value), buffer, &buffer_len))
+            if (base64_decode(json_string_value(j_value),
+                              buffer, &buffer_len))
             {
                 return -1;
             }
@@ -173,7 +177,8 @@ int database_validate_entry(json_t *j_device_object)
     return 0;
 }
 
-int database_populate_entry(json_t *j_device_object, database_entry_t *device_entry)
+int database_populate_entry(database_entry_t *device_entry,
+                            json_t *j_device_object)
 {
     json_t *j_value;
     const char *json_string;
@@ -216,12 +221,14 @@ int database_populate_entry(json_t *j_device_object, database_entry_t *device_en
     {
         return -1;
     }
-    base64_decode(json_string, device_entry->psk_id, &device_entry->psk_id_len);
+    base64_decode(json_string,
+                  device_entry->psk_id, &device_entry->psk_id_len);
 
     return 0;
 }
 
-int database_populate_new_entry(json_t *j_new_device_object, database_entry_t *device_entry)
+int database_populate_new_entry(database_entry_t *device_entry,
+                                json_t *j_new_device_object)
 {
     uuid_t b_uuid;
     char *uuid = NULL;
@@ -273,18 +280,24 @@ int database_prepare_array(json_t *j_array, linked_list_t *device_list)
         return -1;
     }
 
-    for (list_entry = device_list->head; list_entry != NULL; list_entry = list_entry->next)
+    for (list_entry = device_list->head;
+         list_entry != NULL; list_entry = list_entry->next)
     {
         psk_string_len = sizeof(psk_string);
         psk_id_string_len = sizeof(psk_id_string);
 
         device_entry = (database_entry_t *)list_entry->data;
 
-        base64_encode(device_entry->psk, device_entry->psk_len, psk_string, &psk_string_len);
-        base64_encode(device_entry->psk_id, device_entry->psk_id_len, psk_id_string, &psk_id_string_len);
+        base64_encode(device_entry->psk, device_entry->psk_len,
+                      psk_string, &psk_string_len);
+        base64_encode(device_entry->psk_id, device_entry->psk_id_len,
+                      psk_id_string, &psk_id_string_len);
 
-        j_entry = json_pack("{s:s, s:s, s:s}", "uuid", device_entry->uuid, "psk", psk_string, "psk_id",
-                            psk_id_string);
+        j_entry = json_pack("{s:s, s:s, s:s}",
+                            "uuid", device_entry->uuid,
+                            "psk", psk_string,
+                            "psk_id", psk_id_string);
+
         if (j_entry == NULL)
         {
             return -1;
@@ -319,23 +332,26 @@ int database_load_file(punica_context_t *punica)
     punica->rest_devices = device_list;
     if (punica->settings->coap.database_file == NULL)
     {
-//      internal list created, nothing more to do here
+        // internal list created, nothing more to do here
         ret = 0;
         goto exit;
     }
 
-    j_database = json_load_file(punica->settings->coap.database_file, 0, &error);
+    j_database = json_load_file(
+                     punica->settings->coap.database_file, 0, &error);
     if (j_database == NULL)
     {
-        fprintf(stdout, "%s:%d - database file not found, must be created with /devices REST API\r\n",
+        fprintf(stdout, "%s:%d - database file not found,",
                 __FILE__, __LINE__);
+        fprintf(stdout, " must be created with /devices REST API\r\n");
         ret = 0;
         goto exit;
     }
 
     if (!json_is_array(j_database))
     {
-        fprintf(stderr, "%s:%d - database file must contain a json array\r\n",
+        fprintf(stderr,
+                "%s:%d - database file must contain a json array\r\n",
                 __FILE__, __LINE__);
         linked_list_delete(device_list);
         goto exit;
@@ -344,7 +360,7 @@ int database_load_file(punica_context_t *punica)
     int array_size = json_array_size(j_database);
     if (array_size == 0)
     {
-//      empty array, must be populated with /devices REST API
+        // empty array, must be populated with /devices REST API
         ret = 0;
         goto exit;
     }
@@ -353,7 +369,9 @@ int database_load_file(punica_context_t *punica)
     {
         if (database_validate_entry(j_entry))
         {
-            fprintf(stdout, "Found error(s) in device entry no. %ld\n", index);
+            fprintf(stdout,
+                    "Found error(s) in device entry no. %ld\n",
+                    index);
             continue;
         }
 
@@ -365,7 +383,8 @@ int database_load_file(punica_context_t *punica)
 
         if (database_populate_entry(j_entry, curr))
         {
-            fprintf(stdout, "Internal server error while managing device entry\n");
+            fprintf(stdout,
+                    "Internal server error while managing device entry\n");
             goto free_device;
         }
 

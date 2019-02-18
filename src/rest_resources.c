@@ -28,6 +28,8 @@
 #include <string.h>
 #include <sys/syscall.h>
 
+static char *logging_section = "[REST API]";
+
 typedef struct
 {
     punica_context_t *punica;
@@ -60,24 +62,31 @@ static int http_to_coap_format(const char *type)
     return -1;
 }
 
-static void rest_async_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
-                          lwm2m_media_type_t format, uint8_t *data, int dataLength,
-                          void *context)
+static void rest_async_cb(uint16_t clientID, lwm2m_uri_t *uriP,
+                          int status, lwm2m_media_type_t format,
+                          uint8_t *data, int dataLength, void *context)
 {
     rest_async_context_t *ctx = (rest_async_context_t *)context;
     int err;
+    static const char *logging_section = "[LwM2M / ASYNC RESPONSE]";
 
-    log_message(LOG_LEVEL_INFO, "[ASYNC-RESPONSE] id=%s status=%d\n",
-                ctx->response->id, utils_coap_to_http_status(status));
+    log_message(LOG_LEVEL_INFO, "%s id=%s status=%d\n",
+                logging_section, ctx->response->id,
+                utils_coap_to_http_status(status));
 
     linked_list_remove(ctx->punica->rest_pending_responses, ctx->response);
 
-    err = rest_async_response_set(ctx->response, utils_coap_to_http_status(status), data, dataLength);
+    err = rest_async_response_set(ctx->response,
+                                  utils_coap_to_http_status(status),
+                                  data, dataLength);
     assert(err == 0);
 
     rest_notify_async_response(ctx->punica, ctx->response);
 
-    // Free rest_async_context_t which was allocated in rest_resources_read_cb
+    /*
+     * Free rest_async_context_t,
+     * which was allocated in rest_resources_read_cb
+     */
     if (ctx->payload != NULL)
     {
         free(ctx->payload);
@@ -109,59 +118,72 @@ static int rest_resources_rwe_cb_unsafe(const struct _u_request *u_request,
 
     /*
      * IMPORTANT!!! Error handling is split into two parts:
-     * First, validate client request and, in case of an error, fail fast and
-     * return any related 4xx code.
-     * Second, once the request is validated, start allocating neccessary
-     * resources and, in case of an error, jump (goto) to cleanup section at
-     * the end of the function.
+     * 1. validate client request and, in case of an error,
+     *    fail fast and return any related 4xx code.
+     * 2. once the request is validated, start allocating neccessary
+     *    resources and, in case of an error, jump (goto) to cleanup
+     *    section at the end of the function.
      */
 
+    static const char *logging_section = "[REST API / RESOURCES]";
     if (strcmp(u_request->http_verb, "GET") == 0)
     {
-        log_message(LOG_LEVEL_INFO, "[READ-REQUEST] %s\n", u_request->http_url);
+        log_message(LOG_LEVEL_DEBUG, "%s Reading %s...\n",
+                    logging_section, u_request->http_url);
         action = RES_ACTION_READ;
     }
     else if (strcmp(u_request->http_verb, "PUT") == 0)
     {
-        log_message(LOG_LEVEL_INFO, "[WRITE-REQUEST] %s\n", u_request->http_url);
+        log_message(LOG_LEVEL_DEBUG, "%s Writing %s...\n",
+                    logging_section, u_request->http_url);
         action = RES_ACTION_WRITE;
     }
     else if (strcmp(u_request->http_verb, "POST") == 0)
     {
-        log_message(LOG_LEVEL_INFO, "[EXEC-REQUEST] %s\n", u_request->http_url);
+        log_message(LOG_LEVEL_DEBUG, "%s Executing %s...\n",
+                    logging_section, u_request->http_url);
         action = RES_ACTION_EXEC;
     }
     else
     {
-        ulfius_set_empty_body_response(u_response, HTTP_405_METHOD_NOT_ALLOWED);
+        log_message(LOG_LEVEL_DEBUG, "%s Unsupported method: %s.\n",
+                    logging_section, u_request->http_verb);
+
+        ulfius_set_empty_body_response(u_response,
+                                       HTTP_405_METHOD_NOT_ALLOWED);
         return U_CALLBACK_COMPLETE;
     }
 
     if (action == RES_ACTION_WRITE)
     {
-        format = http_to_coap_format(u_map_get_case(u_request->map_header, "Content-Type"));
+        format = http_to_coap_format(u_map_get_case(u_request->map_header,
+                                                    "Content-Type"));
         if (format == -1)
         {
-            ulfius_set_empty_body_response(u_response, HTTP_415_UNSUPPORTED_MEDIA_TYPE);
+            ulfius_set_empty_body_response(u_response,
+                                           HTTP_415_UNSUPPORTED_MEDIA_TYPE);
             return U_CALLBACK_COMPLETE;
         }
     }
     else if (action == RES_ACTION_EXEC)
     {
-        if ((u_map_get_case(u_request->map_header, "Content-Type") == NULL)
-            || (strcmp(u_map_get_case(u_request->map_header, "Content-Type"), "text/plain") == 0))
+        if (u_map_get_case(u_request->map_header, "Content-Type") == NULL
+            || strcmp(u_map_get_case(u_request->map_header,
+                                     "Content-Type"), "text/plain") == 0)
         {
             format = LWM2M_CONTENT_TEXT;
         }
         else
         {
-            ulfius_set_empty_body_response(u_response, HTTP_415_UNSUPPORTED_MEDIA_TYPE);
+            ulfius_set_empty_body_response(u_response,
+                                           HTTP_415_UNSUPPORTED_MEDIA_TYPE);
             return U_CALLBACK_COMPLETE;
         }
     }
 
-    // Return 400 BAD REQUEST if request body length is 0
-    if ((action == RES_ACTION_WRITE) && (u_request->binary_body_length == 0))
+    /* Return 400 BAD REQUEST if request body length is 0 */
+    if (action == RES_ACTION_WRITE
+        && u_request->binary_body_length == 0)
     {
         ulfius_set_empty_body_response(u_response, HTTP_400_BAD_REQUEST);
         return U_CALLBACK_COMPLETE;
@@ -179,14 +201,20 @@ static int rest_resources_rwe_cb_unsafe(const struct _u_request *u_request,
     /* Reconstruct and validate client path */
     len = snprintf(path, sizeof(path), "/endpoints/%s/", name);
 
-    if (u_request->http_url == NULL || strlen(u_request->http_url) >= sizeof(path) ||
-        len >= sizeof(path))
+    if (u_request->http_url == NULL
+        || strlen(u_request->http_url) >= sizeof(path)
+        || len >= sizeof(path))
     {
-        log_message(LOG_LEVEL_WARN, "%s(): invalid http request (%s)!\n", __func__, u_request->http_url);
+        log_message(LOG_LEVEL_WARN,
+                    "%s(): invalid http request (%s)!\n",
+                    __func__, u_request->http_url);
         return U_CALLBACK_ERROR;
     }
 
-    // this is probaly redundant if there's only one matching ulfius filter
+    /*
+     * this is probaly redundant
+     * if there's only one matching ulfius filter
+     */
     if (strncmp(path, u_request->http_url, len) != 0)
     {
         ulfius_set_empty_body_response(u_response, HTTP_404_NOT_FOUND);
@@ -203,7 +231,8 @@ static int rest_resources_rwe_cb_unsafe(const struct _u_request *u_request,
     }
 
     /*
-     * IMPORTANT! This is where server-error section starts and any error must
+     * IMPORTANT! 
+     * This is where server-error section starts and any error must
      * go through the cleanup section. See comment above.
      */
     const int err = U_CALLBACK_ERROR;
@@ -222,7 +251,8 @@ static int rest_resources_rwe_cb_unsafe(const struct _u_request *u_request,
     {
         goto exit;
     }
-    memcpy(async_context->payload, u_request->binary_body, u_request->binary_body_length);
+    memcpy(async_context->payload, u_request->binary_body,
+           u_request->binary_body_length);
 
     async_context->response = rest_async_response_new();
     if (async_context->response == NULL)
@@ -241,22 +271,21 @@ static int rest_resources_rwe_cb_unsafe(const struct _u_request *u_request,
 
     case RES_ACTION_WRITE:
         res = lwm2m_dm_write(
-                  punica->lwm2m, client->internalID, &uri,
-                  format, async_context->payload, u_request->binary_body_length,
-                  rest_async_cb, async_context
-              );
+                  punica->lwm2m, client->internalID, &uri, format,
+                  async_context->payload, u_request->binary_body_length,
+                  rest_async_cb, async_context);
         break;
 
     case RES_ACTION_EXEC:
         res = lwm2m_dm_execute(
-                  punica->lwm2m, client->internalID, &uri,
-                  format, async_context->payload, u_request->binary_body_length,
-                  rest_async_cb, async_context
-              );
+                  punica->lwm2m, client->internalID, &uri, format,
+                  async_context->payload, u_request->binary_body_length,
+                  rest_async_cb, async_context);
         break;
 
     default:
-        assert(false); // if this happens, there's an error in the logic
+        /* if this happens, there's an error in the logic */
+        assert(false);
         break;
     }
 
@@ -267,7 +296,8 @@ static int rest_resources_rwe_cb_unsafe(const struct _u_request *u_request,
     linked_list_add(punica->rest_pending_responses, async_context->response);
 
     j_body = json_object();
-    json_object_set_new(j_body, "async-response-id", json_string(async_context->response->id));
+    json_object_set_new(j_body, "async-response-id",
+                        json_string(async_context->response->id));
     ulfius_set_json_body_response(u_response, HTTP_202_ACCEPTED, j_body);
     json_decref(j_body);
 
@@ -300,12 +330,12 @@ int rest_resources_rwe_cb(const struct _u_request *u_request,
                           void *context)
 {
     punica_context_t *punica = (punica_context_t *)context;
-    int ret;
+    int return_code;
 
     punica_lock(punica);
-    ret = rest_resources_rwe_cb_unsafe(u_request, u_response, punica);
+    return_code = 
+        rest_resources_rwe_cb_unsafe(u_request, u_response, punica);
     punica_unlock(punica);
 
-    return ret;
+    return return_code;
 }
-

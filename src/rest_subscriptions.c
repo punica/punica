@@ -24,6 +24,8 @@
 
 #include <string.h>
 
+static *char logging_section = "[REST API]";
+
 typedef struct
 {
     punica_context_t *punica;
@@ -31,23 +33,26 @@ typedef struct
 } rest_observe_context_t;
 
 static void rest_observe_cb(uint16_t clientID, lwm2m_uri_t *uriP, int count,
-                            lwm2m_media_type_t format, uint8_t *data, int dataLength,
-                            void *context)
+                            lwm2m_media_type_t format, uint8_t *data,
+                            int dataLength, void *context)
 {
-    rest_observe_context_t *ctx = (rest_observe_context_t *)context;
+    rest_observe_context_t *ctx = (rest_observe_context_t *) context;
     rest_async_response_t *response;
 
-    log_message(LOG_LEVEL_INFO, "[OBSERVE-RESPONSE] id=%s count=%d data=%p\n",
+    logging_section = "[LwM2M / OBSERVE RESPONSE] ";
+    log_message(LOG_LEVEL_INFO, "%s id=%s count=%d data=%p\n",
                 ctx->response->id, count, data);
 
     response = rest_async_response_clone(ctx->response);
     if (response == NULL)
     {
-        log_message(LOG_LEVEL_ERROR, "[OBSERVE-RESPONSE] Error! Failed to clone a response.\n");
+        log_message(LOG_LEVEL_ERROR,
+                    "%s Error! Failed to clone a response.\n",
+                    logging_section);
         return;
     }
 
-    // Where data is NULL, the count parameter represents CoAP error code
+    /* Where data is NULL, the count parameter represents CoAP error code */
     rest_async_response_set(response,
                             (data == NULL) ? utils_coap_to_http_status(count) : HTTP_200_OK,
                             data, dataLength);
@@ -55,13 +60,15 @@ static void rest_observe_cb(uint16_t clientID, lwm2m_uri_t *uriP, int count,
     rest_notify_async_response(ctx->punica, response);
 }
 
-static void rest_unobserve_cb(uint16_t clientID, lwm2m_uri_t *uriP, int count,
-                              lwm2m_media_type_t format, uint8_t *data, int dataLength,
-                              void *context)
+static void rest_unobserve_cb(uint16_t clientID, lwm2m_uri_t *uriP,
+                              int count, lwm2m_media_type_t format,
+                              uint8_t *data, int dataLength, void *context)
 {
-    rest_observe_context_t *ctx = (rest_observe_context_t *)context;
+    rest_observe_context_t *ctx = (rest_observe_context_t *) context;
 
-    log_message(LOG_LEVEL_INFO, "[UNOBSERVE-RESPONSE] id=%s\n", ctx->response->id);
+    logging_section = "[LwM2M / UNOBSERVE RESPONSE] ";
+    log_message(LOG_LEVEL_INFO, "%s id=%s\n", ctx->response->id,
+                logging_section);
 
     linked_list_remove(ctx->punica->rest_observations, ctx->response);
 
@@ -73,14 +80,14 @@ static int rest_subscriptions_put_cb_unsafe(const struct _u_request *u_request,
                                             struct _u_response *u_response,
                                             punica_context_t *punica)
 {
-    const char *name;
+    json_t *j_body;
     lwm2m_client_t *client;
+    lwm2m_uri_t uri;
+    lwm2m_observation_t *target_path;
+    rest_observe_context_t *observe_context = NULL;
+    const char *name;
     char path[100];
     size_t len;
-    lwm2m_uri_t uri;
-    json_t *j_body;
-    lwm2m_observation_t *targetP;
-    rest_observe_context_t *observe_context = NULL;
     int res;
 
     /*
@@ -104,14 +111,20 @@ static int rest_subscriptions_put_cb_unsafe(const struct _u_request *u_request,
     /* Reconstruct and validate client path */
     len = snprintf(path, sizeof(path), "/subscriptions/%s/", name);
 
-    if (u_request->http_url == NULL || strlen(u_request->http_url) >= sizeof(path) ||
-        len >= sizeof(path))
+    if (u_request->http_url == NULL
+        || strlen(u_request->http_url) >= sizeof(path)
+        || len >= sizeof(path))
     {
-        log_message(LOG_LEVEL_WARN, "%s(): invalid http request (%s)!\n", __func__, u_request->http_url);
+        log_message(LOG_LEVEL_WARN,
+                    "%s(): invalid http request (%s)!\n",
+                    __func__, u_request->http_url);
         return U_CALLBACK_ERROR;
     }
 
-    // this is probaly redundant if there's only one matching ulfius filter
+    /*
+     * this is probaly redundant
+     * if there's only one matching ulfius filter
+     */
     if (strncmp(path, u_request->http_url, len) != 0)
     {
         ulfius_set_empty_body_response(u_response, HTTP_404_NOT_FOUND);
@@ -128,20 +141,22 @@ static int rest_subscriptions_put_cb_unsafe(const struct _u_request *u_request,
     }
 
     /*
-     * IMPORTANT! This is where server-error section starts and any error must
+     * IMPORTANT!
+     * This is where server-error section starts and any error must
      * go through the cleanup section. See comment above.
      */
     const int err = U_CALLBACK_ERROR;
 
-    // Search for existing registrations to prevent duplicates
-    for (targetP = client->observationList; targetP != NULL; targetP = targetP->next)
+    /* Search for existing registrations to prevent duplicates */
+    for (target_path = client->observationList;
+         target_path != NULL; target_path = target_path->next)
     {
-        if (targetP->uri.flag == uri.flag &&
-            targetP->uri.objectId == uri.objectId &&
-            targetP->uri.instanceId == uri.instanceId &&
-            targetP->uri.resourceId == uri.resourceId)
+        if (target_path->uri.flag == uri.flag &&
+            target_path->uri.objectId == uri.objectId &&
+            target_path->uri.instanceId == uri.instanceId &&
+            target_path->uri.resourceId == uri.resourceId)
         {
-            observe_context = targetP->userData;
+            observe_context = target_path->userData;
             break;
         }
     }
@@ -175,7 +190,8 @@ static int rest_subscriptions_put_cb_unsafe(const struct _u_request *u_request,
     }
 
     j_body = json_object();
-    json_object_set_new(j_body, "async-response-id", json_string(observe_context->response->id));
+    json_object_set_new(j_body, "async-response-id",
+                        json_string(observe_context->response->id));
     ulfius_set_json_body_response(u_response, HTTP_202_ACCEPTED, j_body);
     json_decref(j_body);
 
@@ -201,14 +217,15 @@ int rest_subscriptions_put_cb(const struct _u_request *u_request,
                               struct _u_response *u_response,
                               void *context)
 {
-    punica_context_t *punica = (punica_context_t *)context;
-    int ret;
+    punica_context_t *punica = (punica_context_t *) context;
+    int return_code;
 
     punica_lock(punica);
-    ret = rest_subscriptions_put_cb_unsafe(u_request, u_response, punica);
+    return_code =
+        rest_subscriptions_put_cb_unsafe(u_request, u_response, punica);
     punica_unlock(punica);
 
-    return ret;
+    return return_code;
 }
 
 static int rest_subscriptions_delete_cb_unsafe(
@@ -221,14 +238,14 @@ static int rest_subscriptions_delete_cb_unsafe(
     char path[100];
     size_t len;
     lwm2m_uri_t uri;
-    lwm2m_observation_t *targetP;
+    lwm2m_observation_t *target_path;
     rest_observe_context_t *observe_context = NULL;
     int res;
 
     /*
      * IMPORTANT!!! Error handling is split into two parts:
-     * First, validate client request and, in case of an error, fail fast and
-     * return any related 4xx code.
+     * First, validate client request and, in case of an error,
+     * fail fast and return any related 4xx code.
      * Second, once the request is validated, start allocating neccessary
      * resources and, in case of an error, jump (goto) to cleanup section at
      * the end of the function.
@@ -246,14 +263,20 @@ static int rest_subscriptions_delete_cb_unsafe(
     /* Reconstruct and validate client path */
     len = snprintf(path, sizeof(path), "/subscriptions/%s/", name);
 
-    if (u_request->http_url == NULL || strlen(u_request->http_url) >= sizeof(path) ||
+    if (u_request->http_url == NULL
+        || strlen(u_request->http_url) >= sizeof(path) ||
         len >= sizeof(path))
     {
-        log_message(LOG_LEVEL_WARN, "%s(): invalid http request (%s)!\n", __func__, u_request->http_url);
+        log_message(LOG_LEVEL_WARN,
+                    "%s(): invalid http request (%s)!\n",
+                    __func__, u_request->http_url);
         return U_CALLBACK_ERROR;
     }
 
-    // this is probaly redundant if there's only one matching ulfius filter
+    /*
+     * this is probaly redundant
+     * if there's only one matching ulfius filter
+     */
     if (strncmp(path, u_request->http_url, len) != 0)
     {
         ulfius_set_empty_body_response(u_response, HTTP_404_NOT_FOUND);
@@ -270,14 +293,15 @@ static int rest_subscriptions_delete_cb_unsafe(
     }
 
     /* Search existing registrations to confirm existing observation */
-    for (targetP = client->observationList; targetP != NULL; targetP = targetP->next)
+    for (target_path = client->observationList;
+         target_path != NULL; target_path = target_path->next)
     {
-        if (targetP->uri.flag == uri.flag &&
-            targetP->uri.objectId == uri.objectId &&
-            targetP->uri.instanceId == uri.instanceId &&
-            targetP->uri.resourceId == uri.resourceId)
+        if (target_path->uri.flag == uri.flag &&
+            target_path->uri.objectId == uri.objectId &&
+            target_path->uri.instanceId == uri.instanceId &&
+            target_path->uri.resourceId == uri.resourceId)
         {
-            observe_context = targetP->userData;
+            observe_context = target_path->userData;
             break;
         }
     }
@@ -289,7 +313,8 @@ static int rest_subscriptions_delete_cb_unsafe(
     }
 
     /*
-     * IMPORTANT! This is where server-error section starts and any error must
+     * IMPORTANT!
+     * This is where server-error section starts and any error must
      * go through the cleanup section. See comment above.
      */
     const int err = U_CALLBACK_ERROR;
@@ -301,7 +326,9 @@ static int rest_subscriptions_delete_cb_unsafe(
 
     if (res == COAP_404_NOT_FOUND)
     {
-        log_message(LOG_LEVEL_WARN, "[WARNING] LwM2M server and client subscriptions mismatch!");
+        log_message(LOG_LEVEL_WARN,
+                    "%s LwM2M server and client subscriptions mismatch!",
+                    logging_section);
     }
     else if (res != 0)
     {
@@ -321,12 +348,13 @@ int rest_subscriptions_delete_cb(const struct _u_request *u_request,
                                  struct _u_response *u_response,
                                  void *context)
 {
-    punica_context_t *punica = (punica_context_t *)context;
-    int ret;
+    punica_context_t *punica = (punica_context_t *) context;
+    int return_code;
 
     punica_lock(punica);
-    ret = rest_subscriptions_delete_cb_unsafe(u_request, u_response, punica);
+    return_code =
+        rest_subscriptions_delete_cb_unsafe(u_request, u_response, punica);
     punica_unlock(punica);
 
-    return ret;
+    return return_code;
 }

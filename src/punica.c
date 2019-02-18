@@ -56,7 +56,8 @@ static void sigpipe_handler(int signal)
 
     logging_section = "[SIGNAL]";
     log_message(LOG_LEVEL_ERROR,
-                "%s SIGPIPE occurs: %d times.\n", logging_section, sigpipe_cnt);
+                "%s SIGPIPE occurs: %d times.\n",
+                logging_section, sigpipe_cnt);
 }
 
 /**
@@ -67,11 +68,14 @@ static void signals_initialize(void)
     struct sigaction old_signal, signal;
 
     logging_section = "[SIGNAL]";
-    // signal(SIGINT, sigint_handler); //automaticaly do SA_RESTART, we must break system functions exmp. select
+    /* signal(SIGINT, sigint_handler);
+       automaticaly do SA_RESTART,
+       we must break system functions exmp. select */
     memset(&signal, 0, sizeof(signal));
     signal.sa_handler = &sigint_handler;
     sigemptyset(&signal.sa_mask);
-    signal.sa_flags = 0; // break system functions open, read ... if SIGINT occurs
+    /* break system functions open, read ... if SIGINT occurs */
+    signal.sa_flags = 0;
     if (0 != sigaction(SIGINT, &signal, &old_signal))
     {
         log_message(LOG_LEVEL_FATAL,
@@ -143,7 +147,8 @@ void client_monitor_cb(uint16_t l_client_id, lwm2m_uri_t *l_uri_path,
         }
         else
         {
-            rest_notif_update_t *update_notification = rest_notif_update_new();
+            rest_notif_update_t *update_notification =
+                rest_notif_update_new();
 
             if (update_notification != NULL)
             {
@@ -161,10 +166,13 @@ void client_monitor_cb(uint16_t l_client_id, lwm2m_uri_t *l_uri_path,
                         logging_section, l_client_id);
         }
 
-        log_message(LOG_LEVEL_DEBUG,
-                    "\tname: \"%s\"\n\tbind: \"%s\"\n\tlifetime: %d\n\tobjects: ",
-                    l_client->name, binding_to_string(l_client->binding),
+        log_message(LOG_LEVEL_DEBUG, "\tname: \"%s\"\n",
+                    l_client->name);
+        log_message(LOG_LEVEL_DEBUG, "\tbind: \"%s\"\n",
+                    binding_to_string(l_client->binding));
+        log_message(LOG_LEVEL_DEBUG, "\tlifetime: %d\n",
                     l_client->lifetime);
+        log_message(LOG_LEVEL_DEBUG,"\tobjects: ");
 
         for (l_object = l_client->objectList;
              l_object != NULL; l_object = l_object->next)
@@ -205,7 +213,8 @@ void client_monitor_cb(uint16_t l_client_id, lwm2m_uri_t *l_uri_path,
         }
 
         log_message(LOG_LEVEL_INFO,
-                    "%s Client %d deregistered.\n", logging_section, l_client_id);
+                    "%s Client %d deregistered.\n",
+                    logging_section, l_client_id);
         break;
     }
     default:
@@ -228,7 +237,8 @@ int socket_receive(lwm2m_context_t *lwm2m, int coap_socket)
     memset(buffer, 0, sizeof(buffer));
 
     buffer_length = recvfrom(coap_socket, buffer, sizeof(buffer),
-                             0, (struct sockaddr *)&socket_address, &socket_address_size);
+                             0, (struct sockaddr *)&socket_address,
+                             &socket_address_size);
 
     if (buffer_length < 0)
     {
@@ -247,7 +257,7 @@ int socket_receive(lwm2m_context_t *lwm2m, int coap_socket)
     if (connection == NULL)
     {
         connection = connection_new_incoming(connections, coap_socket,
-                                             (struct sockaddr *)&socket_address, socket_address_size);
+                                             (struct sockaddr *) &socket_address, socket_address_size);
 
         if (connection)
         {
@@ -315,7 +325,8 @@ int main(int argc, char *argv[])
     if (punica.lwm2m == NULL)
     {
         log_message(LOG_LEVEL_FATAL,
-                    "%s Failed to initialize server instance!\n", logging_section);
+                    "%s Failed to initialize server instance!\n",
+                    logging_section);
         return -1;
     }
 
@@ -329,7 +340,8 @@ int main(int argc, char *argv[])
                              NULL, NULL) != U_OK)
     {
         log_message(LOG_LEVEL_FATAL,
-                    "%s Failed to initialize server instance!\n", logging_section);
+                    "%s Failed to initialize server instance!\n",
+                    logging_section);
         return -1;
     }
 
@@ -339,10 +351,10 @@ int main(int argc, char *argv[])
      */
 
     // Endpoints
-    ulfius_add_endpoint_by_val(&u_instance,
-                               "GET", "/endpoints", NULL, 10, &rest_endpoints_cb, &punica);
-    ulfius_add_endpoint_by_val(&u_instance,
-                               "GET", "/endpoints", ":name", 10, &rest_endpoints_name_cb, &punica);
+    ulfius_add_endpoint_by_val(&u_instance, "GET", "/endpoints", NULL, 10,
+                               &rest_endpoints_cb, &punica);
+    ulfius_add_endpoint_by_val(&u_instance, "GET", "/endpoints", ":name", 10,
+                               &rest_endpoints_name_cb, &punica);
 
     // Devices
     ulfius_add_endpoint_by_val(&u_instance, "GET", "/devices", NULL, 10,
@@ -357,19 +369,20 @@ int main(int argc, char *argv[])
                                &rest_devices_delete_cb, &punica);
 
     // Resources
-    ulfius_add_endpoint_by_val(&u_instance,
-                               "*", "/endpoints", ":name/*", 10, &rest_resources_rwe_cb, &punica);
+    ulfius_add_endpoint_by_val(&u_instance, "*", "/endpoints", ":name/*", 10,
+                               &rest_resources_rwe_cb, &punica);
 
     // Notifications
-    ulfius_add_endpoint_by_val(&u_instance,
-                               "GET", "/notification/callback", NULL, 10,
+    ulfius_add_endpoint_by_val(&u_instance, "GET", "/notification/callback",
+                               NULL, 10,
                                &rest_notifications_get_callback_cb, &punica);
     ulfius_add_endpoint_by_val(&u_instance,
                                "PUT", "/notification/callback", NULL, 10,
                                &rest_notifications_put_callback_cb, &punica);
     ulfius_add_endpoint_by_val(&u_instance,
                                "DELETE", "/notification/callback", NULL, 10,
-                               &rest_notifications_delete_callback_cb, &punica);
+                               &rest_notifications_delete_callback_cb,
+                               &punica);
     ulfius_add_endpoint_by_val(&u_instance,
                                "GET", "/notification/pull", NULL, 10,
                                &rest_notifications_pull_cb, &punica);
@@ -384,15 +397,17 @@ int main(int argc, char *argv[])
 
     // Version
     ulfius_add_endpoint_by_val(&u_instance,
-                               "GET", "/version", NULL, 1, &rest_version_cb, NULL);
+                               "GET", "/version", NULL, 1,
+                               &rest_version_cb, NULL);
 
     // JWT authentication
     ulfius_add_endpoint_by_val(&u_instance,
-                               "POST", "/authenticate", NULL, 1, &rest_authenticate_cb,
-                               (void *)&settings.http.security.jwt);
+                               "POST", "/authenticate", NULL, 1,
+                               &rest_authenticate_cb,
+                               (void *) &settings.http.security.jwt);
     ulfius_add_endpoint_by_val(&u_instance,
                                "*", "*", NULL, 3, &rest_validate_jwt_cb,
-                               (void *)&settings.http.security.jwt);
+                               (void *) &settings.http.security.jwt);
 
     if (settings.http.security.private_key != NULL
         || settings.http.security.certificate != NULL)
@@ -400,7 +415,8 @@ int main(int argc, char *argv[])
         if (security_load(&(settings.http.security)) != 0)
         {
             log_message(LOG_LEVEL_FATAL,
-                        "%s Failed to load server security!\n", logging_section);
+                        "%s Failed to load server security!\n",
+                        logging_section);
             return -1;
         }
 
@@ -409,7 +425,8 @@ int main(int argc, char *argv[])
                                           settings.http.security.certificate_file) != U_OK)
         {
             log_message(LOG_LEVEL_FATAL,
-                        "%s Failed to start secure server!\n", logging_section);
+                        "%s Failed to start secure server!\n",
+                        logging_section);
             return -1;
         }
 
@@ -485,8 +502,8 @@ int main(int argc, char *argv[])
         }
         punica_unlock(&punica);
 
-        status_code = select(
-                          FD_SETSIZE, &read_fds, NULL, NULL, &tv_timeout_interval);
+        status_code = select(FD_SETSIZE, &read_fds, NULL, NULL,
+                             &tv_timeout_interval);
         if (status_code < 0)
         {
             if (errno == EINTR)
@@ -497,7 +514,8 @@ int main(int argc, char *argv[])
             log_message(LOG_LEVEL_ERROR,
                         "%s Failed to read\n", logging_section);
             log_message(LOG_LEVEL_DEBUG,
-                        "%s select() error: %d\n", logging_section, status_code);
+                        "%s select() error: %d\n",
+                        logging_section, status_code);
         }
 
         if (FD_ISSET(coap_socket, &read_fds))

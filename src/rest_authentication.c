@@ -57,8 +57,10 @@ static int validate_authentication_body(json_t *j_authentication_body)
     user_name_length = strnlen(user_name, J_MAX_LENGTH_USER_NAME);
     user_secret_length = strnlen(user_secret, J_MAX_LENGTH_USER_SECRET);
 
-    if (user_name_length == 0 || user_name_length == J_MAX_LENGTH_USER_NAME
-        || user_secret_length == 0 || user_secret_length == J_MAX_LENGTH_USER_SECRET)
+    if (user_name_length == 0
+        || user_name_length == J_MAX_LENGTH_USER_NAME
+        || user_secret_length == 0
+        || user_secret_length == J_MAX_LENGTH_USER_SECRET)
     {
         return 1;
     }
@@ -69,14 +71,16 @@ static int validate_authentication_body(json_t *j_authentication_body)
 static char *get_request_access_token(const struct _u_request *u_request)
 {
     char *token;
-    const char *authorization_header = u_map_get(u_request->map_header, HEADER_AUTHORIZATION);
+    const char *authorization_header = u_map_get(u_request->map_header,
+                                                 HEADER_AUTHORIZATION);
 
     if (authorization_header == NULL)
     {
         return NULL;
     }
 
-    if (strncmp(authorization_header, HEADER_PREFIX_BEARER, strlen(HEADER_PREFIX_BEARER)) != 0)
+    if (strncmp(authorization_header, HEADER_PREFIX_BEARER,
+                strlen(HEADER_PREFIX_BEARER)) != 0)
     {
         return NULL;
     }
@@ -89,10 +93,13 @@ static char *get_request_access_token(const struct _u_request *u_request)
 static char *get_request_scope(const struct _u_request *u_request)
 {
     char *scope;
-    size_t method_length = strnlen(u_request->http_verb, J_MAX_LENGTH_METHOD);
-    size_t url_length = strnlen(u_request->http_url, J_MAX_LENGTH_URL);
+    size_t method_length = strnlen(u_request->http_verb,
+                                   J_MAX_LENGTH_METHOD),
+           url_length = strnlen(u_request->http_url, J_MAX_LENGTH_URL);
 
-    if (method_length == 0 || method_length == J_MAX_LENGTH_METHOD || url_length == J_MAX_LENGTH_URL)
+    if (method_length == 0
+        || method_length == J_MAX_LENGTH_METHOD
+        || url_length == J_MAX_LENGTH_URL)
     {
         return NULL;
     }
@@ -111,47 +118,62 @@ static char *get_request_scope(const struct _u_request *u_request)
     return scope;
 }
 
-static jwt_error_t validate_token_grants(jwt_settings_t *settings, json_t *j_token)
+static jwt_error_t validate_token_grants(jwt_settings_t *settings,
+                                         json_t *j_token)
 {
-    time_t current_time = time(NULL);
     json_int_t expiration_time;
     json_t *j_issuing_time, *j_user_name;
+    time_t current_time = time(NULL);
     const char *user_name;
     size_t user_name_length;
 
     j_user_name = json_object_get(j_token, "name");
     if (j_user_name == NULL)
     {
-        log_message(LOG_LEVEL_TRACE, "[JWT] User is not specified in access token\n");
+        log_message(LOG_LEVEL_TRACE,
+            "%s User is not specified in access token\n", logging_section);
+
         return J_ERROR_INVALID_TOKEN;
     }
     else if (!json_is_string(j_user_name))
     {
-        log_message(LOG_LEVEL_TRACE, "[JWT] Name specified in token must be string\n");
+        log_message(LOG_LEVEL_TRACE,
+                    "%s Name specified in token must be string\n",
+                    logging_section);
+
         return J_ERROR_INVALID_TOKEN;
     }
 
     user_name = json_string_value(j_user_name);
     user_name_length = strnlen(user_name, J_MAX_LENGTH_USER_NAME);
-    if (user_name_length == 0 || user_name_length == J_MAX_LENGTH_USER_NAME)
+    if (user_name_length == 0
+        || user_name_length == J_MAX_LENGTH_USER_NAME)
     {
-        log_message(LOG_LEVEL_TRACE, "[JWT] Name specified in token length is invalid\n");
+        log_message(LOG_LEVEL_TRACE,
+                    "%s Name specified in token length is invalid\n",
+                    logging_section);
+
         return J_ERROR_INVALID_TOKEN;
     }
 
     j_issuing_time = json_object_get(j_token, "iat");
     if (j_issuing_time == NULL)
     {
-        log_message(LOG_LEVEL_TRACE, "[JWT] Token issuing time is unspecified\n");
+        log_message(LOG_LEVEL_TRACE,
+                    "%s Token issuing time is unspecified\n", logging_section);
+
         return J_ERROR_INVALID_TOKEN;
     }
 
-    expiration_time = json_integer_value(j_issuing_time) + settings->expiration_time;
+    expiration_time = json_integer_value(j_issuing_time)
+                      + settings->expiration_time;
 
     if (current_time >= expiration_time)
     {
-        log_message(LOG_LEVEL_TRACE, "[JWT] User \"%s\" submitted expired token\n",
-                    json_string_value(j_user_name));
+        log_message(LOG_LEVEL_TRACE,
+                    "%s User \"%s\" submitted expired token\n",
+                    logging_section, json_string_value(j_user_name));
+
         return J_ERROR_EXPIRED_TOKEN;
     }
 
@@ -181,8 +203,8 @@ static jwt_error_t access_token_check_scope(char *access_token,
     }
 
     status = J_ERROR_INVALID_TOKEN;
-    if (jwt_decode(&jwt, access_token,
-                   jwt_settings->secret_key, jwt_settings->secret_key_length))
+    if (jwt_decode(&jwt, access_token, jwt_settings->secret_key,
+                   jwt_settings->secret_key_length))
     {
         return status;
     }
@@ -260,26 +282,32 @@ int rest_authenticate_cb(const struct _u_request *u_request,
     if (validate_authentication_body(j_request_body) != 0)
     {
         log_message(LOG_LEVEL_INFO,
-                    "%s Invalid authentication request body\n", logging_section);
+                    "%s Invalid authentication request body\n",
+                    logging_section);
 
-        json_object_set_new(j_response_body, "error", json_string("invalid_request"));
+        json_object_set_new(j_response_body,
+                            "error", json_string("invalid_request"));
 
-        ulfius_set_json_body_response(u_response, HTTP_400_BAD_REQUEST, j_response_body);
+        ulfius_set_json_body_response(u_response,
+                                      HTTP_400_BAD_REQUEST, j_response_body);
 
         goto exit;
     }
 
     user_name = json_string_value(json_object_get(j_request_body, "name"));
-    user_secret = json_string_value(json_object_get(j_request_body, "secret"));
+    user_secret = json_string_value(
+                  json_object_get(j_request_body, "secret"));
 
-    for (entry = jwt_settings->users_list->head; entry != NULL; entry = entry->next)
+    for (entry = jwt_settings->users_list->head;
+         entry != NULL; entry = entry->next)
     {
         user_entry = entry->data;
 
         if (strlen(user_entry->name) == strlen(user_name)
             && strlen(user_entry->secret) == strlen(user_secret)
             && strncmp(user_entry->name, user_name, strlen(user_name)) == 0
-            && strncmp(user_entry->secret, user_secret, strlen(user_secret)) == 0)
+            && strncmp(user_entry->secret, user_secret,
+                       strlen(user_secret)) == 0)
         {
             user = user_entry;
             break;
@@ -320,8 +348,8 @@ int rest_authenticate_cb(const struct _u_request *u_request,
     token = jwt_encode_str(jwt);
 
     json_object_set_new(j_response_body, "access_token", json_string(token));
-    json_object_set_new(j_response_body,
-                        "expires_in", json_integer(jwt_settings->expiration_time));
+    json_object_set_new(j_response_body, "expires_in", 
+                        json_integer(jwt_settings->expiration_time));
 
     log_message(LOG_LEVEL_INFO,
                 "%s Access token issued to user \"%s\".\n",
@@ -355,6 +383,9 @@ int rest_validate_jwt_cb(const struct _u_request *u_request,
     jwt_error_t token_scope_status;
     char *access_token, *required_scope;
 
+    log_message(LOG_LEVEL_INFO, "%s received \"%s %s\" request.\n",
+                "[REST API]", u_request->http_verb, u_request->http_url);
+
     if (!jwt_settings->initialized)
     {
         return U_CALLBACK_CONTINUE;
@@ -378,19 +409,23 @@ int rest_validate_jwt_cb(const struct _u_request *u_request,
     {
     case J_OK:
         return U_CALLBACK_CONTINUE;
+
     case J_ERROR_INVALID_REQUEST:
         u_map_put(u_response->map_header,
                   HEADER_UNAUTHORIZED, ERROR_DESCRIPTION_INVALID_TOKEN);
         return U_CALLBACK_UNAUTHORIZED;
+
     case J_ERROR_INVALID_TOKEN:
     case J_ERROR_EXPIRED_TOKEN:
         u_map_put(u_response->map_header,
                   HEADER_UNAUTHORIZED, ERROR_DESCRIPTION_INVALID_SCOPE);
         return U_CALLBACK_UNAUTHORIZED;
+
     case J_ERROR_INSUFFICIENT_SCOPE:
         u_map_put(u_response->map_header,
                   HEADER_UNAUTHORIZED, ERROR_DESCRIPTION_INSUFFICIENT_SCOPE);
         return U_CALLBACK_UNAUTHORIZED;
+
     case J_ERROR:
     case J_ERROR_INTERNAL:
     default:
