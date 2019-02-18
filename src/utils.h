@@ -29,6 +29,7 @@ int utils_coap_to_http_status(int status);
 
 size_t utils_get_random(void *buf, size_t buflen);
 
+int utils_generate_async_response_id(char *id);
 int utils_generate_uuid(char *uuid);
 
 lwm2m_client_t *utils_find_client(lwm2m_client_t *list, const char *name);

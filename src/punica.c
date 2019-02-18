@@ -22,15 +22,14 @@
 #include "rest.h"
 #include "utils.h"
 #include "linked_list.h"
-#include "connection.h"
 #include "logging.h"
 #include "security.h"
 #include "settings.h"
-#include "rest_authentication.h"
 #include "rest_callbacks.h"
 
 #include <liblwm2m.h>
 
+#include <connection.h>
 #include <errno.h>
 #include <signal.h>
 #include <stdint.h>
