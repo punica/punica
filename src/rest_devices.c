@@ -100,11 +100,9 @@ int rest_devices_post_cb(const struct _u_request *u_request,
                          void *context)
 {
     punica_context_t *punica = (punica_context_t *)context;
-    const char *content_type;
-    json_t *j_device = NULL, *j_database_list = NULL, *j_body;
+    json_t *j_device = NULL, *j_body;
     database_entry_t *device;
-
-    punica_lock(punica);
+    const char *content_type;
 
     content_type = u_map_get_case(u_request->map_header, "Content-Type");
     if (content_type == NULL
@@ -112,7 +110,7 @@ int rest_devices_post_cb(const struct _u_request *u_request,
     {
         ulfius_set_empty_body_response(u_response,
                                        HTTP_415_UNSUPPORTED_MEDIA_TYPE);
-        goto exit;
+        return U_CALLBACK_COMPLETE;
     }
 
     j_device = json_loadb(u_request->binary_body,
@@ -120,39 +118,42 @@ int rest_devices_post_cb(const struct _u_request *u_request,
     if (devices_database_new_entry_validate(j_device))
     {
         ulfius_set_empty_body_response(u_response, HTTP_400_BAD_REQUEST);
-        goto exit;
+        return U_CALLBACK_COMPLETE;
     }
 
-    device = calloc(1, sizeof(database_entry_t));
+    device = malloc(sizeof(database_entry_t));
     if (device == NULL)
     {
         ulfius_set_empty_body_response(u_response, HTTP_500_INTERNAL_ERROR);
-        goto exit;
+        json_decref(j_device);
+        return U_CALLBACK_COMPLETE;
     }
 
-    if (devices_database_entry_new_from_json(j_device, device))
+    if (devices_database_entry_new_from_json(j_device, device) != 0)
     {
+        free(device);
+        json_decref(j_device);
         ulfius_set_empty_body_response(u_response, HTTP_500_INTERNAL_ERROR);
-        goto exit;
+        return U_CALLBACK_COMPLETE;
     }
+    json_decref(j_device);
+
+    punica_lock(punica);
     linked_list_add(punica->rest_devices, device);
 
     devices_database_to_file(punica->rest_devices,
                              punica->settings->coap.database_file);
+    punica_unlock(punica);
 
     j_body = devices_database_entry_get_json(device);
     if (j_body == NULL)
     {
         ulfius_set_empty_body_response(u_response, HTTP_500_INTERNAL_ERROR);
-        goto exit;
+        return U_CALLBACK_COMPLETE;
     }
 
     ulfius_set_json_body_response(u_response, HTTP_201_CREATED, j_body);
-
-exit:
-    json_decref(j_device);
-    json_decref(j_database_list);
-    punica_unlock(punica);
+    json_decref(j_body);
 
     return U_CALLBACK_COMPLETE;
 }
