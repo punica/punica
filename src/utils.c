@@ -22,6 +22,9 @@
 #include "punica.h"
 
 #include <assert.h>
+#include <time.h>
+#include <string.h>
+#include <uuid/uuid.h>
 
 static const char *base64_table =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -205,6 +208,40 @@ size_t utils_get_random(void *buf, size_t buflen)
     return len;
 }
 
+int utils_generate_async_response_id(char *id)
+{
+    uint32_t timestamp = time(NULL);
+    uint16_t random_data[6];
+
+    if (utils_get_random(random_data,
+                         sizeof(random_data)) != sizeof(random_data))
+    {
+        return -1;
+    }
+
+    snprintf(id, 40,
+             "%u#%04x%04x-%04x-%04x-%04x-%04x",
+             timestamp, random_data[0], random_data[1], random_data[2],
+             random_data[3], random_data[4], random_data[5]);
+
+    return 0;
+}
+
+int utils_generate_uuid(char *uuid)
+{
+    uuid_t b_uuid;
+    uuid_generate_random(b_uuid);
+
+    if (uuid == NULL)
+    {
+        return -1;
+    }
+
+    uuid_unparse(b_uuid, uuid);
+
+    return 0;
+}
+
 lwm2m_client_t *utils_find_client(lwm2m_client_t *list, const char *name)
 {
     lwm2m_client_t *client;
@@ -225,9 +262,9 @@ lwm2m_client_t *utils_find_client(lwm2m_client_t *list, const char *name)
     return NULL;
 }
 
-const char *binding_to_string(lwm2m_binding_t bind)
+const char *utils_binding_to_string(lwm2m_binding_t binding)
 {
-    switch (bind)
+    switch (binding)
     {
     case BINDING_U:
         return "U";
@@ -245,4 +282,3 @@ const char *binding_to_string(lwm2m_binding_t bind)
         return "Unknown";
     }
 }
-

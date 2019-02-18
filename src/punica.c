@@ -169,7 +169,7 @@ void client_monitor_cb(uint16_t l_client_id, lwm2m_uri_t *l_uri_path,
         log_message(LOG_LEVEL_DEBUG, "\tname: \"%s\"\n",
                     l_client->name);
         log_message(LOG_LEVEL_DEBUG, "\tbind: \"%s\"\n",
-                    binding_to_string(l_client->binding));
+                    utils_binding_to_string(l_client->binding));
         log_message(LOG_LEVEL_DEBUG, "\tlifetime: %d\n",
                     l_client->lifetime);
         log_message(LOG_LEVEL_DEBUG, "\tobjects: ");

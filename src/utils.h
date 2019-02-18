@@ -25,15 +25,15 @@
 
 #include <liblwm2m.h>
 
-const char *utils_base64_encode(const uint8_t *data, size_t length);
-
 int utils_coap_to_http_status(int status);
 
 size_t utils_get_random(void *buf, size_t buflen);
 
+int utils_generate_uuid(char *uuid);
+
 lwm2m_client_t *utils_find_client(lwm2m_client_t *list, const char *name);
 
-const char *binding_to_string(lwm2m_binding_t bind);
+const char *utils_binding_to_string(lwm2m_binding_t bind);
 
 /*
  * Decodes base64 string into binary buffer and calculates its length.

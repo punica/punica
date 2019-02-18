@@ -24,13 +24,10 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
 
 rest_async_response_t *rest_async_response_new(void)
 {
     rest_async_response_t *response;
-    uint32_t timestamp;
-    uint16_t random_data[6];
 
     response = malloc(sizeof(rest_async_response_t));
     if (response == NULL)
@@ -39,17 +36,10 @@ rest_async_response_t *rest_async_response_new(void)
     }
     memset(response, 0, sizeof(rest_async_response_t));
 
-    timestamp = time(NULL);
-    if (utils_get_random(random_data,
-                         sizeof(random_data)) != sizeof(random_data))
+    if (utils_generate_async_response_id(response->id) != 0)
     {
         return NULL;
     }
-
-    snprintf(response->id, sizeof(response->id),
-             "%u#%04x%04x-%04x-%04x-%04x-%04x",
-             timestamp, random_data[0], random_data[1], random_data[2],
-             random_data[3], random_data[4], random_data[5]);
 
     return response;
 }

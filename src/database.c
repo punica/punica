@@ -23,8 +23,7 @@
 #include "punica.h"
 #include "rest_core_types.h"
 #include "settings.h"
-
-#include <uuid/uuid.h>
+#include "utils.h"
 
 static char *logging_section = "[DEVICES DATABASE]";
 
@@ -205,28 +204,18 @@ int database_populate_entry(database_entry_t *device_entry,
 int database_populate_new_entry(database_entry_t *device_entry,
                                 json_t *j_new_device_object)
 {
-    uuid_t b_uuid;
-    char *uuid = NULL;
-    int return_code;
     json_t *j_device_object = json_deep_copy(j_new_device_object);
+    char *uuid = malloc(37);
+    int return_code;
 
     if (j_device_object == NULL || device_entry == NULL)
     {
         return -1;
     }
 
-    uuid_generate_random(b_uuid);
-
-    uuid = malloc(37);
-    if (uuid == NULL)
-    {
-        return -1;
-    }
-
-    uuid_unparse(b_uuid, uuid);
-
-    if (json_object_set_new(
-            j_device_object, "uuid", json_stringn(uuid, 37)) != 0)
+    if (utils_generate_uuid(uuid) != 0
+        || json_object_set_new(j_device_object, "uuid",
+                               json_stringn(uuid, 37)) != 0)
     {
         return_code = -1;
         goto exit;
