@@ -228,7 +228,7 @@ int rest_devices_post_cb(const struct _u_request *u_request,
 {
     punica_context_t *punica = (punica_context_t *)context;
     const char *content_type;
-    json_t *j_device_list = NULL, *j_database_list = NULL;
+    json_t *j_device = NULL, *j_database_list = NULL;
     json_t *j_post_resp;
     database_entry_t *device_entry;
 
@@ -243,9 +243,9 @@ int rest_devices_post_cb(const struct _u_request *u_request,
         goto exit;
     }
 
-    j_device_list = json_loadb(u_request->binary_body,
-                               u_request->binary_body_length, 0, NULL);
-    if (database_validate_new_entry(j_device_list))
+    j_device = json_loadb(u_request->binary_body,
+                          u_request->binary_body_length, 0, NULL);
+    if (devices_database_new_entry_validate(j_device))
     {
         ulfius_set_empty_body_response(u_response, HTTP_400_BAD_REQUEST);
         goto exit;
@@ -258,7 +258,7 @@ int rest_devices_post_cb(const struct _u_request *u_request,
         goto exit;
     }
 
-    if (database_populate_new_entry(device_entry, j_device_list))
+    if (devices_database_entry_new_from_json(j_device, device_entry))
     {
         ulfius_set_empty_body_response(u_response, HTTP_500_INTERNAL_ERROR);
         goto exit;
@@ -270,7 +270,7 @@ int rest_devices_post_cb(const struct _u_request *u_request,
     {
         j_database_list = json_array();
 
-        if (database_prepare_array(j_database_list, punica->rest_devices))
+        if (devices_database_to_json(punica->rest_devices, j_database_list) != 0)
         {
             ulfius_set_empty_body_response(u_response,
                                            HTTP_500_INTERNAL_ERROR);
@@ -296,7 +296,7 @@ int rest_devices_post_cb(const struct _u_request *u_request,
     ulfius_set_json_body_response(u_response, HTTP_201_CREATED, j_post_resp);
 
 exit:
-    json_decref(j_device_list);
+    json_decref(j_device);
     json_decref(j_database_list);
     punica_unlock(punica);
 
@@ -363,7 +363,7 @@ int rest_devices_put_cb(const struct _u_request *u_request,
 
     j_database_list = json_array();
 
-    if (database_prepare_array(j_database_list, punica->rest_devices))
+    if (devices_database_to_json(punica->rest_devices, j_database_list))
     {
         ulfius_set_empty_body_response(u_response, HTTP_500_INTERNAL_ERROR);
         goto exit;
@@ -419,7 +419,7 @@ int rest_devices_delete_cb(const struct _u_request *u_request,
 
     j_database_list = json_array();
 
-    if (database_prepare_array(j_database_list, punica->rest_devices))
+    if (devices_database_to_json(punica->rest_devices, j_database_list))
     {
         ulfius_set_empty_body_response(u_response, HTTP_500_INTERNAL_ERROR);
         goto exit;

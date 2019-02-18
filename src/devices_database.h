@@ -40,19 +40,28 @@ typedef struct
     size_t psk_id_len;
 } database_entry_t;
 
-int database_load_file(punica_context_t *punica);
+// void database_free_entry(database_entry_t *device_entry);
+void devices_database_entry_free(database_entry_t *device);
 
-void database_free_entry(database_entry_t *device_entry);
+// int database_validate_new_entry(json_t *j_new_device_object);
+int devices_database_new_entry_validate(json_t *j_new_entry);
+// int database_validate_entry(json_t *j_device_object);
+int devices_database_entry_validate(json_t *j_device);
 
-int database_validate_new_entry(json_t *j_new_device_object);
-int database_validate_entry(json_t *j_device_object);
+// int database_populate_entry(
+//     database_entry_t *device_entry, json_t *j_device_object);
+int devices_database_entry_from_json(json_t *j_device,
+                                     database_entry_t *device);
 
-int database_populate_entry(
-    database_entry_t *device_entry, json_t *j_device_object);
-int database_populate_new_entry(
-    database_entry_t *device_entry, json_t *j_new_device_object);
+// int database_populate_new_entry(
+//     database_entry_t *device_entry, json_t *j_new_device_object);
+int devices_database_entry_new_from_json(json_t *j_new_device,
+                                         database_entry_t *device);
 
-int database_prepare_array(json_t *j_array, linked_list_t *device_list);
+// int database_prepare_array(json_t *j_array, linked_list_t *device_list);
+int devices_database_to_json(linked_list_t *devices, json_t *j_devices);
 
+// int database_load_file(punica_context_t *punica);
+int devices_database_from_file(punica_context_t *punica);
 
 #endif //DATABASE_H

@@ -38,7 +38,7 @@ void punica_initialize(punica_context_t *punica, settings_t *settings)
     punica->settings = settings;
     punica->j_rest_callback = NULL;
 
-    database_load_file(punica);
+    devices_database_from_file(punica);
 
     assert(pthread_mutex_init(&punica->mutex, NULL) == 0);
 }
