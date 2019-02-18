@@ -94,8 +94,8 @@ static char *get_request_scope(const struct _u_request *u_request)
 {
     char *scope;
     size_t method_length = strnlen(u_request->http_verb,
-                                   J_MAX_LENGTH_METHOD),
-                           url_length = strnlen(u_request->http_url, J_MAX_LENGTH_URL);
+                                   J_MAX_LENGTH_METHOD);
+    size_t url_length = strnlen(u_request->http_url, J_MAX_LENGTH_URL);
 
     if (method_length == 0
         || method_length == J_MAX_LENGTH_METHOD
@@ -131,7 +131,8 @@ static jwt_error_t validate_token_grants(jwt_settings_t *settings,
     if (j_user_name == NULL)
     {
         log_message(LOG_LEVEL_TRACE,
-                    "%s User is not specified in access token\n", logging_section);
+                    "%s User is not specified in access token\n",
+                    logging_section);
 
         return J_ERROR_INVALID_TOKEN;
     }
@@ -160,7 +161,8 @@ static jwt_error_t validate_token_grants(jwt_settings_t *settings,
     if (j_issuing_time == NULL)
     {
         log_message(LOG_LEVEL_TRACE,
-                    "%s Token issuing time is unspecified\n", logging_section);
+                    "%s Token issuing time is unspecified\n",
+                    logging_section);
 
         return J_ERROR_INVALID_TOKEN;
     }
