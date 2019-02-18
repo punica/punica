@@ -244,7 +244,7 @@ int rest_devices_post_cb(const struct _u_request *u_request,
     }
 
     j_device_list = json_loadb(u_request->binary_body,
-                              u_request->binary_body_length, 0, NULL);
+                               u_request->binary_body_length, 0, NULL);
     if (database_validate_new_entry(j_device_list))
     {
         ulfius_set_empty_body_response(u_response, HTTP_400_BAD_REQUEST);

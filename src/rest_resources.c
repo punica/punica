@@ -231,7 +231,7 @@ static int rest_resources_rwe_cb_unsafe(const struct _u_request *u_request,
     }
 
     /*
-     * IMPORTANT! 
+     * IMPORTANT!
      * This is where server-error section starts and any error must
      * go through the cleanup section. See comment above.
      */
@@ -333,7 +333,7 @@ int rest_resources_rwe_cb(const struct _u_request *u_request,
     int return_code;
 
     punica_lock(punica);
-    return_code = 
+    return_code =
         rest_resources_rwe_cb_unsafe(u_request, u_response, punica);
     punica_unlock(punica);
 

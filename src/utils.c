@@ -107,7 +107,8 @@ int base64_decode(const char *base64_string, uint8_t *data, size_t *length)
     return BASE64_ERR_NONE;
 }
 
-int base64_encode(const uint8_t *data, size_t length, char *base64_string, size_t *base64_length)
+int base64_encode(const uint8_t *data, size_t length, char *base64_string,
+                  size_t *base64_length)
 {
     static uint8_t previous_byte;
     int data_index = 0,

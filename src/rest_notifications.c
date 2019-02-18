@@ -46,14 +46,20 @@ bool validate_callback(json_t *j_callback, punica_context_t *punica)
                                "registrations", "reg-updates",
                                "async-responses", "de-registrations");
 
+    logging_section = "[CALLBACK] validate_callback()";
+
     if (j_callback == NULL)
     {
+        log_message(LOG_LEVEL_DEBUG, "%s callback JSON is NULL.\n",
+                    logging_section);
         return false;
     }
 
     // Must be an object with "url" and "headers"
     if (!json_is_object(j_callback) || json_object_size(j_callback) != 2)
     {
+        log_message(LOG_LEVEL_DEBUG, "%s callback JSON is NULL.\n",
+                    logging_section);
         return false;
     }
 
@@ -61,6 +67,8 @@ bool validate_callback(json_t *j_callback, punica_context_t *punica)
     j_url = json_object_get(j_callback, "url");
     if (!json_is_string(j_url) || !valid_callback_url(json_string_value(j_url)))
     {
+        log_message(LOG_LEVEL_DEBUG, "%s callback JSON is NULL.\n",
+                    logging_section);
         return false;
     }
 
@@ -68,6 +76,8 @@ bool validate_callback(json_t *j_callback, punica_context_t *punica)
     j_headers = json_object_get(j_callback, "headers");
     if (!json_is_object(j_headers))
     {
+        log_message(LOG_LEVEL_DEBUG, "%s callback JSON is NULL.\n",
+                    logging_section);
         return false;
     }
 
@@ -77,6 +87,8 @@ bool validate_callback(json_t *j_callback, punica_context_t *punica)
     {
         if (!json_is_string(j_value))
         {
+            log_message(LOG_LEVEL_DEBUG, "%s callback JSON is NULL.\n",
+                        logging_section);
             u_map_clean(&headers);
 
             return false;
@@ -109,7 +121,7 @@ bool validate_callback(json_t *j_callback, punica_context_t *punica)
         u_map_clean(&headers);
         ulfius_clean_request(&test_request);
 
-        return -1;
+        return false;
     }
 
     u_map_copy_into(test_request.map_header, &headers);

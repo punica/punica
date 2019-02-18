@@ -95,7 +95,7 @@ static char *get_request_scope(const struct _u_request *u_request)
     char *scope;
     size_t method_length = strnlen(u_request->http_verb,
                                    J_MAX_LENGTH_METHOD),
-           url_length = strnlen(u_request->http_url, J_MAX_LENGTH_URL);
+                           url_length = strnlen(u_request->http_url, J_MAX_LENGTH_URL);
 
     if (method_length == 0
         || method_length == J_MAX_LENGTH_METHOD
@@ -131,7 +131,7 @@ static jwt_error_t validate_token_grants(jwt_settings_t *settings,
     if (j_user_name == NULL)
     {
         log_message(LOG_LEVEL_TRACE,
-            "%s User is not specified in access token\n", logging_section);
+                    "%s User is not specified in access token\n", logging_section);
 
         return J_ERROR_INVALID_TOKEN;
     }
@@ -296,7 +296,7 @@ int rest_authenticate_cb(const struct _u_request *u_request,
 
     user_name = json_string_value(json_object_get(j_request_body, "name"));
     user_secret = json_string_value(
-                  json_object_get(j_request_body, "secret"));
+                      json_object_get(j_request_body, "secret"));
 
     for (entry = jwt_settings->users_list->head;
          entry != NULL; entry = entry->next)
@@ -348,7 +348,7 @@ int rest_authenticate_cb(const struct _u_request *u_request,
     token = jwt_encode_str(jwt);
 
     json_object_set_new(j_response_body, "access_token", json_string(token));
-    json_object_set_new(j_response_body, "expires_in", 
+    json_object_set_new(j_response_body, "expires_in",
                         json_integer(jwt_settings->expiration_time));
 
     log_message(LOG_LEVEL_INFO,

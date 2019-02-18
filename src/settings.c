@@ -151,7 +151,7 @@ static int set_user_settings(json_t *j_user_settings,
     {
         log_message(LOG_LEVEL_WARN,
                     "%s User \"%s\" scope list %s.\n",
-                    logging_section, user_name, 
+                    logging_section, user_name,
                     "contains invalid scope");
         log_message(LOG_LEVEL_WARN,
                     "%s Setting default scope: \"[]\".\n", logging_section);
@@ -164,7 +164,7 @@ static int set_user_settings(json_t *j_user_settings,
         {
             log_message(LOG_LEVEL_WARN,
                         "%s User \"%s\" scope list %s.\n",
-                        logging_section, user_name, 
+                        logging_section, user_name,
                         "contains invalid type value");
             return 1;
         }
@@ -177,7 +177,7 @@ static int set_user_settings(json_t *j_user_settings,
         {
             log_message(LOG_LEVEL_WARN,
                         "%s User \"%s\" scope list %s.\n",
-                        logging_section, user_name, 
+                        logging_section, user_name,
                         "contains invalid length value");
             return 1;
         }
@@ -247,7 +247,7 @@ static void set_jwt_settings(json_t *j_section, jwt_settings_t *settings)
 
             settings->secret_key_length = value_length;
             settings->secret_key = (unsigned char *) malloc(
-                settings->secret_key_length * sizeof(unsigned char));
+                                       settings->secret_key_length * sizeof(unsigned char));
             if (settings->secret_key == NULL)
             {
                 log_message(LOG_LEVEL_FATAL,
@@ -490,7 +490,7 @@ int settings_initialize(settings_t *settings)
 
     jwt_settings->users_list = linked_list_new();
     jwt_settings->secret_key = (unsigned char *) malloc(
-        jwt_settings->secret_key_length * sizeof(unsigned char));
+                                   jwt_settings->secret_key_length * sizeof(unsigned char));
 
     utils_get_random(jwt_settings->secret_key,
                      jwt_settings->secret_key_length);

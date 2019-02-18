@@ -172,7 +172,7 @@ void client_monitor_cb(uint16_t l_client_id, lwm2m_uri_t *l_uri_path,
                     binding_to_string(l_client->binding));
         log_message(LOG_LEVEL_DEBUG, "\tlifetime: %d\n",
                     l_client->lifetime);
-        log_message(LOG_LEVEL_DEBUG,"\tobjects: ");
+        log_message(LOG_LEVEL_DEBUG, "\tobjects: ");
 
         for (l_object = l_client->objectList;
              l_object != NULL; l_object = l_object->next)
