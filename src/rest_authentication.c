@@ -385,7 +385,7 @@ int rest_validate_jwt_cb(const struct _u_request *u_request,
     jwt_error_t token_scope_status;
     char *access_token, *required_scope;
 
-    log_message(LOG_LEVEL_INFO, "%s received \"%s %s\" request.\n",
+    log_message(LOG_LEVEL_INFO, "%s Received request: \"%s %s\".\n",
                 "[REST API]", u_request->http_verb, u_request->http_url);
 
     if (!jwt_settings->initialized)
