@@ -17,7 +17,6 @@
  *
  */
 
-//  TODO: camel-case code to something else (uniform)
 #include <stdio.h>
 
 #include <gnutls/gnutls.h>
@@ -37,32 +36,32 @@ static device_connection_t *connection_list = NULL;
 
 static ssize_t prv_net_send(gnutls_transport_ptr_t context, const void *data, size_t size)
 {
-    device_connection_t *connP = (device_connection_t *)context;
+    device_connection_t *conn = (device_connection_t *)context;
 
-    return sendto(connP->sock, data, size, 0, (struct sockaddr *)&connP->addr, connP->addr_size);
+    return sendto(conn->sock, data, size, 0, (struct sockaddr *)&conn->addr, conn->addr_size);
 }
 
 static ssize_t prv_net_receive(gnutls_transport_ptr_t context, void *data, size_t size)
 {
-    device_connection_t *connP = (device_connection_t *)context;
+    device_connection_t *conn = (device_connection_t *)context;
 
-    connP->addr_size = sizeof(connP->addr);
-    return recvfrom(connP->sock, data, size, 0, (struct sockaddr *)&connP->addr, &connP->addr_size);
+    conn->addr_size = sizeof(conn->addr);
+    return recvfrom(conn->sock, data, size, 0, (struct sockaddr *)&conn->addr, &conn->addr_size);
 }
 
 static int prv_net_receive_timeout(gnutls_transport_ptr_t context, unsigned int ms)
 {
-    device_connection_t *connP = (device_connection_t *)context;
+    device_connection_t *conn = (device_connection_t *)context;
     fd_set fds;
     struct timeval tv;
 
     FD_ZERO(&fds);
-    FD_SET(connP->sock, &fds);
+    FD_SET(conn->sock, &fds);
 
     tv.tv_sec = ms / 1000;
     tv.tv_usec = ms;
 
-    return select(connP->sock + 1, &fds, NULL, NULL, &tv);
+    return select(conn->sock + 1, &fds, NULL, NULL, &tv);
 }
 
 static int prv_new_socket(const char *host, int port, int address_family)
