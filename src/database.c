@@ -257,7 +257,7 @@ int database_populate_new_entry(database_entry_t *device_entry,
         goto exit;
     }
 
-    return_code = database_populate_entry(j_device_object, device_entry);
+    return_code = database_populate_entry(device_entry, j_device_object);
 
 exit:
     free(uuid);
@@ -360,7 +360,7 @@ int database_load_file(punica_context_t *punica)
     int array_size = json_array_size(j_database);
     if (array_size == 0)
     {
-        // empty array, must be populated with /devices REST API
+        /* empty array, must be populated with /devices REST API */
         ret = 0;
         goto exit;
     }
@@ -381,7 +381,7 @@ int database_load_file(punica_context_t *punica)
             goto exit;
         }
 
-        if (database_populate_entry(j_entry, curr))
+        if (database_populate_entry(curr, j_entry))
         {
             fprintf(stdout,
                     "Internal server error while managing device entry\n");

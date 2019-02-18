@@ -150,9 +150,9 @@ static int set_user_settings(json_t *j_user_settings,
     if (!json_is_array(j_scope))
     {
         log_message(LOG_LEVEL_WARN,
-                    "%s User \"%s\" scope list %s.\n"
+                    "%s User \"%s\" scope list %s.\n",
                     logging_section, user_name, 
-                    "contains invalid scope",);
+                    "contains invalid scope");
         log_message(LOG_LEVEL_WARN,
                     "%s Setting default scope: \"[]\".\n", logging_section);
         j_scope = json_array();
@@ -163,9 +163,9 @@ static int set_user_settings(json_t *j_user_settings,
         if (!json_is_string(j_scope_value))
         {
             log_message(LOG_LEVEL_WARN,
-                        "%s User \"%s\" scope list %s.\n"
+                        "%s User \"%s\" scope list %s.\n",
                         logging_section, user_name, 
-                        "contains invalid type value",);
+                        "contains invalid type value");
             return 1;
         }
 
@@ -176,9 +176,9 @@ static int set_user_settings(json_t *j_user_settings,
             || scope_length == J_MAX_LENGTH_METHOD + 1 + J_MAX_LENGTH_URL)
         {
             log_message(LOG_LEVEL_WARN,
-                        "%s User \"%s\" scope list %s.\n"
+                        "%s User \"%s\" scope list %s.\n",
                         logging_section, user_name, 
-                        "contains invalid length value",);
+                        "contains invalid length value");
             return 1;
         }
     }

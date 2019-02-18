@@ -24,7 +24,7 @@
 
 #include <string.h>
 
-static *char logging_section = "[REST API]";
+static char *logging_section = "[REST API]";
 
 typedef struct
 {

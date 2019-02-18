@@ -68,7 +68,7 @@ static void rest_async_cb(uint16_t clientID, lwm2m_uri_t *uriP,
 {
     rest_async_context_t *ctx = (rest_async_context_t *)context;
     int err;
-    static const char *logging_section = "[LwM2M / ASYNC RESPONSE]";
+    logging_section = "[LwM2M / ASYNC RESPONSE]";
 
     log_message(LOG_LEVEL_INFO, "%s id=%s status=%d\n",
                 logging_section, ctx->response->id,
@@ -125,7 +125,7 @@ static int rest_resources_rwe_cb_unsafe(const struct _u_request *u_request,
      *    section at the end of the function.
      */
 
-    static const char *logging_section = "[REST API / RESOURCES]";
+    logging_section = "[REST API / RESOURCES]";
     if (strcmp(u_request->http_verb, "GET") == 0)
     {
         log_message(LOG_LEVEL_DEBUG, "%s Reading %s...\n",
