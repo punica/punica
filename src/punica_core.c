@@ -18,7 +18,7 @@
  */
 
 #include "punica.h"
-#include "database.h"
+#include "devices_database.h"
 #include "logging.h"
 #include "settings.h"
 #include "rest.h"

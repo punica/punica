@@ -82,7 +82,7 @@ static void signals_initialize(void)
                     logging_section, strerror(errno));
     }
 
-    //to stop valgrind
+    /* to stop valgrind */
     if (0 != sigaction(SIGTERM, &signal, &old_signal))
     {
         log_message(LOG_LEVEL_FATAL,

@@ -17,7 +17,7 @@
  *
  */
 
-#include "database.h"
+#include "devices_database.h"
 #include "linked_list.h"
 #include "http_codes.h"
 #include "punica.h"
