@@ -18,7 +18,6 @@
  */
 
 //  TODO: camel-case code to something else (uniform)
-//  TODO: add CHECK_RET everywhere
 #include <stdio.h>
 
 #include <gnutls/gnutls.h>
@@ -27,19 +26,11 @@
 #include "connection-secure.h"
 
 #define BUFFER_SIZE 1024
-//  TODO: extract function name from 'func'
-#define CHECK_RET(func); \
-    do {                 \
-        if(func < 0)     \
-        {                \
-            fprintf(stderr, "%s returned error\n", #func); \
-        }                \
-    } while (0);         \
 
-static gnutls_certificate_credentials_t server_cert;
-static gnutls_priority_t priority_cache;
+static gnutls_certificate_credentials_t server_cert = NULL;
+static gnutls_priority_t priority_cache = NULL;
 static gnutls_datum_t cookie_key;
-static gnutls_psk_server_credentials_t server_psk;
+static gnutls_psk_server_credentials_t server_psk = NULL;
 
 static int listen_socket;
 static device_connection_t *connection_list = NULL;
@@ -106,7 +97,12 @@ static int prv_new_socket(const char *host, int port, int address_family)
         }
 
         enable = 1;
-        setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const char *)&enable, sizeof(enable));
+        if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const char *)&enable, sizeof(enable)))
+        {
+            close(sock);
+            sock = -1;
+            continue;
+        }
 
         if (bind(sock, cur->ai_addr, cur->ai_addrlen))
         {
@@ -136,9 +132,6 @@ static int prv_switch_sockets(int *local_socket, int *client_socket,
     }
 
     *client_socket = *local_socket;
-//  in case some later stage fails before a new socket is created
-//  TODO: server should check if it needs to create new socket
-    *local_socket = -1;
 
     size = sizeof(struct sockaddr_storage);
     if (getsockname(*client_socket, (struct sockaddr *)&local_address, &size))
@@ -155,7 +148,7 @@ static int prv_switch_sockets(int *local_socket, int *client_socket,
 
     *local_socket = prv_new_socket(NULL, port, local_address.ss_family);
 
-    return *local_socket;
+    return 0;
 }
 
 static int prv_cookie_negotiate(device_connection_t *connection, gnutls_dtls_prestate_st *prestate)
@@ -196,51 +189,101 @@ static int prv_cookie_negotiate(device_connection_t *connection, gnutls_dtls_pre
 
 static int prv_connection_init(device_connection_t *connection, gnutls_dtls_prestate_st *prestate)
 {
-    gnutls_init(&connection->session, GNUTLS_SERVER | GNUTLS_DATAGRAM);
-    CHECK_RET(gnutls_credentials_set(connection->session, GNUTLS_CRD_PSK, server_psk));
-    CHECK_RET(gnutls_credentials_set(connection->session, GNUTLS_CRD_CERTIFICATE, server_cert));
-    gnutls_priority_set(connection->session, priority_cache);
-    gnutls_dtls_prestate_set(connection->session, prestate);
+    int ret = -1;
 
+    if (gnutls_init(&connection->session, GNUTLS_SERVER | GNUTLS_DATAGRAM))
+    {
+        goto exit;
+    }
+    if (gnutls_credentials_set(connection->session, GNUTLS_CRD_PSK, server_psk))
+    {
+        goto exit;
+    }
+    if (gnutls_credentials_set(connection->session, GNUTLS_CRD_CERTIFICATE, server_cert))
+    {
+        goto exit;
+    }
+    if (gnutls_priority_set(connection->session, priority_cache))
+    {
+        goto exit;
+    }
+
+    gnutls_dtls_prestate_set(connection->session, prestate);
     gnutls_transport_set_ptr(connection->session, connection);
     gnutls_transport_set_push_function(connection->session, prv_net_send);
     gnutls_transport_set_pull_function(connection->session, prv_net_receive);
     gnutls_transport_set_pull_timeout_function(connection->session, prv_net_receive_timeout);
 
-    return 0;
+    ret = 0;
+exit:
+    if (ret)
+    {
+        gnutls_deinit(connection->session);
+    }
+    return ret;
 }
 
 int connection_create_secure(settings_t *options, int address_family, void *context)
 {
-    CHECK_RET(gnutls_global_init());
+    int ret = -1;
+
+    if (gnutls_global_init())
+    {
+        goto exit;
+    }
 
     if (options->coap.certificate_file)
     {
-        gnutls_certificate_allocate_credentials(&server_cert);
-        gnutls_certificate_set_x509_trust_file(server_cert, options->coap.certificate_file,
-                                               GNUTLS_X509_FMT_PEM);
-
-        CHECK_RET(gnutls_certificate_set_x509_key_file(server_cert, options->coap.certificate_file,
-                                                       options->coap.private_key_file, GNUTLS_X509_FMT_PEM));
+        if (gnutls_certificate_allocate_credentials(&server_cert) != GNUTLS_E_SUCCESS)
+        {
+            goto exit;
+        }
+        if (gnutls_certificate_set_x509_trust_file(server_cert, options->coap.certificate_file,
+                                                   GNUTLS_X509_FMT_PEM) == 0)
+        {
+            goto exit;
+        }
+        if (gnutls_certificate_set_x509_key_file(server_cert, options->coap.certificate_file,
+                                                 options->coap.private_key_file, GNUTLS_X509_FMT_PEM))
+        {
+            goto exit;
+        }
     }
 
-    CHECK_RET(gnutls_priority_init(&priority_cache,
-                                   "NORMAL:+VERS-DTLS1.2:+AES-128-CCM-8:+PSK:+ECDHE-ECDSA", NULL));
+    if (gnutls_priority_init(&priority_cache, "NORMAL:+VERS-DTLS1.2:+AES-128-CCM-8:+PSK:+ECDHE-ECDSA",
+                             NULL) != GNUTLS_E_SUCCESS)
+    {
+        goto exit;
+    }
+    if (gnutls_key_generate(&cookie_key, GNUTLS_COOKIE_KEY_SIZE) != GNUTLS_E_SUCCESS)
+    {
+        goto exit;
+    }
+    if (gnutls_psk_allocate_server_credentials(&server_psk) != GNUTLS_E_SUCCESS)
+    {
+        goto exit;
+    }
 
-    gnutls_key_generate(&cookie_key, GNUTLS_COOKIE_KEY_SIZE);
-
-    gnutls_psk_allocate_server_credentials(&server_psk);
     gnutls_psk_set_server_credentials_function(server_psk, psk_callback);
     set_psk_callback_context(context);
 
     listen_socket = prv_new_socket(NULL, options->coap.port, address_family);
+    ret = listen_socket;
 
-    return listen_socket;
+exit:
+    if (ret <= 0)
+    {
+        gnutls_certificate_free_credentials(server_cert);
+        gnutls_priority_deinit(priority_cache);
+        gnutls_psk_free_server_credentials(server_psk);
+    }
+    return ret;
 }
 
 static device_connection_t *connection_new_incoming(int *sock)
 {
-    int ret;
+    int ret, port;
+    char service[16];
     const char *err_str;
     gnutls_dtls_prestate_st prestate;
     device_connection_t *conn;
@@ -255,8 +298,25 @@ static device_connection_t *connection_new_incoming(int *sock)
     if (prv_cookie_negotiate(conn, &prestate) == 0)
     {
 //      the current socket will be taken over by the client connection and a new one created for listening for incoming connections
-        CHECK_RET(prv_switch_sockets(sock, &conn->sock, &conn->addr, conn->addr_size));
-        CHECK_RET(prv_connection_init(conn, &prestate));
+        if (prv_switch_sockets(sock, &conn->sock, &conn->addr, conn->addr_size))
+        {
+            getnameinfo((struct sockaddr *)&conn->addr, conn->addr_size, NULL, 0, service, sizeof(service),
+                        NI_NUMERICSERV);
+            port = atoi(service);
+
+            *sock = prv_new_socket(NULL, port, conn->addr.ss_family);
+
+            close(conn->sock);
+            free(conn);
+            return NULL;
+        }
+
+        if (prv_connection_init(conn, &prestate))
+        {
+            close(conn->sock);
+            free(conn);
+            return NULL;
+        }
 
         do
         {
@@ -269,6 +329,7 @@ static device_connection_t *connection_new_incoming(int *sock)
             log_message(LOG_LEVEL_WARN, "Handshake failed with message: '%s'\n", err_str);
 
             gnutls_deinit(conn->session);
+            close(conn->sock);
             free(conn);
             return NULL;
         }
