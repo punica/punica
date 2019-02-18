@@ -32,7 +32,8 @@
 typedef enum
 {
     PUNICA_COAP_MODE_INSECURE,
-    PUNICA_COAP_MODE_SECURE
+    PUNICA_COAP_MODE_SECURE,
+    PUNICA_COAP_MODE_BOTH
 } punica_coap_mode_t;
 
 typedef struct
