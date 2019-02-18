@@ -28,28 +28,6 @@
 
 static char *logging_section = "[DEVICES DATABASE]";
 
-void free_database_entry(database_entry_t *device)
-{
-
-    if (device)
-    {
-        if (device->uuid)
-        {
-            free(device->uuid);
-        }
-        if (device->psk)
-        {
-            free(device->psk);
-        }
-        if (device->psk_id)
-        {
-            free(device->psk_id);
-        }
-
-        free(device);
-    }
-}
-
 void database_free_entry(database_entry_t *device_entry)
 {
 

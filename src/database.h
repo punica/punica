@@ -40,8 +40,6 @@ typedef struct
     size_t psk_id_len;
 } database_entry_t;
 
-void free_database_entry(database_entry_t *device);
-
 int database_load_file(punica_context_t *punica);
 
 void database_free_entry(database_entry_t *device_entry);
