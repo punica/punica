@@ -36,7 +36,7 @@
 #include "rest-list.h"
 #include "rest-authentication.h"
 
-static connection_api_t ConnApi;
+static connection_api_t conn_api;
 
 static volatile int restserver_quit;
 static void sigint_handler(int signo)
@@ -92,22 +92,22 @@ static void init_signals(void)
     }
 }
 
-static int prv_api_init(connection_api_t *ConnApi, uint16_t mode)
+static int prv_api_init(connection_api_t *conn_api, uint16_t mode)
 {
     if (mode == 0)
     {
-        ConnApi->f_socket = connection_create;
-        ConnApi->f_step = connection_step;
-        ConnApi->f_send = connection_send;
-        ConnApi->f_free = connection_free;
+        conn_api->f_socket = connection_create;
+        conn_api->f_step = connection_step;
+        conn_api->f_send = connection_send;
+        conn_api->f_free = connection_free;
         return 0;
     }
     else if (mode == 1)
     {
-        ConnApi->f_socket = connection_create_secure;
-        ConnApi->f_step = connection_step_secure;
-        ConnApi->f_send = connection_send_secure;
-        ConnApi->f_free = connection_free_secure;
+        conn_api->f_socket = connection_create_secure;
+        conn_api->f_step = connection_step_secure;
+        conn_api->f_send = connection_send_secure;
+        conn_api->f_free = connection_free_secure;
         return 0;
     }
     else
@@ -230,7 +230,7 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
             log_message(LOG_LEVEL_ERROR, "[MONITOR] Failed to allocate deregistration notification!\n");
         }
 
-        if (ConnApi.f_free(client->sessionH))
+        if (conn_api.f_free(client->sessionH))
         {
             log_message(LOG_LEVEL_ERROR, "[MONITOR] Failed to deregister client %d.\n", clientID);
         }
@@ -302,7 +302,7 @@ int main(int argc, char *argv[])
 
     rest_init(&rest, &settings);
 
-    if (prv_api_init(&ConnApi, settings.coap.mode) != 0)
+    if (prv_api_init(&conn_api, settings.coap.mode) != 0)
     {
         return -1;
     }
@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
     /* Socket section */
     log_message(LOG_LEVEL_INFO, "Creating coap socket on port %d\n", settings.coap.port);
 
-    res = ConnApi.f_socket(&settings, AF_INET6, (void *)rest.devicesList);
+    res = conn_api.f_socket(&settings, AF_INET6, (void *)rest.devicesList);
     if (res < 0)
     {
         log_message(LOG_LEVEL_FATAL, "Failed to create socket!\n");
@@ -325,7 +325,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    rest.lwm2m->userData = &ConnApi;
+    rest.lwm2m->userData = &conn_api;
 
     lwm2m_set_monitoring_callback(rest.lwm2m, client_monitor_cb, &rest);
 
@@ -456,14 +456,14 @@ int main(int argc, char *argv[])
         }
         rest_unlock(&rest);
 
-        res = ConnApi.f_step(rest.lwm2m, &tv);
+        res = conn_api.f_step(rest.lwm2m, &tv);
         if (res)
         {
             if (errno == EINTR)
             {
                 continue;
             }
-            log_message(LOG_LEVEL_ERROR, "ConnApi.f_step() error: %d\n", res);
+            log_message(LOG_LEVEL_ERROR, "conn_api.f_step() error: %d\n", res);
         }
     }
 
