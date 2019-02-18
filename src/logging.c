@@ -26,22 +26,23 @@
 #include <time.h>
 
 static logging_settings_t logging_settings;
+static char *logging_section = "[LOGGING]";
 
 int logging_initialize(logging_settings_t *settings)
 {
     memcpy(&logging_settings, settings, sizeof(logging_settings_t));
 
     log_message(LOG_LEVEL_TRACE,
-                "[LOGGING] Timestamp set to %s\n",
-                logging_settings.timestamp ? "ON" : "OFF");
+                "%s Timestamp set to %s\n",
+                logging_section, logging_settings.timestamp ? "ON" : "OFF");
     log_message(LOG_LEVEL_TRACE,
-                "[LOGGING] Level set to %d\n",
-                logging_settings.level);
+                "%s Level set to %d\n",
+                logging_section, logging_settings.level);
 
     if (logging_settings.level > LOG_LEVEL_TRACE)
     {
         log_message(LOG_LEVEL_WARN,
-                    "[LOGGING] Unexpected high logging level \"%d\".\n",
+                    "%s Unexpected high logging level \"%d\".\n",
                     logging_settings.level);
     }
 
