@@ -25,6 +25,12 @@
 
 #include "punica.h"
 
+#define DATABASE_UUID_KEY_BIT       0x1
+#define DATABASE_PSK_KEY_BIT        0x2
+#define DATABASE_PSK_ID_KEY_BIT     0x4
+#define DATABASE_ALL_NEW_KEYS_SET   0x6
+#define DATABASE_ALL_KEYS_SET       0x7
+
 typedef struct
 {
     char *uuid;
