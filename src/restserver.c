@@ -92,9 +92,9 @@ static void init_signals(void)
     }
 }
 
-static int prv_api_init(connection_api_t *conn_api, uint16_t mode)
+static int prv_api_init(connection_api_t *conn_api, uint16_t security_mode)
 {
-    if (mode == 0)
+    if (security_mode == PUNICA_COAP_MODE_INSECURE)
     {
         conn_api->f_socket = connection_create;
         conn_api->f_step = connection_step;
@@ -102,7 +102,7 @@ static int prv_api_init(connection_api_t *conn_api, uint16_t mode)
         conn_api->f_free = connection_free;
         return 0;
     }
-    else if (mode == 1)
+    else if (security_mode == PUNICA_COAP_MODE_SECURE)
     {
         conn_api->f_socket = connection_create_secure;
         conn_api->f_step = connection_step_secure;
@@ -112,7 +112,7 @@ static int prv_api_init(connection_api_t *conn_api, uint16_t mode)
     }
     else
     {
-        log_message(LOG_LEVEL_FATAL, "Found unsupported CoAP mode: %d\n", mode);
+        log_message(LOG_LEVEL_FATAL, "Found unsupported CoAP security mode: %d\n", security_mode);
         return -1;
     }
 }
@@ -273,6 +273,7 @@ int main(int argc, char *argv[])
             },
         },
         .coap = {
+            .security_mode = PUNICA_COAP_MODE_INSECURE,
             .port = 5555,
             .private_key_file = NULL,
             .certificate_file = NULL,
@@ -302,7 +303,7 @@ int main(int argc, char *argv[])
 
     rest_init(&rest, &settings);
 
-    if (prv_api_init(&conn_api, settings.coap.mode) != 0)
+    if (prv_api_init(&conn_api, settings.coap.security_mode) != 0)
     {
         return -1;
     }

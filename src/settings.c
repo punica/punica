@@ -58,7 +58,7 @@ static void set_coap_settings(json_t *j_section, coap_settings_t *settings)
         {
             if (json_is_integer(j_value))
             {
-                settings->mode = (uint16_t) json_integer_value(j_value);
+                settings->security_mode = (uint16_t) json_integer_value(j_value);
             }
             else
             {
