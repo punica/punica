@@ -18,11 +18,13 @@
  */
 
 #include "rest_authentication.h"
+
+#include <string.h>
+
+#include "rest_callbacks.h"
 #include "http_codes.h"
 #include "logging.h"
 #include "security.h"
-
-#include <string.h>
 
 static char *logging_section = "[JWT]";
 

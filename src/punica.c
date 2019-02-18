@@ -18,23 +18,23 @@
  *
  */
 
-#include "punica.h"
-#include "rest.h"
-#include "utils.h"
-#include "linked_list.h"
-#include "logging.h"
-#include "security.h"
-#include "settings.h"
-#include "rest_callbacks.h"
-
-#include <liblwm2m.h>
-
 #include <connection.h>
 #include <errno.h>
 #include <signal.h>
 #include <stdint.h>
 #include <string.h>
 #include <sys/socket.h>
+
+#include <liblwm2m.h>
+
+#include "linked_list.h"
+#include "logging.h"
+#include "punica_core.h"
+#include "rest.h"
+#include "rest_callbacks.h"
+#include "security.h"
+#include "settings.h"
+#include "utils.h"
 
 static char *logging_section = "";
 static volatile int punica_quit;

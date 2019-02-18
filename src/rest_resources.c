@@ -17,16 +17,17 @@
  *
  */
 
-#include "http_codes.h"
-#include "logging.h"
-#include "rest.h"
-
 #include <assert.h>
 #include <errno.h>
 #include <linux/random.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/syscall.h>
+
+#include "http_codes.h"
+#include "logging.h"
+#include "rest.h"
+#include "rest_callbacks.h"
 
 static char *logging_section = "[REST API]";
 

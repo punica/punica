@@ -17,14 +17,15 @@
  *
  */
 
-#include "http_codes.h"
 #include "utils.h"
-#include "punica.h"
 
 #include <assert.h>
 #include <time.h>
 #include <string.h>
 #include <uuid/uuid.h>
+
+#include "http_codes.h"
+#include "punica_core.h"
 
 static const char *base64_table =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

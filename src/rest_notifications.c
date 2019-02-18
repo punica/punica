@@ -20,6 +20,7 @@
 #include "http_codes.h"
 #include "logging.h"
 #include "rest.h"
+#include "rest_callbacks.h"
 
 #include <string.h>
 

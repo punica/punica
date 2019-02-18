@@ -17,12 +17,12 @@
  *
  */
 
+#include <string.h>
+
 #include "http_codes.h"
-#include "punica.h"
+#include "punica_core.h"
 #include "rest.h"
 #include "rest_callbacks.h"
-
-#include <string.h>
 
 static json_t *endpoint_to_json(lwm2m_client_t *client)
 {

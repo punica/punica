@@ -17,14 +17,15 @@
  *
  */
 
+#include <string.h>
+
 #include "http_codes.h"
 #include "logging.h"
 #include "punica.h"
 #include "rest.h"
+#include "rest_callbacks.h"
 
-#include <string.h>
-
-static char *logging_section = "[REST API]";
+static char *logging_section = "";
 
 typedef struct
 {
@@ -39,8 +40,9 @@ static void rest_observe_cb(uint16_t clientID, lwm2m_uri_t *uriP, int count,
     rest_observe_context_t *ctx = (rest_observe_context_t *) context;
     rest_async_response_t *response;
 
-    logging_section = "[LwM2M / OBSERVE RESPONSE] ";
-    log_message(LOG_LEVEL_INFO, "%s id=%s count=%d data=%p\n",
+    logging_section = "[LwM2M]";
+    log_message(LOG_LEVEL_INFO,
+                "%s Observation response id: \"%s\" count=%d data=%p\n",
                 logging_section, ctx->response->id, count, data);
 
     response = rest_async_response_clone(ctx->response);
@@ -53,9 +55,15 @@ static void rest_observe_cb(uint16_t clientID, lwm2m_uri_t *uriP, int count,
     }
 
     /* Where data is NULL, the count parameter represents CoAP error code */
-    rest_async_response_set(response,
-                            (data == NULL) ? utils_coap_to_http_status(count) : HTTP_200_OK,
-                            data, dataLength);
+    if (data == NULL)
+    {
+        rest_async_response_set(response, utils_coap_to_http_status(count),
+                                data, dataLength);
+    }
+    else
+    {
+        rest_async_response_set(response, HTTP_200_OK, data, dataLength);
+    }
 
     rest_notify_async_response(ctx->punica, response);
 }
@@ -66,9 +74,9 @@ static void rest_unobserve_cb(uint16_t clientID, lwm2m_uri_t *uriP,
 {
     rest_observe_context_t *ctx = (rest_observe_context_t *) context;
 
-    logging_section = "[LwM2M / UNOBSERVE RESPONSE] ";
-    log_message(LOG_LEVEL_INFO, "%s id=%s\n", ctx->response->id,
-                logging_section);
+    logging_section = "[LwM2M]";
+    log_message(LOG_LEVEL_INFO, "%s Unobserve response id: \"%s\"\n",
+                logging_section, ctx->response->id);
 
     linked_list_remove(ctx->punica->rest_observations, ctx->response);
 
@@ -99,6 +107,8 @@ static int rest_subscriptions_put_cb_unsafe(const struct _u_request *u_request,
      * the end of the function.
      */
 
+    logging_section = "[REST API]"
+
     /* Find requested client */
     name = u_map_get(u_request->map_url, "name");
     client = utils_find_client(punica->lwm2m->clientList, name);
@@ -116,14 +126,13 @@ static int rest_subscriptions_put_cb_unsafe(const struct _u_request *u_request,
         || len >= sizeof(path))
     {
         log_message(LOG_LEVEL_WARN,
-                    "%s(): invalid http request (%s)!\n",
-                    __func__, u_request->http_url);
+                    "%s %s(): invalid http request: \"%s\"!\n",
+                    logging_section, __func__, u_request->http_url);
         return U_CALLBACK_ERROR;
     }
 
     /*
-     * this is probaly redundant
-     * if there's only one matching ulfius filter
+     * This is probaly redundant if there's only one matching ulfius filter
      */
     if (strncmp(path, u_request->http_url, len) != 0)
     {

@@ -17,14 +17,15 @@
  *
  */
 
-#include "punica.h"
+#include "punica_core.h"
+
+#include <assert.h>
+#include <string.h>
+
 #include "devices_database.h"
 #include "logging.h"
 #include "settings.h"
 #include "rest.h"
-
-#include <assert.h>
-#include <string.h>
 
 void punica_initialize(punica_context_t *punica, settings_t *settings)
 {

@@ -20,15 +20,15 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-#include "logging.h"
-#include "security.h"
-#include "utils.h"
-
-#include <jansson.h>
-
 #include <argp.h>
 #include <stdint.h>
 #include <string.h>
+
+#include <jansson.h>
+
+#include "logging.h"
+#include "security.h"
+#include "utils.h"
 
 typedef struct
 {

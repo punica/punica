@@ -20,11 +20,12 @@
 #ifndef REST_H
 #define REST_H
 
-#include "punica.h"
-#include "rest_core_types.h"
+#include <time.h>
 
 #include <jansson.h>
-#include <time.h>
+
+#include "punica.h"
+#include "rest_core_types.h"
 
 void rest_notify_registration(
     punica_context_t *punica,

@@ -18,14 +18,15 @@
  */
 
 #include "devices_database.h"
+
+#include <string.h>
+
 #include "linked_list.h"
 #include "logging.h"
-#include "punica.h"
+#include "punica_core.h"
 #include "rest_core_types.h"
 #include "settings.h"
 #include "utils.h"
-
-#include <string.h>
 
 static char *logging_section = "[DEVICES DATABASE]";
 
@@ -96,11 +97,11 @@ int devices_database_delete_by_uuid(linked_list_t *devices, const char *uuid)
 
 int devices_database_new_entry_validate(json_t *j_new_device)
 {
-    int key_check = 0;
-    const char *key;
     json_t *j_value;
+    const char *key;
     uint8_t buffer[512];
     size_t buffer_len = sizeof(buffer);
+    int key_check = 0;
 
     if (!json_is_object(j_new_device))
     {
@@ -117,7 +118,7 @@ int devices_database_new_entry_validate(json_t *j_new_device)
         if (strcasecmp(key, "psk") == 0)
         {
             if (base64_decode(json_string_value(j_value),
-                              buffer, &buffer_len))
+                              buffer, &buffer_len) != 0)
             {
                 return -1;
             }
@@ -127,7 +128,7 @@ int devices_database_new_entry_validate(json_t *j_new_device)
         else if (strcasecmp(key, "psk_id") == 0)
         {
             if (base64_decode(json_string_value(j_value),
-                              buffer, &buffer_len))
+                              buffer, &buffer_len) != 0)
             {
                 return -1;
             }
@@ -146,11 +147,11 @@ int devices_database_new_entry_validate(json_t *j_new_device)
 
 int devices_database_entry_validate(json_t *j_device)
 {
-    int key_check = 0;
-    const char *key;
     json_t *j_value;
+    const char *key;
     uint8_t buffer[512];
     size_t buffer_len = sizeof(buffer);
+    int key_check = 0;
 
     if (!json_is_object(j_device))
     {
@@ -170,7 +171,7 @@ int devices_database_entry_validate(json_t *j_device)
         else if (strcasecmp(key, "psk") == 0)
         {
             if (base64_decode(json_string_value(j_value),
-                              buffer, &buffer_len))
+                              buffer, &buffer_len) != 0)
             {
                 return -1;
             }
@@ -179,7 +180,7 @@ int devices_database_entry_validate(json_t *j_device)
         else if (strcasecmp(key, "psk_id") == 0)
         {
             if (base64_decode(json_string_value(j_value),
-                              buffer, &buffer_len))
+                              buffer, &buffer_len) != 0)
             {
                 return -1;
             }
@@ -385,12 +386,11 @@ int devices_database_to_json(linked_list_t *devices, json_t *j_devices)
 
 int devices_database_from_file(punica_context_t *punica)
 {
+    database_entry_t *database;
     json_error_t error;
-    size_t index;
-    json_t *j_device;
-    json_t *j_devices = NULL;
+    json_t *j_device, *j_devices = NULL;
     int ret = 1;
-    database_entry_t *curr;
+    size_t index;
 
     linked_list_t *devices = linked_list_new();
     if (devices == 0)
@@ -448,13 +448,13 @@ int devices_database_from_file(punica_context_t *punica)
             continue;
         }
 
-        curr = calloc(1, sizeof(database_entry_t));
-        if (curr == NULL)
+        database = malloc(sizeof(database_entry_t));
+        if (database == NULL)
         {
             goto exit;
         }
 
-        if (devices_database_entry_from_json(j_device, curr))
+        if (devices_database_entry_from_json(j_device, database))
         {
             log_message(LOG_LEVEL_INFO,
                         "%s Failed to parse entry to JSON.\n",
@@ -462,11 +462,11 @@ int devices_database_from_file(punica_context_t *punica)
             goto free_device;
         }
 
-        linked_list_add(devices, (void *)curr);
+        linked_list_add(devices, (void *)database);
         continue;
 
 free_device:
-        devices_database_entry_free(curr);
+        devices_database_entry_free(database);
     }
     ret = 0;
 
@@ -479,8 +479,12 @@ int devices_database_to_file(linked_list_t *devices, const char *file_name)
 {
     json_t *j_devices = json_array();
 
-    if (file_name == NULL
-        || !json_is_array(j_devices))
+    if (file_name == NULL)
+    {
+        return 0;
+    }
+
+    if (!json_is_array(j_devices))
     {
         return -1;
     }

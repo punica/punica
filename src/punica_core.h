@@ -20,12 +20,12 @@
 #ifndef PUNICA_H
 #define PUNICA_H
 
-#include "rest_core_types.h"
-#include "utils.h"
-#include "settings.h"
-
 #include <liblwm2m.h>
 #include <ulfius.h>
+
+#include "rest_core_types.h"
+#include "settings.h"
+#include "utils.h"
 
 typedef struct
 {
