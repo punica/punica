@@ -41,29 +41,6 @@ static ssize_t prv_net_send(gnutls_transport_ptr_t context, const void *data, si
     return sendto(conn->sock, data, size, 0, (struct sockaddr *)&conn->addr, conn->addr_size);
 }
 
-static ssize_t prv_net_receive(gnutls_transport_ptr_t context, void *data, size_t size)
-{
-    device_connection_t *conn = (device_connection_t *)context;
-
-    conn->addr_size = sizeof(conn->addr);
-    return recvfrom(conn->sock, data, size, 0, (struct sockaddr *)&conn->addr, &conn->addr_size);
-}
-
-static int prv_net_receive_timeout(gnutls_transport_ptr_t context, unsigned int ms)
-{
-    device_connection_t *conn = (device_connection_t *)context;
-    fd_set fds;
-    struct timeval tv;
-
-    FD_ZERO(&fds);
-    FD_SET(conn->sock, &fds);
-
-    tv.tv_sec = ms / 1000;
-    tv.tv_usec = ms;
-
-    return select(conn->sock + 1, &fds, NULL, NULL, &tv);
-}
-
 static int prv_new_socket(const char *host, int port, int address_family)
 {
     int sock, enable;
@@ -208,10 +185,7 @@ static int prv_connection_init(device_connection_t *connection, gnutls_dtls_pres
     }
 
     gnutls_dtls_prestate_set(connection->session, prestate);
-    gnutls_transport_set_ptr(connection->session, connection);
-    gnutls_transport_set_push_function(connection->session, prv_net_send);
-    gnutls_transport_set_pull_function(connection->session, prv_net_receive);
-    gnutls_transport_set_pull_timeout_function(connection->session, prv_net_receive_timeout);
+    gnutls_transport_set_ptr(connection->session, (void *)((intptr_t)connection->sock));
 
     ret = 0;
 exit:
