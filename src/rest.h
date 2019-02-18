@@ -24,7 +24,7 @@
 
 #include <jansson.h>
 
-#include "punica.h"
+#include "punica_core.h"
 #include "rest_core_types.h"
 
 void rest_notify_registration(
