@@ -126,7 +126,7 @@ void jwt_init(jwt_settings_t *settings)
 
 void jwt_cleanup(jwt_settings_t *settings)
 {
-    rest_list_entry_t *entry;
+    linked_list_entry_t *entry;
 
     if (settings->secret_key != NULL)
     {
@@ -138,7 +138,7 @@ void jwt_cleanup(jwt_settings_t *settings)
         security_user_delete((user_t *) entry->data);
     }
 
-    rest_list_delete(settings->users_list);
+    linked_list_delete(settings->users_list);
     settings->initialised = false;
 }
 

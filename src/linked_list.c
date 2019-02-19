@@ -24,7 +24,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-linked_list_t *rest_list_new(void)
+linked_list_t *linked_list_new(void)
 {
     linked_list_t *list = malloc(sizeof(linked_list_t));
 
@@ -41,9 +41,9 @@ linked_list_t *rest_list_new(void)
     return list;
 }
 
-void rest_list_delete(linked_list_t *list)
+void linked_list_delete(linked_list_t *list)
 {
-    rest_list_entry_t *entry;
+    linked_list_entry_t *entry;
 
     pthread_mutex_lock(&list->mutex);
 
@@ -62,13 +62,13 @@ void rest_list_delete(linked_list_t *list)
     free(list);
 }
 
-void rest_list_add(linked_list_t *list, void *data)
+void linked_list_add(linked_list_t *list, void *data)
 {
-    rest_list_entry_t *entry;
+    linked_list_entry_t *entry;
 
     pthread_mutex_lock(&list->mutex);
 
-    entry = malloc(sizeof(rest_list_entry_t));
+    entry = malloc(sizeof(linked_list_entry_t));
     assert(entry != NULL);
 
     entry->next = list->head;
@@ -78,11 +78,11 @@ void rest_list_add(linked_list_t *list, void *data)
     pthread_mutex_unlock(&list->mutex);
 }
 
-void rest_list_remove(linked_list_t *list, void *data)
+void linked_list_remove(linked_list_t *list, void *data)
 {
     pthread_mutex_lock(&list->mutex);
 
-    rest_list_entry_t *entry, *previous;
+    linked_list_entry_t *entry, *previous;
 
     for (entry = list->head; entry != NULL; entry = entry->next)
     {

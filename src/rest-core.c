@@ -28,13 +28,13 @@ void rest_init(punica_core_t *punica, settings_t *settings)
 {
     memset(punica, 0, sizeof(punica_core_t));
 
-    punica->registrationList = rest_list_new();
-    punica->updateList = rest_list_new();
-    punica->deregistrationList = rest_list_new();
-    punica->timeoutList = rest_list_new();
-    punica->asyncResponseList = rest_list_new();
-    punica->pendingResponseList = rest_list_new();
-    punica->observeList = rest_list_new();
+    punica->registrationList = linked_list_new();
+    punica->updateList = linked_list_new();
+    punica->deregistrationList = linked_list_new();
+    punica->timeoutList = linked_list_new();
+    punica->asyncResponseList = linked_list_new();
+    punica->pendingResponseList = linked_list_new();
+    punica->observeList = linked_list_new();
     punica->settings = settings;
 
     assert(pthread_mutex_init(&punica->mutex, NULL) == 0);
@@ -51,13 +51,13 @@ void rest_cleanup(punica_core_t *punica)
     }
 
     rest_notifications_clear(punica);
-    rest_list_delete(punica->registrationList);
-    rest_list_delete(punica->updateList);
-    rest_list_delete(punica->deregistrationList);
-    rest_list_delete(punica->timeoutList);
-    rest_list_delete(punica->asyncResponseList);
-    rest_list_delete(punica->pendingResponseList);
-    rest_list_delete(punica->observeList);
+    linked_list_delete(punica->registrationList);
+    linked_list_delete(punica->updateList);
+    linked_list_delete(punica->deregistrationList);
+    linked_list_delete(punica->timeoutList);
+    linked_list_delete(punica->asyncResponseList);
+    linked_list_delete(punica->pendingResponseList);
+    linked_list_delete(punica->observeList);
 
     assert(pthread_mutex_destroy(&punica->mutex) == 0);
 }

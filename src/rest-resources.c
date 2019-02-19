@@ -69,7 +69,7 @@ static void rest_async_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
     log_message(LOG_LEVEL_INFO, "[ASYNC-RESPONSE] id=%s status=%d\n",
                 ctx->response->id, coap_to_http_status(status));
 
-    rest_list_remove(ctx->punica->pendingResponseList, ctx->response);
+    linked_list_remove(ctx->punica->pendingResponseList, ctx->response);
 
     err = rest_async_response_set(ctx->response, coap_to_http_status(status), data, dataLength);
     assert(err == 0);
@@ -261,7 +261,7 @@ static int rest_resources_rwe_cb_unsafe(punica_core_t *punica,
     {
         goto exit;
     }
-    rest_list_add(punica->pendingResponseList, async_context->response);
+    linked_list_add(punica->pendingResponseList, async_context->response);
 
     jresponse = json_object();
     json_object_set_new(jresponse, "async-response-id", json_string(async_context->response->id));
