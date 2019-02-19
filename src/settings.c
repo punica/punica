@@ -78,7 +78,7 @@ static void set_coap_settings(json_t *j_section, coap_settings_t *settings)
     }
 }
 
-static int set_user_settings(json_t *user_settings, rest_list_t *users_list)
+static int set_user_settings(json_t *user_settings, linked_list_t *users_list)
 {
     user_t *user, *user_entry;
     rest_list_entry_t *entry;

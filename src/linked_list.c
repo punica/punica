@@ -24,16 +24,16 @@
 #include <stdbool.h>
 #include <string.h>
 
-rest_list_t *rest_list_new(void)
+linked_list_t *rest_list_new(void)
 {
-    rest_list_t *list = malloc(sizeof(rest_list_t));
+    linked_list_t *list = malloc(sizeof(linked_list_t));
 
     if (list == NULL)
     {
         return NULL;
     }
 
-    memset(list, 0, sizeof(rest_list_t));
+    memset(list, 0, sizeof(linked_list_t));
 
     pthread_mutex_init(&list->mutex, NULL);
     list->head = NULL;
@@ -41,7 +41,7 @@ rest_list_t *rest_list_new(void)
     return list;
 }
 
-void rest_list_delete(rest_list_t *list)
+void rest_list_delete(linked_list_t *list)
 {
     rest_list_entry_t *entry;
 
@@ -62,7 +62,7 @@ void rest_list_delete(rest_list_t *list)
     free(list);
 }
 
-void rest_list_add(rest_list_t *list, void *data)
+void rest_list_add(linked_list_t *list, void *data)
 {
     rest_list_entry_t *entry;
 
@@ -78,7 +78,7 @@ void rest_list_add(rest_list_t *list, void *data)
     pthread_mutex_unlock(&list->mutex);
 }
 
-void rest_list_remove(rest_list_t *list, void *data)
+void rest_list_remove(linked_list_t *list, void *data)
 {
     pthread_mutex_lock(&list->mutex);
 

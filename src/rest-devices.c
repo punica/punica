@@ -23,7 +23,7 @@
 #include "linked_list.h"
 #include "settings.h"
 
-static int rest_devices_update_list(rest_list_t *list, json_t *jdevice)
+static int rest_devices_update_list(linked_list_t *list, json_t *jdevice)
 {
     const char *string;
     json_t *jstring;
@@ -89,7 +89,7 @@ static int rest_devices_update_list(rest_list_t *list, json_t *jdevice)
     return -1;
 }
 
-static int rest_devices_remove_list(rest_list_t *list, const char *id)
+static int rest_devices_remove_list(linked_list_t *list, const char *id)
 {
     rest_list_entry_t *device_entry;
     database_entry_t *device_data;
@@ -131,7 +131,7 @@ static json_t *rest_devices_prepare_resp(database_entry_t *device_entry)
 int rest_devices_get_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
     punica_core_t *punica = (punica_core_t *)context;
-    rest_list_t *device_list = punica->devicesList;
+    linked_list_t *device_list = punica->devicesList;
     database_entry_t *device_data;
     rest_list_entry_t *device_entry;
     json_t *j_devices = NULL;
@@ -165,7 +165,7 @@ exit:
 int rest_devices_get_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
     punica_core_t *punica = (punica_core_t *)context;
-    rest_list_t *device_list = punica->devicesList;
+    linked_list_t *device_list = punica->devicesList;
     database_entry_t *device_data;
     rest_list_entry_t *device_entry;
     json_t *j_entry_object = NULL;

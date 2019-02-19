@@ -60,7 +60,7 @@ typedef struct
     jwt_alg_t algorithm;
     unsigned char *secret_key;
     size_t secret_key_length;
-    rest_list_t *users_list;
+    linked_list_t *users_list;
     json_int_t expiration_time;
 } jwt_settings_t;
 

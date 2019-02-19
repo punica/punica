@@ -251,7 +251,7 @@ exit:
     return return_code;
 }
 
-int database_prepare_array(json_t *j_array, rest_list_t *device_list)
+int database_prepare_array(json_t *j_array, linked_list_t *device_list)
 {
     rest_list_entry_t *list_entry;
     database_entry_t *device_entry;
