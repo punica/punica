@@ -24,8 +24,8 @@
 #include <sys/syscall.h>
 #include <linux/random.h>
 
-#include "logging.h"
-#include "punica_core.h"
+#include "../logging.h"
+#include "../punica_core.h"
 
 typedef struct
 {

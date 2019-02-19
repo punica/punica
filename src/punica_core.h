@@ -24,8 +24,8 @@
 #include <ulfius.h>
 
 #include "http_codes.h"
-#include "rest-core-types.h"
-#include "rest-utils.h"
+#include "rest/rest-core-types.h"
+#include "rest/rest-utils.h"
 #include "settings.h"
 
 

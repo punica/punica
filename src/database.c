@@ -18,7 +18,7 @@
  */
 
 #include "punica_core.h"
-#include "rest-core-types.h"
+#include "rest/rest-core-types.h"
 #include "linked_list.h"
 #include "settings.h"
 

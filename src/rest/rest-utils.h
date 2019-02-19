@@ -20,10 +20,10 @@
 #ifndef REST_UTILS_H
 #define REST_UTILS_H
 
-#include "settings.h"
-
 #include <stdlib.h>
 #include <stdint.h>
+
+#include "../settings.h"
 
 typedef struct
 {

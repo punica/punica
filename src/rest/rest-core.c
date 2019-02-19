@@ -20,9 +20,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include "database.h"
-#include "logging.h"
-#include "punica_core.h"
+#include "../database.h"
+#include "../logging.h"
+#include "../punica_core.h"
 
 void rest_init(punica_core_t *punica, settings_t *settings)
 {

@@ -23,8 +23,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "linked_list.h"
-
+#include "../linked_list.h"
 
 enum base64_error_t
 {

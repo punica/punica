@@ -26,8 +26,8 @@
 #include <argp.h>
 
 #include "logging.h"
+#include "rest/rest-utils.h"
 #include "security.h"
-#include "rest-utils.h"
 
 typedef struct
 {
