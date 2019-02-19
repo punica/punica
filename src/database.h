@@ -20,6 +20,8 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
-int database_load_file(punica_core_t *rest);
+#include "punica_core.h"
+
+int database_load_file(punica_core_t *punica);
 
 #endif //DATABASE_H
