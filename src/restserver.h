@@ -28,17 +28,19 @@
 #include "rest-utils.h"
 #include "settings.h"
 
-typedef int (*f_socket_t)(settings_t *, int, void *);
-typedef int (*f_step_t)(void *, struct timeval *);
-typedef int (*f_send_t)(void *, uint8_t *, size_t);
-typedef int (*f_free_t)(void *);
+typedef int (*f_start_t)(void *);
+typedef int (*f_receive_t)(void *, uint8_t *, size_t, void **, struct timeval *);
+typedef int (*f_send_t)(void *, void *, uint8_t *, size_t);
+typedef int (*f_close_t)(void *, void *);
+typedef int (*f_stop_t)(void *);
 
 typedef struct connection_api_t
 {
-    f_socket_t f_socket;
-    f_step_t   f_step;
-    f_send_t   f_send;
-    f_free_t   f_free;
+    f_start_t   f_start;
+    f_receive_t f_receive;
+    f_send_t    f_send;
+    f_close_t   f_close;
+    f_stop_t    f_stop;
 } connection_api_t;
 
 typedef struct _u_request ulfius_req_t;

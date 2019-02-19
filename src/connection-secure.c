@@ -17,22 +17,28 @@
  *
  */
 
-#include <stdio.h>
-
-#include <gnutls/gnutls.h>
-#include <gnutls/dtls.h>
-
 #include "connection-secure.h"
+#include <stdio.h>
+#include <gnutls/dtls.h>
+#include <gnutls/gnutls.h>
 
 #define BUFFER_SIZE 1024
 
-static gnutls_certificate_credentials_t server_cert = NULL;
-static gnutls_priority_t priority_cache = NULL;
-static gnutls_datum_t cookie_key;
-static gnutls_psk_server_credentials_t server_psk = NULL;
-
-static int listen_socket;
-static device_connection_t *connection_list = NULL;
+typedef struct secure_connection_context_t
+{
+    connection_api_t api;
+    device_connection_t *connection_list;
+    int port;
+    int address_family;
+    const char *certificate_file;
+    const char *private_key_file;
+    int listen_socket;
+    gnutls_certificate_credentials_t server_cert;
+    gnutls_priority_t priority_cache;
+    gnutls_datum_t cookie_key;
+    gnutls_psk_server_credentials_t server_psk;
+    void *data;
+} secure_connection_context_t;
 
 static ssize_t prv_net_send(gnutls_transport_ptr_t context, const void *data, size_t size)
 {
@@ -41,25 +47,22 @@ static ssize_t prv_net_send(gnutls_transport_ptr_t context, const void *data, si
     return sendto(conn->sock, data, size, 0, (struct sockaddr *)&conn->addr, conn->addr_size);
 }
 
-static int prv_new_socket(const char *host, int port, int address_family)
+static int prv_new_socket(void *this)
 {
+    secure_connection_context_t *context = (secure_connection_context_t *)this;
     int sock, enable;
     struct addrinfo hints, *addr_list, *cur;
     char port_str[16];
 
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = address_family;
+    hints.ai_family = context->address_family;
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_protocol = IPPROTO_UDP;
     hints.ai_flags = AI_ADDRCONFIG;
+    hints.ai_flags |= AI_PASSIVE;
 
-    if (host == NULL)
-    {
-        hints.ai_flags |= AI_PASSIVE;
-    }
-
-    sprintf(port_str, "%d", port);
-    if (getaddrinfo(host, port_str, &hints, &addr_list) != 0)
+    sprintf(port_str, "%d", context->port);
+    if (getaddrinfo(NULL, port_str, &hints, &addr_list) != 0)
     {
         return -1;
     }
@@ -94,41 +97,26 @@ static int prv_new_socket(const char *host, int port, int address_family)
     return sock;
 }
 
-static int prv_switch_sockets(int *local_socket, int *client_socket,
-                              struct sockaddr_storage *client_address, socklen_t address_length)
+static int prv_switch_sockets(void *this, device_connection_t *connection)
 {
-    socklen_t size;
-    struct sockaddr_storage local_address;
-    char service[16];
-    int port;
+    secure_connection_context_t *context = (secure_connection_context_t *)this;
 
-    if (connect(*local_socket, (struct sockaddr *)client_address, sizeof(struct sockaddr_storage)))
+    if (connect(context->listen_socket, (struct sockaddr *)&connection->addr,
+                sizeof(struct sockaddr_storage)))
     {
         return -1;
     }
 
-    *client_socket = *local_socket;
-
-    size = sizeof(struct sockaddr_storage);
-    if (getsockname(*client_socket, (struct sockaddr *)&local_address, &size))
-    {
-        return -1;
-    }
-
-    if (getnameinfo((struct sockaddr *)&local_address, size, NULL, 0, service, sizeof(service),
-                    NI_NUMERICSERV))
-    {
-        return -1;
-    }
-    port = atoi(service);
-
-    *local_socket = prv_new_socket(NULL, port, local_address.ss_family);
+    connection->sock = context->listen_socket;
+    context->listen_socket = prv_new_socket(this);
 
     return 0;
 }
 
-static int prv_cookie_negotiate(device_connection_t *connection, gnutls_dtls_prestate_st *prestate)
+static int prv_cookie_negotiate(void *this, device_connection_t *connection,
+                                gnutls_dtls_prestate_st *prestate)
 {
+    secure_connection_context_t *context = (secure_connection_context_t *)this;
     int ret;
     char buffer[BUFFER_SIZE];
 
@@ -142,7 +130,8 @@ static int prv_cookie_negotiate(device_connection_t *connection, gnutls_dtls_pre
         {
             memset(prestate, 0, sizeof(gnutls_dtls_prestate_st));
 
-            ret = gnutls_dtls_cookie_verify(&cookie_key, &connection->addr, sizeof(connection->addr), buffer,
+            ret = gnutls_dtls_cookie_verify(&context->cookie_key, &connection->addr, sizeof(connection->addr),
+                                            buffer,
                                             ret, prestate);
             if (ret == 0)
             {
@@ -150,7 +139,7 @@ static int prv_cookie_negotiate(device_connection_t *connection, gnutls_dtls_pre
             }
             else
             {
-                gnutls_dtls_cookie_send(&cookie_key, &connection->addr, sizeof(connection->addr), prestate,
+                gnutls_dtls_cookie_send(&context->cookie_key, &connection->addr, sizeof(connection->addr), prestate,
                                         connection, prv_net_send);
             }
         }
@@ -163,23 +152,25 @@ static int prv_cookie_negotiate(device_connection_t *connection, gnutls_dtls_pre
     return -1;
 }
 
-static int prv_connection_init(device_connection_t *connection, gnutls_dtls_prestate_st *prestate)
+static int prv_connection_init(void *this, device_connection_t *connection,
+                               gnutls_dtls_prestate_st *prestate)
 {
+    secure_connection_context_t *context = (secure_connection_context_t *)this;
     int ret = -1;
 
     if (gnutls_init(&connection->session, GNUTLS_SERVER | GNUTLS_DATAGRAM))
     {
         goto exit;
     }
-    if (gnutls_credentials_set(connection->session, GNUTLS_CRD_PSK, server_psk))
+    if (gnutls_credentials_set(connection->session, GNUTLS_CRD_PSK, context->server_psk))
     {
         goto exit;
     }
-    if (gnutls_credentials_set(connection->session, GNUTLS_CRD_CERTIFICATE, server_cert))
+    if (gnutls_credentials_set(connection->session, GNUTLS_CRD_CERTIFICATE, context->server_cert))
     {
         goto exit;
     }
-    if (gnutls_priority_set(connection->session, priority_cache))
+    if (gnutls_priority_set(connection->session, context->priority_cache))
     {
         goto exit;
     }
@@ -197,67 +188,10 @@ exit:
     return ret;
 }
 
-int connection_create_secure(settings_t *options, int address_family, void *context)
+static device_connection_t *connection_new_incoming(void *this)
 {
-    int ret = -1;
-
-    if (gnutls_global_init())
-    {
-        goto exit;
-    }
-
-    if (options->coap.certificate_file)
-    {
-        if (gnutls_certificate_allocate_credentials(&server_cert) != GNUTLS_E_SUCCESS)
-        {
-            goto exit;
-        }
-        if (gnutls_certificate_set_x509_trust_file(server_cert, options->coap.certificate_file,
-                                                   GNUTLS_X509_FMT_PEM) == 0)
-        {
-            goto exit;
-        }
-        if (gnutls_certificate_set_x509_key_file(server_cert, options->coap.certificate_file,
-                                                 options->coap.private_key_file, GNUTLS_X509_FMT_PEM))
-        {
-            goto exit;
-        }
-    }
-
-    if (gnutls_priority_init(&priority_cache, "NORMAL:+VERS-DTLS1.2:+AES-128-CCM-8:+PSK:+ECDHE-ECDSA",
-                             NULL) != GNUTLS_E_SUCCESS)
-    {
-        goto exit;
-    }
-    if (gnutls_key_generate(&cookie_key, GNUTLS_COOKIE_KEY_SIZE) != GNUTLS_E_SUCCESS)
-    {
-        goto exit;
-    }
-    if (gnutls_psk_allocate_server_credentials(&server_psk) != GNUTLS_E_SUCCESS)
-    {
-        goto exit;
-    }
-
-    gnutls_psk_set_server_credentials_function(server_psk, psk_callback);
-    set_psk_callback_context(context);
-
-    listen_socket = prv_new_socket(NULL, options->coap.port, address_family);
-    ret = listen_socket;
-
-exit:
-    if (ret <= 0)
-    {
-        gnutls_certificate_free_credentials(server_cert);
-        gnutls_priority_deinit(priority_cache);
-        gnutls_psk_free_server_credentials(server_psk);
-    }
-    return ret;
-}
-
-static device_connection_t *connection_new_incoming(int *sock)
-{
-    int ret, port;
-    char service[16];
+    secure_connection_context_t *context = (secure_connection_context_t *)this;
+    int ret;
     const char *err_str;
     gnutls_dtls_prestate_st prestate;
     device_connection_t *conn;
@@ -267,25 +201,21 @@ static device_connection_t *connection_new_incoming(int *sock)
     {
         return NULL;
     }
-    conn->sock = *sock;
+    conn->sock = context->listen_socket;
 
-    if (prv_cookie_negotiate(conn, &prestate) == 0)
+    if (prv_cookie_negotiate(this, conn, &prestate) == 0)
     {
 //      the current socket will be taken over by the client connection and a new one created for listening for incoming connections
-        if (prv_switch_sockets(sock, &conn->sock, &conn->addr, conn->addr_size))
+        if (prv_switch_sockets(this, conn))
         {
-            getnameinfo((struct sockaddr *)&conn->addr, conn->addr_size, NULL, 0, service, sizeof(service),
-                        NI_NUMERICSERV);
-            port = atoi(service);
-
-            *sock = prv_new_socket(NULL, port, conn->addr.ss_family);
+            context->listen_socket = prv_new_socket(this);
 
             close(conn->sock);
             free(conn);
             return NULL;
         }
 
-        if (prv_connection_init(conn, &prestate))
+        if (prv_connection_init(this, conn, &prestate))
         {
             close(conn->sock);
             free(conn);
@@ -317,15 +247,102 @@ static device_connection_t *connection_new_incoming(int *sock)
     return conn;
 }
 
-int connection_step_secure(void *context, struct timeval *tv)
+int dtls_connection_api_init(connection_api_t **conn_api, int port, int address_family,
+                             const char *certificate_file, const char *private_key_file, void *data)
 {
-    uint8_t buffer[BUFFER_SIZE];
+    secure_connection_context_t *context;
+    context = calloc(1, sizeof(secure_connection_context_t));
+    if (context == NULL)
+    {
+        return -1;
+    }
+
+    context->port = port;
+    context->address_family = address_family;
+    context->certificate_file = certificate_file;
+    context->private_key_file = private_key_file;
+    context->data = data;
+
+    context->api.f_start = connection_start_secure;
+    context->api.f_receive = connection_receive_secure;
+    context->api.f_send = connection_send_secure;
+    context->api.f_close = connection_close_secure;
+    context->api.f_stop = connection_stop_secure;
+    *conn_api = &context->api;
+
+    return 0;
+}
+
+int connection_start_secure(void *this)
+{
+    secure_connection_context_t *context = (secure_connection_context_t *)this;
+    int ret = -1;
+
+    if (gnutls_global_init())
+    {
+        goto exit;
+    }
+
+    if (context->certificate_file)
+    {
+        if (gnutls_certificate_allocate_credentials(&context->server_cert) != GNUTLS_E_SUCCESS)
+        {
+            goto exit;
+        }
+        if (gnutls_certificate_set_x509_trust_file(context->server_cert, context->certificate_file,
+                                                   GNUTLS_X509_FMT_PEM) == 0)
+        {
+            goto exit;
+        }
+        if (gnutls_certificate_set_x509_key_file(context->server_cert, context->certificate_file,
+                                                 context->private_key_file, GNUTLS_X509_FMT_PEM))
+        {
+            goto exit;
+        }
+    }
+
+    if (gnutls_priority_init(&context->priority_cache,
+                             "NORMAL:+VERS-DTLS1.2:+AES-128-CCM-8:+PSK:+ECDHE-ECDSA",
+                             NULL) != GNUTLS_E_SUCCESS)
+    {
+        goto exit;
+    }
+    if (gnutls_key_generate(&context->cookie_key, GNUTLS_COOKIE_KEY_SIZE) != GNUTLS_E_SUCCESS)
+    {
+        goto exit;
+    }
+    if (gnutls_psk_allocate_server_credentials(&context->server_psk) != GNUTLS_E_SUCCESS)
+    {
+        goto exit;
+    }
+
+    gnutls_psk_set_server_credentials_function(context->server_psk, psk_callback);
+    set_psk_callback_data(context->data);
+
+    context->listen_socket = prv_new_socket(this);
+    ret = context->listen_socket;
+
+exit:
+    if (ret <= 0)
+    {
+        gnutls_certificate_free_credentials(context->server_cert);
+        gnutls_priority_deinit(context->priority_cache);
+        gnutls_psk_free_server_credentials(context->server_psk);
+    }
+    return ret;
+}
+
+int connection_receive_secure(void *this, uint8_t *buffer, size_t size, void **connection,
+                              struct timeval *tv)
+{
+    secure_connection_context_t *context = (secure_connection_context_t *)this;
     int ret, nfds = 0;
     fd_set read_fds;
-    device_connection_t *conn_curr = connection_list;
+    device_connection_t *conn_curr = context->connection_list;
 
     FD_ZERO(&read_fds);
 
+//  set active file descriptors and calculate required nfds
     while (conn_curr != NULL)
     {
         FD_SET(conn_curr->sock, &read_fds);
@@ -336,10 +353,10 @@ int connection_step_secure(void *context, struct timeval *tv)
         conn_curr = conn_curr->next;
     }
 
-    FD_SET(listen_socket, &read_fds);
-    if (listen_socket >= nfds)
+    FD_SET(context->listen_socket, &read_fds);
+    if (context->listen_socket >= nfds)
     {
-        nfds = listen_socket + 1;
+        nfds = context->listen_socket + 1;
     }
 
     ret = select(nfds, &read_fds, NULL, NULL, tv);
@@ -348,56 +365,54 @@ int connection_step_secure(void *context, struct timeval *tv)
         return ret;
     }
 
-    conn_curr = connection_list;
+    conn_curr = context->connection_list;
     while (conn_curr != NULL)
     {
         if (FD_ISSET(conn_curr->sock, &read_fds))
         {
+            *connection = conn_curr;
             conn_curr->addr_size = sizeof(conn_curr->addr);
-            ret = recvfrom(conn_curr->sock, buffer, sizeof(buffer), MSG_PEEK,
+            ret = recvfrom(conn_curr->sock, buffer, size, MSG_PEEK,
                            (struct sockaddr *)&conn_curr->addr, &conn_curr->addr_size);
-            ret = gnutls_record_recv(conn_curr->session, buffer, ret);
-            if (ret > 0)
-            {
-                lwm2m_handle_packet(context, buffer, ret, conn_curr);
-            }
+            return gnutls_record_recv(conn_curr->session, buffer, ret);
         }
         conn_curr = conn_curr->next;
     }
 
-    if (FD_ISSET(listen_socket, &read_fds))
+    if (FD_ISSET(context->listen_socket, &read_fds))
     {
-        device_connection_t *conn_new = connection_new_incoming(&listen_socket);
+        device_connection_t *conn_new = connection_new_incoming(this);
         if (conn_new == NULL)
         {
             log_message(LOG_LEVEL_WARN, "Failed to connect to device\n");
             return -1;
         }
 
-        conn_new->next = connection_list;
-        connection_list = conn_new;
+        conn_new->next = context->connection_list;
+        context->connection_list = conn_new;
     }
 
     return 0;
 }
 
-int connection_free_secure(void *connection)
+int connection_close_secure(void *this, void *connection)
 {
+    secure_connection_context_t *context = (secure_connection_context_t *)this;
     device_connection_t *conn = (device_connection_t *)connection;
     int ret;
 
-    if (connection_list == NULL)
+    if (context->connection_list == NULL)
     {
         return 0;
     }
 
-    if (conn == connection_list)
+    if (conn == context->connection_list)
     {
-        connection_list = conn->next;
+        context->connection_list = conn->next;
         goto free;
     }
 
-    device_connection_t *conn_curr = connection_list;
+    device_connection_t *conn_curr = context->connection_list;
     do
     {
         if (conn_curr->next == conn)
@@ -425,9 +440,36 @@ free:
     return 0;
 }
 
-int connection_send_secure(void *connection, uint8_t *buffer, size_t length)
+int connection_send_secure(void *this, void *connection, uint8_t *buffer, size_t length)
 {
     device_connection_t *conn = (device_connection_t *)connection;
 
     return gnutls_record_send(conn->session, buffer, length);
+}
+
+int connection_stop_secure(void *this)
+{
+    secure_connection_context_t *context = (secure_connection_context_t *)this;
+    device_connection_t *curr, *next;
+
+    curr = context->connection_list;
+    while (curr != NULL)
+    {
+        next = curr->next;
+        if (connection_close_secure(this, curr))
+        {
+            log_message(LOG_LEVEL_ERROR, "Failed to deinit session with client\n");
+        }
+        curr = next;
+    }
+
+    gnutls_certificate_free_credentials(context->server_cert);
+    gnutls_priority_deinit(context->priority_cache);
+    gnutls_psk_free_server_credentials(context->server_psk);
+    gnutls_global_deinit();
+
+    close(context->listen_socket);
+    free(context);
+
+    return 0;
 }

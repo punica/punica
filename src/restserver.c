@@ -36,8 +36,6 @@
 #include "rest-list.h"
 #include "rest-authentication.h"
 
-static connection_api_t conn_api;
-
 static volatile int restserver_quit;
 static void sigint_handler(int signo)
 {
@@ -92,27 +90,20 @@ static void init_signals(void)
     }
 }
 
-static int prv_api_init(connection_api_t *conn_api, uint16_t security_mode)
+static int api_init(connection_api_t **conn_api, coap_settings_t *coap, void *data)
 {
-    if (security_mode == PUNICA_COAP_MODE_INSECURE)
+    if (coap->security_mode == PUNICA_COAP_MODE_INSECURE)
     {
-        conn_api->f_socket = connection_create;
-        conn_api->f_step = connection_step;
-        conn_api->f_send = connection_send;
-        conn_api->f_free = connection_free;
-        return 0;
+        return udp_connection_api_init(conn_api, coap->port, AF_INET6);
     }
-    else if (security_mode == PUNICA_COAP_MODE_SECURE)
+    else if (coap->security_mode == PUNICA_COAP_MODE_SECURE)
     {
-        conn_api->f_socket = connection_create_secure;
-        conn_api->f_step = connection_step_secure;
-        conn_api->f_send = connection_send_secure;
-        conn_api->f_free = connection_free_secure;
-        return 0;
+        return dtls_connection_api_init(conn_api, coap->port, AF_INET6, coap->certificate_file,
+                                        coap->private_key_file, data);
     }
     else
     {
-        log_message(LOG_LEVEL_FATAL, "Found unsupported CoAP security mode: %d\n", security_mode);
+        log_message(LOG_LEVEL_FATAL, "Found unsupported CoAP security mode: %d\n", coap->security_mode);
         return -1;
     }
 }
@@ -152,6 +143,7 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
 {
     rest_context_t *rest = (rest_context_t *)userData;
     lwm2m_context_t *lwm2m = rest->lwm2m;
+    connection_api_t *conn_api = (connection_api_t *)lwm2m->userData;
     lwm2m_client_t *client;
     lwm2m_client_object_t *obj;
     lwm2m_list_t *ins;
@@ -230,7 +222,7 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
             log_message(LOG_LEVEL_ERROR, "[MONITOR] Failed to allocate deregistration notification!\n");
         }
 
-        if (conn_api.f_free(client->sessionH))
+        if (conn_api->f_close(conn_api, client->sessionH))
         {
             log_message(LOG_LEVEL_ERROR, "[MONITOR] Failed to deregister client %d.\n", clientID);
         }
@@ -252,6 +244,9 @@ int main(int argc, char *argv[])
     struct timeval tv;
     int res;
     rest_context_t rest;
+    connection_api_t *conn_api;
+    uint8_t buffer[1500];
+    void *connection;
 
     static settings_t settings =
     {
@@ -303,7 +298,7 @@ int main(int argc, char *argv[])
 
     rest_init(&rest, &settings);
 
-    if (prv_api_init(&conn_api, settings.coap.security_mode) != 0)
+    if (api_init(&conn_api, &settings.coap, (void *)rest.devicesList) != 0)
     {
         return -1;
     }
@@ -311,7 +306,7 @@ int main(int argc, char *argv[])
     /* Socket section */
     log_message(LOG_LEVEL_INFO, "Creating coap socket on port %d\n", settings.coap.port);
 
-    res = conn_api.f_socket(&settings, AF_INET6, (void *)rest.devicesList);
+    res = conn_api->f_start(conn_api);
     if (res < 0)
     {
         log_message(LOG_LEVEL_FATAL, "Failed to create socket!\n");
@@ -326,7 +321,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    rest.lwm2m->userData = &conn_api;
+    rest.lwm2m->userData = conn_api;
 
     lwm2m_set_monitoring_callback(rest.lwm2m, client_monitor_cb, &rest);
 
@@ -457,20 +452,25 @@ int main(int argc, char *argv[])
         }
         rest_unlock(&rest);
 
-        res = conn_api.f_step(rest.lwm2m, &tv);
-        if (res)
+        res = conn_api->f_receive(conn_api, buffer, sizeof(buffer), &connection, &tv);
+        if (res < 0)
         {
             if (errno == EINTR)
             {
                 continue;
             }
-            log_message(LOG_LEVEL_ERROR, "conn_api.f_step() error: %d\n", res);
+            log_message(LOG_LEVEL_ERROR, "conn_api->f_receive() error: %d\n", res);
+        }
+        else if (res)
+        {
+            lwm2m_handle_packet(rest.lwm2m, buffer, res, connection);
         }
     }
 
     ulfius_stop_framework(&instance);
     ulfius_clean_instance(&instance);
 
+    conn_api->f_stop(conn_api);
     lwm2m_close(rest.lwm2m);
     rest_cleanup(&rest);
 

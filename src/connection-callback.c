@@ -17,19 +17,19 @@
  *
  */
 
-#include "restserver.h"
 #include "connection-secure.h"
+#include "restserver.h"
 
-static void *psk_context;
+static void *psk_list;
 
-void set_psk_callback_context(void *context)
+void set_psk_callback_data(void *data)
 {
-    psk_context = context;
+    psk_list = data;
 }
 
 int psk_callback(gnutls_session_t session, const char *username, gnutls_datum_t *key)
 {
-    rest_list_t *device_list = psk_context;
+    rest_list_t *device_list = psk_list;
     database_entry_t *device_data;
     rest_list_entry_t *device_entry;
 
@@ -53,19 +53,19 @@ int psk_callback(gnutls_session_t session, const char *username, gnutls_datum_t 
     return -1;
 }
 
-uint8_t lwm2m_buffer_send(void *sessionH, uint8_t *buffer, size_t length, void *userData)
+uint8_t lwm2m_buffer_send(void *session, uint8_t *buffer, size_t length, void *user_data)
 {
-    connection_api_t *connApi = (connection_api_t *)userData;
+    connection_api_t *conn_api = (connection_api_t *)user_data;
 
-    if (sessionH == NULL)
+    if (session == NULL)
     {
-        fprintf(stderr, "#> failed sending %lu bytes, missing connection\r\n", length);
+        log_message(LOG_LEVEL_ERROR, "Failed sending %lu bytes, missing connection\n", length);
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
-    if (connApi->f_send(sessionH, buffer, length) < 0)
+    if (conn_api->f_send(conn_api, session, buffer, length) < 0)
     {
-        fprintf(stderr, "#> failed sending %lu bytes\r\n", length);
+        log_message(LOG_LEVEL_ERROR, "Failed sending %lu bytes\n", length);
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
@@ -118,7 +118,6 @@ int lwm2m_client_validate(char *name, void *session)
 
     if (strcmp(name, common_name) == 0)
     {
-        printf("IS OK!!\r\n");
         return 0;
     }
 

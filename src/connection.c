@@ -17,105 +17,126 @@
  *
  */
 
+#include "connection.h"
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include <liblwm2m.h>
-#include "connection.h"
 #include "logging.h"
 
-static int sock = -1;
-static connection_t *connectionList = NULL;
-
-static connection_t *connection_find(connection_t *connList,
-                                     struct sockaddr_storage *addr,
-                                     size_t addrLen)
+typedef struct connection_context_t
 {
-    connection_t *connP;
+    connection_api_t api;
+    connection_t *connection_list;
+    int port;
+    int address_family;
+    int listen_socket;
+} connection_context_t;
 
-    connP = connList;
-    while (connP != NULL)
+static connection_t *connection_find(void *this, struct sockaddr_storage *addr, size_t addr_len)
+{
+    connection_context_t *context = (connection_context_t *)this;
+    connection_t *conn_curr;
+
+    conn_curr = context->connection_list;
+    while (conn_curr != NULL)
     {
-        if ((connP->addrLen == addrLen)
-            && (memcmp(&(connP->addr), addr, addrLen) == 0))
+        if ((conn_curr->addr_len == addr_len) && (memcmp(&(conn_curr->addr), addr, addr_len) == 0))
         {
-            return connP;
+            return conn_curr;
         }
-        connP = connP->next;
+        conn_curr = conn_curr->next;
     }
 
-    return connP;
+    return NULL;
 }
 
-static connection_t *connection_new_incoming(connection_t *connList,
-                                             struct sockaddr *addr,
-                                             size_t addrLen)
+static connection_t *connection_new_incoming(void *this, struct sockaddr *addr, size_t addr_len)
 {
-    connection_t *connP;
+    connection_context_t *context = (connection_context_t *)this;
+    connection_t *conn;
 
-    connP = (connection_t *)malloc(sizeof(connection_t));
-    if (connP != NULL)
+    conn = (connection_t *)malloc(sizeof(connection_t));
+    if (conn != NULL)
     {
-        connP->sock = sock;
-        memcpy(&(connP->addr), addr, addrLen);
-        connP->addrLen = addrLen;
-        connP->next = connList;
+        conn->sock = context->listen_socket;
+        memcpy(&(conn->addr), addr, addr_len);
+        conn->addr_len = addr_len;
+        conn->next = context->connection_list;
     }
 
-    return connP;
+    return conn;
 }
 
-static int socket_receive(void *ctx)
+static int socket_receive(void *this, uint8_t *buffer, size_t size, void **connection)
 {
-    int nbytes;
-    uint8_t buf[1500];
+    connection_context_t *context = (connection_context_t *)this;
+    int ret;
+    connection_t *conn;
     struct sockaddr_storage addr;
-    socklen_t addrLen = sizeof(addr);
-    connection_t *con;
+    socklen_t addr_len = sizeof(addr);
 
-    memset(buf, 0, sizeof(buf));
+    ret = recvfrom(context->listen_socket, buffer, size, 0, (struct sockaddr *)&addr, &addr_len);
 
-    nbytes = recvfrom(sock, buf, sizeof(buf), 0, (struct sockaddr *)&addr, &addrLen);
-
-    if (nbytes < 0)
+    if (ret < 0)
     {
-        log_message(LOG_LEVEL_FATAL, "recvfrom() error: %d\n", nbytes);
+        log_message(LOG_LEVEL_FATAL, "recvfrom() error: %d\n", ret);
         return -1;
     }
 
-    con = connection_find(connectionList, &addr, addrLen);
-    if (con == NULL)
+    conn = connection_find(this, &addr, addr_len);
+    if (conn == NULL)
     {
-        con = connection_new_incoming(connectionList, (struct sockaddr *)&addr, addrLen);
-        if (con)
+        conn = connection_new_incoming(this, (struct sockaddr *)&addr, addr_len);
+        if (conn)
         {
-            connectionList = con;
+            context->connection_list = conn;
         }
     }
 
-    if (con)
+    *connection = conn;
+    return ret;
+}
+
+int udp_connection_api_init(connection_api_t **conn_api, int port, int address_family)
+{
+    connection_context_t *context;
+    context = calloc(1, sizeof(connection_context_t));
+    if (context == NULL)
     {
-        lwm2m_handle_packet(ctx, buf, nbytes, con);
+        return -1;
     }
+
+    context->port = port;
+    context->address_family = address_family;
+
+    context->api.f_start = connection_start;
+    context->api.f_receive = connection_receive;
+    context->api.f_send = connection_send;
+    context->api.f_close = connection_close;
+    context->api.f_stop = connection_stop;
+    *conn_api = &context->api;
 
     return 0;
 }
 
-int connection_create(settings_t *options, int addressFamily, void *context)
+int connection_start(void *this)
 {
+    connection_context_t *context = (connection_context_t *)this;
     struct addrinfo hints;
     struct addrinfo *res;
     struct addrinfo *p;
+    char port_string[20];
+    int sock = -1;
 
-    char portStr[20];
-    sprintf(portStr, "%d", options->coap.port);
+    sprintf(port_string, "%d", context->port);
 
     memset(&hints, 0, sizeof hints);
-    hints.ai_family = addressFamily;
+    hints.ai_family = context->address_family;
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_flags = AI_PASSIVE;
 
-    if (0 != getaddrinfo(NULL, portStr, &hints, &res))
+    if (0 != getaddrinfo(NULL, port_string, &hints, &res))
     {
         return -1;
     }
@@ -134,41 +155,43 @@ int connection_create(settings_t *options, int addressFamily, void *context)
     }
 
     freeaddrinfo(res);
+    context->listen_socket = sock;
 
     return sock;
 }
 
-int connection_free(void *fromSessionH)
+int connection_close(void *this, void *connection)
 {
-    connection_t *connP = (connection_t *)fromSessionH;
-    connection_t *connCurr = connectionList;
+    connection_context_t *context = (connection_context_t *)this;
+    connection_t *conn = (connection_t *)connection;
+    connection_t *conn_curr = context->connection_list;
     connection_t *next;
 
-    if (connectionList == NULL)
+    if (conn_curr == NULL)
     {
         return 0;
     }
-    else if (connP == connectionList)
+    else if (conn == conn_curr)
     {
-        next = connectionList->next;
-        free(connP);
-        connectionList = next;
+        next = conn_curr->next;
+        free(conn);
+        context->connection_list = next;
         return 0;
     }
 
-    while (connCurr->next != connP)
+    while (conn_curr->next != conn)
     {
-        connCurr = connCurr->next;
+        conn_curr = conn_curr->next;
     }
 
-    connCurr->next = connP->next;
-    free(connP);
+    conn_curr->next = conn->next;
+    free(conn);
     return 0;
 }
 
-int connection_send(void *sessionH, uint8_t *buffer, size_t length)
+int connection_send(void *this, void *connection, uint8_t *buffer, size_t length)
 {
-    connection_t *connP = (connection_t *)sessionH;
+    connection_t *conn = (connection_t *)connection;
     int nbSent;
     size_t offset;
 
@@ -178,15 +201,15 @@ int connection_send(void *sessionH, uint8_t *buffer, size_t length)
 
     s[0] = 0;
 
-    if (AF_INET == connP->addr.sin6_family)
+    if (AF_INET == conn->addr.sin6_family)
     {
-        struct sockaddr_in *saddr = (struct sockaddr_in *)&connP->addr;
+        struct sockaddr_in *saddr = (struct sockaddr_in *)&conn->addr;
         inet_ntop(saddr->sin_family, &saddr->sin_addr, s, INET6_ADDRSTRLEN);
         port = saddr->sin_port;
     }
-    else if (AF_INET6 == connP->addr.sin6_family)
+    else if (AF_INET6 == conn->addr.sin6_family)
     {
-        struct sockaddr_in6 *saddr = (struct sockaddr_in6 *)&connP->addr;
+        struct sockaddr_in6 *saddr = (struct sockaddr_in6 *)&conn->addr;
         inet_ntop(saddr->sin6_family, &saddr->sin6_addr, s, INET6_ADDRSTRLEN);
         port = saddr->sin6_port;
     }
@@ -197,34 +220,53 @@ int connection_send(void *sessionH, uint8_t *buffer, size_t length)
     offset = 0;
     while (offset != length)
     {
-        nbSent = sendto(connP->sock, buffer + offset, length - offset, 0,
-                        (struct sockaddr *) & (connP->addr), connP->addrLen);
+        nbSent = sendto(conn->sock, buffer + offset, length - offset, 0,
+                        (struct sockaddr *) & (conn->addr), conn->addr_len);
         if (nbSent == -1) { return -1; }
         offset += nbSent;
     }
     return 0;
 }
 
-int connection_step(void *ctx, struct timeval *tv)
+int connection_receive(void *this, uint8_t *buffer, size_t size, void **connection,
+                       struct timeval *tv)
 {
+    connection_context_t *context = (connection_context_t *)this;
     int res;
     fd_set readfds;
 
     FD_ZERO(&readfds);
-    FD_SET(sock, &readfds);
+    FD_SET(context->listen_socket, &readfds);
 
-//  TODO: should change FD_SETSIZE to a calculated value for optimization
-    res = select(FD_SETSIZE, &readfds, NULL, NULL, tv);
+    res = select(context->listen_socket + 1, &readfds, NULL, NULL, tv);
     if (res < 0)
     {
         return res;
     }
 
-    if (FD_ISSET(sock, &readfds))
+    if (FD_ISSET(context->listen_socket, &readfds))
     {
-//      rest_lock() already locked before calling connection_step()
-        return socket_receive(ctx);
+        return socket_receive(this, buffer, size, connection);
     }
+
+    return 0;
+}
+
+int connection_stop(void *this)
+{
+    connection_context_t *context = (connection_context_t *)this;
+    connection_t *curr, *next;
+
+    curr = context->connection_list;
+    while (curr != NULL)
+    {
+        next = curr->next;
+        connection_close(this, curr);
+        curr = next;
+    }
+
+    close(context->listen_socket);
+    free(context);
 
     return 0;
 }

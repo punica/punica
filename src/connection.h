@@ -20,15 +20,15 @@
 #ifndef CONNECTION_H_
 #define CONNECTION_H_
 
-#include <stdio.h>
-#include <unistd.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <netinet/in.h>
+#include <stdio.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <liblwm2m.h>
-
+#include "restserver.h"
 #include "settings.h"
 
 typedef struct _connection_t
@@ -36,14 +36,19 @@ typedef struct _connection_t
     struct _connection_t   *next;
     int                     sock;
     struct sockaddr_in6     addr;
-    size_t                  addrLen;
+    size_t                  addr_len;
 } connection_t;
 
-int connection_create(settings_t *options, int addressFamily, void *context);
+int udp_connection_api_init(connection_api_t **api, int port, int address_family);
 
-int connection_free(void *connP);
+int connection_start(void *this);
 
-int connection_step(void *ctx, struct timeval *tv);
+int connection_close(void *this, void *connection);
 
-int connection_send(void *sessionH, uint8_t *buffer, size_t length);
+int connection_receive(void *this, uint8_t *buffer, size_t size, void **connection,
+                       struct timeval *tv);
+
+int connection_send(void *this, void *connection, uint8_t *buffer, size_t length);
+
+int connection_stop(void *this);
 #endif
