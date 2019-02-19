@@ -92,7 +92,8 @@ bool validate_callback(json_t *jcallback, punica_core_t *punica)
     test_request.check_server_certificate = 0;
     test_request.client_cert_file = o_strdup(punica->settings->http.security.certificate);
     test_request.client_key_file = o_strdup(punica->settings->http.security.private_key);
-    if ((punica->settings->http.security.certificate != NULL && test_request.client_cert_file == NULL) ||
+    if ((punica->settings->http.security.certificate != NULL &&
+         test_request.client_cert_file == NULL) ||
         (punica->settings->http.security.private_key != NULL && test_request.client_key_file == NULL))
     {
         log_message(LOG_LEVEL_ERROR, "[CALLBACK] Failed to set client security credentials\n");
