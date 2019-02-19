@@ -566,11 +566,20 @@ The code in this directory is licensed under the MIT license, however please not
   
 * **Error Response:**
 
-  * **Code:** 415 UNSUPPORTED MEDIA TYPE - user provided wrong content type <br />
-  
+  * **Code:** 400 BAD REQUEST - one of following:
+    - message body is not JSON object
+    - message body JSON object has invalid format, one of following:
+      - missing 'psk'
+      - missing 'psk_id'
+  <br />
+
   OR
-  
-  * **Code:** 400 BAD REQUEST - sent data was not a JSON object or is missing 'psk' and/or 'psk_id' keys <br />
+
+  * **Code:** 404 NOT FOUND - device not found in existing database. <br />
+
+  OR
+
+  * **Code:** 415 UNSUPPORTED MEDIA TYPE - user provided wrong content type <br />
 
 * **Sample Call:**
 

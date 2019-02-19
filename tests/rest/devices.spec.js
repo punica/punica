@@ -198,13 +198,13 @@ describe('Devices interface', () => {
         });
     });
 
-    it('should return 400 if \'uuid\' is non-existing', (done) => {
+    it('should return 404 if \'uuid\' is non-existing', (done) => {
       chai.request(server)
         .put('/devices/non-existing')
         .set('Content-Type', 'application/json')
         .send('{"psk":"cHNrMQ==","psk_id":"cHNraWQa"}')
         .end((err, res) => {
-          res.should.have.status(400);
+          res.should.have.status(404);
           done();
         });
     });
