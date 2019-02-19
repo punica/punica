@@ -20,18 +20,17 @@
 #include "connection-secure.h"
 #include "restserver.h"
 
-static void *psk_list;
-
-void set_psk_callback_data(void *data)
-{
-    psk_list = data;
-}
-
 int psk_callback(gnutls_session_t session, const char *username, gnutls_datum_t *key)
 {
-    rest_list_t *device_list = psk_list;
     database_entry_t *device_data;
     rest_list_entry_t *device_entry;
+    rest_list_t *device_list;
+
+    device_list = gnutls_session_get_ptr(session);
+    if (device_list == NULL)
+    {
+        return -1;
+    }
 
     for (device_entry = device_list->head; device_entry != NULL; device_entry = device_entry->next)
     {

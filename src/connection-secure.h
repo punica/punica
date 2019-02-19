@@ -47,8 +47,6 @@ typedef struct _device_connection_t
 
 int psk_callback(gnutls_session_t session, const char *username, gnutls_datum_t *key);
 
-void set_psk_callback_data(void *context);
-
 /*
  * Initialize a DTLS connection context
  *

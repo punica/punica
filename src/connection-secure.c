@@ -178,6 +178,7 @@ static int prv_connection_init(void *this, device_connection_t *connection,
     gnutls_certificate_server_set_request(connection->session, GNUTLS_CERT_REQUIRE);
     gnutls_dtls_prestate_set(connection->session, prestate);
     gnutls_transport_set_ptr(connection->session, (void *)((intptr_t)connection->sock));
+    gnutls_session_set_ptr(connection->session, context->data);
 
     ret = 0;
 exit:
@@ -317,7 +318,6 @@ int connection_start_secure(void *this)
     }
 
     gnutls_psk_set_server_credentials_function(context->server_psk, psk_callback);
-    set_psk_callback_data(context->data);
 
     context->listen_socket = prv_new_socket(this);
     ret = context->listen_socket;
