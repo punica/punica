@@ -25,7 +25,7 @@
 #include <linux/random.h>
 
 #include "logging.h"
-#include "restserver.h"
+#include "punica_core.h"
 
 typedef struct
 {

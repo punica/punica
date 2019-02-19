@@ -19,9 +19,8 @@
 
 #include <string.h>
 
-#include "restserver.h"
 #include "logging.h"
-
+#include "punica_core.h"
 
 typedef struct
 {

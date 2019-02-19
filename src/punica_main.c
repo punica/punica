@@ -17,23 +17,23 @@
  *
  */
 
-#include <sys/socket.h>
+#include <connection.h>
 #include <errno.h>
 #include <signal.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/socket.h>
 
 #include <liblwm2m.h>
 #include <ulfius.h>
 
-#include "connection.h"
-#include "restserver.h"
 #include "logging.h"
-#include "settings.h"
-#include "version.h"
-#include "security.h"
+#include "punica_core.h"
 #include "rest-list.h"
 #include "rest-authentication.h"
+#include "security.h"
+#include "settings.h"
+#include "version.h"
 
 static volatile int restserver_quit;
 static void sigint_handler(int signo)

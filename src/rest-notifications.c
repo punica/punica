@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include "logging.h"
-#include "restserver.h"
+#include "punica_core.h"
 
 bool valid_callback_url(const char *url)
 {

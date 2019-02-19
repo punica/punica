@@ -17,10 +17,10 @@
  *
  */
 
-#include "settings.h"
+#include "punica_core.h"
 #include "rest-core-types.h"
 #include "rest-list.h"
-#include "restserver.h"
+#include "settings.h"
 
 int database_load_file(rest_context_t *rest)
 {

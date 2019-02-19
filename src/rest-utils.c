@@ -16,12 +16,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  */
-#include <string.h>
-#include <uuid/uuid.h>
 
 #include "rest-utils.h"
 
-#include "restserver.h"
+#include <string.h>
+#include <uuid/uuid.h>
+
+#include "punica_core.h"
 
 #define DATABASE_UUID_KEY_BIT       0x1
 #define DATABASE_PSK_KEY_BIT        0x2

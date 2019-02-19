@@ -19,7 +19,7 @@
 
 #include <string.h>
 
-#include "restserver.h"
+#include "punica_core.h"
 #include "rest-list.h"
 #include "settings.h"
 
