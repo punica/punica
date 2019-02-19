@@ -3,7 +3,7 @@
 set(PUNICA_SOURCES_DIR ${CMAKE_CURRENT_LIST_DIR})
 
 set(PUNICA_SOURCES
-    ${CMAKE_CURRENT_LIST_DIR}/restserver.c
+    ${CMAKE_CURRENT_LIST_DIR}/punica_core.c
     ${CMAKE_CURRENT_LIST_DIR}/rest-core.c
     ${CMAKE_CURRENT_LIST_DIR}/rest-core-types.c
     ${CMAKE_CURRENT_LIST_DIR}/rest-endpoints.c
