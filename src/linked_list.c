@@ -17,13 +17,12 @@
  *
  */
 
-#include "rest-list.h"
+#include "linked_list.h"
 
 #include <assert.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-
 
 rest_list_t *rest_list_new(void)
 {

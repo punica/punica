@@ -27,9 +27,9 @@
 #include <liblwm2m.h>
 #include <ulfius.h>
 
+#include "linked_list.h"
 #include "logging.h"
 #include "punica_core.h"
-#include "rest-list.h"
 #include "rest-authentication.h"
 #include "security.h"
 #include "settings.h"

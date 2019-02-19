@@ -25,7 +25,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "rest-list.h"
+#include "linked_list.h"
 
 enum
 {

@@ -10,7 +10,7 @@ set(PUNICA_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/rest-resources.c
     ${CMAKE_CURRENT_LIST_DIR}/rest-notifications.c
     ${CMAKE_CURRENT_LIST_DIR}/rest-subscriptions.c
-    ${CMAKE_CURRENT_LIST_DIR}/rest-list.c
+    ${CMAKE_CURRENT_LIST_DIR}/linked_list.c
     ${CMAKE_CURRENT_LIST_DIR}/rest-utils.c
     ${CMAKE_CURRENT_LIST_DIR}/rest-authentication.c
     ${CMAKE_CURRENT_LIST_DIR}/rest-devices.c
