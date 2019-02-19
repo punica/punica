@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include "../punica_core.h"
+#include "rest_core.h"
 
 static json_t *endpoint_to_json(lwm2m_client_t *client)
 {
@@ -83,32 +84,12 @@ static json_t *endpoint_resources_to_json(lwm2m_client_t *client)
     return jobjects;
 }
 
-lwm2m_client_t *rest_endpoints_find_client(lwm2m_client_t *list, const char *name)
-{
-    lwm2m_client_t *client;
-
-    if (name == NULL)
-    {
-        return NULL;
-    }
-
-    for (client = list; client != NULL; client = client->next)
-    {
-        if (strcmp(client->name, name) == 0)
-        {
-            return client;
-        }
-    }
-
-    return NULL;
-}
-
 int rest_endpoints_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
     punica_core_t *punica = (punica_core_t *)context;
     lwm2m_client_t *client;
 
-    rest_lock(punica);
+    punica_lock(punica);
 
     json_t *jclients = json_array();
     for (client = punica->lwm2m->clientList; client != NULL; client = client->next)
@@ -119,7 +100,7 @@ int rest_endpoints_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *contex
     ulfius_set_json_body_response(resp, 200, jclients);
     json_decref(jclients);
 
-    rest_unlock(punica);
+    punica_unlock(punica);
 
     return U_CALLBACK_COMPLETE;
 }
@@ -131,9 +112,9 @@ int rest_endpoints_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
     const char *name = u_map_get(req->map_url, "name");
     json_t *jclient;
 
-    rest_lock(punica);
+    punica_lock(punica);
 
-    client = rest_endpoints_find_client(punica->lwm2m->clientList, name);
+    client = lwm2m_endpoints_find_client(punica->lwm2m->clientList, name);
 
     if (client == NULL)
     {
@@ -146,8 +127,7 @@ int rest_endpoints_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
         json_decref(jclient);
     }
 
-    rest_unlock(punica);
+    punica_unlock(punica);
 
     return U_CALLBACK_COMPLETE;
 }
-

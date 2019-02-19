@@ -31,6 +31,7 @@
 #include "logging.h"
 #include "punica_core.h"
 #include "rest/rest-authentication.h"
+#include "rest/rest_core.h"
 #include "security.h"
 #include "settings.h"
 #include "version.h"
@@ -142,7 +143,7 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
             if (regNotif != NULL)
             {
                 rest_notif_registration_set(regNotif, client->name);
-                rest_notify_registration(punica, regNotif);
+                rest_notify_registration(punica->rest, regNotif);
             }
             else
             {
@@ -158,7 +159,7 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
             if (updateNotif != NULL)
             {
                 rest_notif_update_set(updateNotif, client->name);
-                rest_notify_update(punica, updateNotif);
+                rest_notify_update(punica->rest, updateNotif);
             }
             else
             {
@@ -196,7 +197,7 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
         if (deregNotif != NULL)
         {
             rest_notif_deregistration_set(deregNotif, client->name);
-            rest_notify_deregistration(punica, deregNotif);
+            rest_notify_deregistration(punica->rest, deregNotif);
         }
         else
         {
@@ -303,7 +304,7 @@ int main(int argc, char *argv[])
 
     init_signals();
 
-    rest_init(&punica, &settings);
+    punica_initialize(&punica, &settings);
 
     /* Socket section */
     snprintf(coap_port, sizeof(coap_port), "%d", settings.coap.port);
@@ -441,19 +442,19 @@ int main(int argc, char *argv[])
         tv.tv_sec = 5;
         tv.tv_usec = 0;
 
-        rest_lock(&punica);
+        punica_lock(&punica);
         res = lwm2m_step(punica.lwm2m, &tv.tv_sec);
         if (res)
         {
             log_message(LOG_LEVEL_ERROR, "lwm2m_step() error: %d\n", res);
         }
 
-        res = rest_step(&punica, &tv);
+        res = rest_step(punica.rest, &tv, &punica.settings->http);
         if (res)
         {
             log_message(LOG_LEVEL_ERROR, "rest_step() error: %d\n", res);
         }
-        rest_unlock(&punica);
+        punica_unlock(&punica);
 
         res = select(FD_SETSIZE, &readfds, NULL, NULL, &tv);
         if (res < 0)
@@ -468,9 +469,9 @@ int main(int argc, char *argv[])
 
         if (FD_ISSET(sock, &readfds))
         {
-            rest_lock(&punica);
+            punica_lock(&punica);
             socket_receive(punica.lwm2m, sock);
-            rest_unlock(&punica);
+            punica_unlock(&punica);
         }
 
     }
@@ -479,7 +480,7 @@ int main(int argc, char *argv[])
     ulfius_clean_instance(&instance);
 
     lwm2m_close(punica.lwm2m);
-    rest_cleanup(&punica);
+    punica_terminate(&punica);
 
     jwt_cleanup(&settings.http.security.jwt);
 

@@ -19,10 +19,11 @@
 
 #include <string.h>
 
-#include "../http_codes.h"
 #include "../logging.h"
 #include "../security.h"
+#include "http_codes.h"
 #include "rest-authentication.h"
+#include "rest_core.h"
 
 static int validate_authentication_body(json_t *authentication_json)
 {

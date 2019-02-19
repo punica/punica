@@ -39,10 +39,10 @@ int database_load_file(punica_core_t *punica)
         goto exit;
     }
 
-    punica->devicesList = device_list;
+    punica->rest->devicesList = device_list;
     if (punica->settings->coap.database_file == NULL)
     {
-//      internal list created, nothing more to do here
+        // internal list created, nothing more to do here
         ret = 0;
         goto exit;
     }

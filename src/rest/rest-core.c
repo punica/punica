@@ -17,52 +17,47 @@
  *
  */
 
+#include "rest_core.h"
+
 #include <assert.h>
 #include <string.h>
 
-#include "../database.h"
+#include "../linked_list.h"
 #include "../logging.h"
-#include "../punica_core.h"
 
-void rest_init(punica_core_t *punica, settings_t *settings)
+void rest_initialize(rest_core_t *rest)
 {
-    memset(punica, 0, sizeof(punica_core_t));
+    memset(rest, 0, sizeof(rest_core_t));
 
-    punica->registrationList = linked_list_new();
-    punica->updateList = linked_list_new();
-    punica->deregistrationList = linked_list_new();
-    punica->timeoutList = linked_list_new();
-    punica->asyncResponseList = linked_list_new();
-    punica->pendingResponseList = linked_list_new();
-    punica->observeList = linked_list_new();
-    punica->settings = settings;
-
-    assert(pthread_mutex_init(&punica->mutex, NULL) == 0);
-
-    database_load_file(punica);
+    rest->registrationList = linked_list_new();
+    rest->updateList = linked_list_new();
+    rest->deregistrationList = linked_list_new();
+    rest->timeoutList = linked_list_new();
+    rest->asyncResponseList = linked_list_new();
+    rest->pendingResponseList = linked_list_new();
+    rest->observeList = linked_list_new();
 }
 
-void rest_cleanup(punica_core_t *punica)
+void rest_terminate(rest_core_t *rest)
 {
-    if (punica->callback)
+    if (rest->callback)
     {
-        json_decref(punica->callback);
-        punica->callback = NULL;
+        json_decref(rest->callback);
+        rest->callback = NULL;
     }
 
-    rest_notifications_clear(punica);
-    linked_list_delete(punica->registrationList);
-    linked_list_delete(punica->updateList);
-    linked_list_delete(punica->deregistrationList);
-    linked_list_delete(punica->timeoutList);
-    linked_list_delete(punica->asyncResponseList);
-    linked_list_delete(punica->pendingResponseList);
-    linked_list_delete(punica->observeList);
-
-    assert(pthread_mutex_destroy(&punica->mutex) == 0);
+    rest_notifications_clear(rest);
+    linked_list_delete(rest->registrationList);
+    linked_list_delete(rest->updateList);
+    linked_list_delete(rest->deregistrationList);
+    linked_list_delete(rest->timeoutList);
+    linked_list_delete(rest->asyncResponseList);
+    linked_list_delete(rest->pendingResponseList);
+    linked_list_delete(rest->observeList);
+    linked_list_delete(rest->observeList);
 }
 
-int rest_step(punica_core_t *punica, struct timeval *tv)
+int rest_step(rest_core_t *rest, struct timeval *tv, http_settings_t *settings)
 {
     ulfius_req_t request;
     ulfius_resp_t response;
@@ -73,14 +68,14 @@ int rest_step(punica_core_t *punica, struct timeval *tv)
     struct _u_map headers;
     int res;
 
-    if ((punica->registrationList->head != NULL
-         || punica->updateList->head != NULL
-         || punica->deregistrationList->head != NULL
-         || punica->asyncResponseList->head != NULL)
-        && punica->callback != NULL)
+    if ((rest->registrationList->head != NULL
+         || rest->updateList->head != NULL
+         || rest->deregistrationList->head != NULL
+         || rest->asyncResponseList->head != NULL)
+        && rest->callback != NULL)
     {
-        const char *url = json_string_value(json_object_get(punica->callback, "url"));
-        jheaders = json_object_get(punica->callback, "headers");
+        const char *url = json_string_value(json_object_get(rest->callback, "url"));
+        jheaders = json_object_get(rest->callback, "headers");
         u_map_init(&headers);
         json_object_foreach(jheaders, header, value)
         {
@@ -89,17 +84,17 @@ int rest_step(punica_core_t *punica, struct timeval *tv)
 
         log_message(LOG_LEVEL_INFO, "[CALLBACK] Sending to %s\n", url);
 
-        jbody = rest_notifications_json(punica);
+        jbody = rest_notifications_json(rest);
 
         ulfius_init_request(&request);
         request.http_verb = strdup("PUT");
         request.http_url = strdup(url);
         request.timeout = 20;
         request.check_server_certificate = 0;
-        request.client_cert_file = o_strdup(punica->settings->http.security.certificate);
-        request.client_key_file = o_strdup(punica->settings->http.security.private_key);
-        if ((punica->settings->http.security.certificate != NULL && request.client_cert_file == NULL) ||
-            (punica->settings->http.security.private_key != NULL && request.client_key_file == NULL))
+        request.client_cert_file = o_strdup(settings->security.certificate);
+        request.client_key_file = o_strdup(settings->security.private_key);
+        if ((settings->security.certificate != NULL && request.client_cert_file == NULL) ||
+            (settings->security.private_key != NULL && request.client_key_file == NULL))
         {
             log_message(LOG_LEVEL_ERROR, "[CALLBACK] Failed to set client security credentials\n");
 
@@ -119,7 +114,7 @@ int rest_step(punica_core_t *punica, struct timeval *tv)
         res = ulfius_send_http_request(&request, &response);
         if (res == U_OK)
         {
-            rest_notifications_clear(punica);
+            rest_notifications_clear(rest);
         }
 
         u_map_clean(&headers);
@@ -128,15 +123,5 @@ int rest_step(punica_core_t *punica, struct timeval *tv)
     }
 
     return 0;
-}
-
-void rest_lock(punica_core_t *punica)
-{
-    assert(pthread_mutex_lock(&punica->mutex) == 0);
-}
-
-void rest_unlock(punica_core_t *punica)
-{
-    assert(pthread_mutex_unlock(&punica->mutex) == 0);
 }
 

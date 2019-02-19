@@ -22,7 +22,7 @@
 #include <string.h>
 #include <uuid/uuid.h>
 
-#include "../punica_core.h"
+#include "rest_core.h"
 
 #define DATABASE_UUID_KEY_BIT       0x1
 #define DATABASE_PSK_KEY_BIT        0x2

@@ -19,9 +19,10 @@
 
 #include <string.h>
 
-#include "../punica_core.h"
 #include "../linked_list.h"
+#include "../punica_core.h"
 #include "../settings.h"
+#include "rest_core.h"
 
 static int rest_devices_update_list(linked_list_t *list, json_t *jdevice)
 {
@@ -131,13 +132,13 @@ static json_t *rest_devices_prepare_resp(database_entry_t *device_entry)
 int rest_devices_get_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
     punica_core_t *punica = (punica_core_t *)context;
-    linked_list_t *device_list = punica->devicesList;
+    linked_list_t *device_list = punica->rest->devicesList;
     database_entry_t *device_data;
     linked_list_entry_t *device_entry;
     json_t *j_devices = NULL;
     json_t *j_entry_object;
 
-    rest_lock(punica);
+    punica_lock(punica);
 
     j_devices = json_array();
     for (device_entry = device_list->head; device_entry != NULL; device_entry = device_entry->next)
@@ -157,7 +158,7 @@ int rest_devices_get_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     ulfius_set_json_body_response(resp, 200, j_devices);
 exit:
     json_decref(j_devices);
-    rest_unlock(punica);
+    punica_unlock(punica);
 
     return U_CALLBACK_COMPLETE;
 }
@@ -165,12 +166,12 @@ exit:
 int rest_devices_get_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
     punica_core_t *punica = (punica_core_t *)context;
-    linked_list_t *device_list = punica->devicesList;
+    linked_list_t *device_list = punica->rest->devicesList;
     database_entry_t *device_data;
     linked_list_entry_t *device_entry;
     json_t *j_entry_object = NULL;
 
-    rest_lock(punica);
+    punica_lock(punica);
 
     const char *id;
     id = u_map_get(req->map_url, "id");
@@ -200,7 +201,7 @@ int rest_devices_get_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void 
     ulfius_set_empty_body_response(resp, 404);
 exit:
     json_decref(j_entry_object);
-    rest_unlock(punica);
+    punica_unlock(punica);
 
     return U_CALLBACK_COMPLETE;
 }
@@ -213,7 +214,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
     json_t *j_post_resp;
     database_entry_t *device_entry;
 
-    rest_lock(punica);
+    punica_lock(punica);
 
     ct = u_map_get_case(req->map_header, "Content-Type");
     if (ct == NULL || strcmp(ct, "application/json") != 0)
@@ -241,14 +242,14 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         ulfius_set_empty_body_response(resp, 500);
         goto exit;
     }
-    linked_list_add(punica->devicesList, device_entry);
+    linked_list_add(punica->rest->devicesList, device_entry);
 
 //  if database file not specified then only save locally
     if (punica->settings->coap.database_file)
     {
         jdatabase_list = json_array();
 
-        if (database_prepare_array(jdatabase_list, punica->devicesList))
+        if (database_prepare_array(jdatabase_list, punica->rest->devicesList))
         {
             ulfius_set_empty_body_response(resp, 500);
             goto exit;
@@ -272,7 +273,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
 exit:
     json_decref(jdevice_list);
     json_decref(jdatabase_list);
-    rest_unlock(punica);
+    punica_unlock(punica);
 
     return U_CALLBACK_COMPLETE;
 }
@@ -282,7 +283,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     punica_core_t *punica = (punica_core_t *)context;
     json_t *jdevice = NULL, *jdatabase_list = NULL;
 
-    rest_lock(punica);
+    punica_lock(punica);
 
     const char *ct;
     ct = u_map_get_case(req->map_header, "Content-Type");
@@ -317,7 +318,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
 
     // if later stages fail, global list will be updated, but database file not
     // consider updating list at the end
-    if (rest_devices_update_list(punica->devicesList, jdevice))
+    if (rest_devices_update_list(punica->rest->devicesList, jdevice))
     {
         ulfius_set_empty_body_response(resp, 400);
         goto exit;
@@ -332,7 +333,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
 
     jdatabase_list = json_array();
 
-    if (database_prepare_array(jdatabase_list, punica->devicesList))
+    if (database_prepare_array(jdatabase_list, punica->rest->devicesList))
     {
         ulfius_set_empty_body_response(resp, 500);
         goto exit;
@@ -348,7 +349,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
 exit:
     json_decref(jdevice);
     json_decref(jdatabase_list);
-    rest_unlock(punica);
+    punica_unlock(punica);
 
     return U_CALLBACK_COMPLETE;
 }
@@ -358,7 +359,7 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
     punica_core_t *punica = (punica_core_t *)context;
     json_t *jdatabase_list = NULL;
 
-    rest_lock(punica);
+    punica_lock(punica);
 
     const char *id;
     id = u_map_get(req->map_url, "id");
@@ -368,7 +369,7 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
         goto exit;
     }
 
-    if (rest_devices_remove_list(punica->devicesList, id))
+    if (rest_devices_remove_list(punica->rest->devicesList, id))
     {
         //  device not found
         ulfius_set_empty_body_response(resp, 404);
@@ -383,7 +384,7 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
 
     jdatabase_list = json_array();
 
-    if (database_prepare_array(jdatabase_list, punica->devicesList))
+    if (database_prepare_array(jdatabase_list, punica->rest->devicesList))
     {
         ulfius_set_empty_body_response(resp, 500);
         goto exit;
@@ -398,7 +399,7 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
     ulfius_set_empty_body_response(resp, 200);
 exit:
     json_decref(jdatabase_list);
-    rest_unlock(punica);
+    punica_unlock(punica);
 
     return U_CALLBACK_COMPLETE;
 }

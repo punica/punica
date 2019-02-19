@@ -26,6 +26,7 @@
 
 #include "../logging.h"
 #include "../punica_core.h"
+#include "rest_core.h"
 
 typedef struct
 {
@@ -69,12 +70,12 @@ static void rest_async_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
     log_message(LOG_LEVEL_INFO, "[ASYNC-RESPONSE] id=%s status=%d\n",
                 ctx->response->id, coap_to_http_status(status));
 
-    linked_list_remove(ctx->punica->pendingResponseList, ctx->response);
+    linked_list_remove(ctx->punica->rest->pendingResponseList, ctx->response);
 
     err = rest_async_response_set(ctx->response, coap_to_http_status(status), data, dataLength);
     assert(err == 0);
 
-    rest_notify_async_response(ctx->punica, ctx->response);
+    rest_notify_async_response(ctx->punica->rest, ctx->response);
 
     // Free rest_async_context_t which was allocated in rest_resources_read_cb
     if (ctx->payload != NULL)
@@ -167,7 +168,7 @@ static int rest_resources_rwe_cb_unsafe(punica_core_t *punica,
 
     /* Find requested client */
     name = u_map_get(req->map_url, "name");
-    client = rest_endpoints_find_client(punica->lwm2m->clientList, name);
+    client = lwm2m_endpoints_find_client(punica->lwm2m->clientList, name);
     if (client == NULL)
     {
         ulfius_set_empty_body_response(resp, 410);
@@ -261,7 +262,7 @@ static int rest_resources_rwe_cb_unsafe(punica_core_t *punica,
     {
         goto exit;
     }
-    linked_list_add(punica->pendingResponseList, async_context->response);
+    linked_list_add(punica->rest->pendingResponseList, async_context->response);
 
     jresponse = json_object();
     json_object_set_new(jresponse, "async-response-id", json_string(async_context->response->id));
@@ -297,9 +298,9 @@ int rest_resources_rwe_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *co
     punica_core_t *punica = (punica_core_t *)context;
     int ret;
 
-    rest_lock(punica);
+    punica_lock(punica);
     ret = rest_resources_rwe_cb_unsafe(punica, req, resp);
-    rest_unlock(punica);
+    punica_unlock(punica);
 
     return ret;
 }

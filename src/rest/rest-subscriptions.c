@@ -21,6 +21,7 @@
 
 #include "../logging.h"
 #include "../punica_core.h"
+#include "rest_core.h"
 
 typedef struct
 {
@@ -50,7 +51,7 @@ static void rest_observe_cb(uint16_t clientID, lwm2m_uri_t *uriP, int count,
                             (data == NULL) ? coap_to_http_status(count) : HTTP_200_OK,
                             data, dataLength);
 
-    rest_notify_async_response(ctx->punica, response);
+    rest_notify_async_response(ctx->punica->rest, response);
 }
 
 static void rest_unobserve_cb(uint16_t clientID, lwm2m_uri_t *uriP, int count,
@@ -61,7 +62,7 @@ static void rest_unobserve_cb(uint16_t clientID, lwm2m_uri_t *uriP, int count,
 
     log_message(LOG_LEVEL_INFO, "[UNOBSERVE-RESPONSE] id=%s\n", ctx->response->id);
 
-    linked_list_remove(ctx->punica->observeList, ctx->response);
+    linked_list_remove(ctx->punica->rest->observeList, ctx->response);
 
     rest_async_response_delete(ctx->response);
     free(ctx);
@@ -92,7 +93,7 @@ static int rest_subscriptions_put_cb_unsafe(punica_core_t *punica,
 
     /* Find requested client */
     name = u_map_get(req->map_url, "name");
-    client = rest_endpoints_find_client(punica->lwm2m->clientList, name);
+    client = lwm2m_endpoints_find_client(punica->lwm2m->clientList, name);
     if (client == NULL)
     {
         ulfius_set_empty_body_response(resp, 404);
@@ -168,7 +169,7 @@ static int rest_subscriptions_put_cb_unsafe(punica_core_t *punica,
             goto exit;
         }
 
-        linked_list_add(punica->observeList, observe_context->response);
+        linked_list_add(punica->rest->observeList, observe_context->response);
     }
 
     jresponse = json_object();
@@ -199,9 +200,9 @@ int rest_subscriptions_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void
     punica_core_t *punica = (punica_core_t *)context;
     int ret;
 
-    rest_lock(punica);
+    punica_lock(punica);
     ret = rest_subscriptions_put_cb_unsafe(punica, req, resp);
-    rest_unlock(punica);
+    punica_unlock(punica);
 
     return ret;
 }
@@ -230,7 +231,7 @@ static int rest_subscriptions_delete_cb_unsafe(punica_core_t *punica,
 
     /* Find requested client */
     name = u_map_get(req->map_url, "name");
-    client = rest_endpoints_find_client(punica->lwm2m->clientList, name);
+    client = lwm2m_endpoints_find_client(punica->lwm2m->clientList, name);
     if (client == NULL)
     {
         ulfius_set_empty_body_response(resp, 404);
@@ -316,9 +317,9 @@ int rest_subscriptions_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, v
     punica_core_t *punica = (punica_core_t *)context;
     int ret;
 
-    rest_lock(punica);
+    punica_lock(punica);
     ret = rest_subscriptions_delete_cb_unsafe(punica, req, resp);
-    rest_unlock(punica);
+    punica_unlock(punica);
 
     return ret;
 }

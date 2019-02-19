@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include "../linked_list.h"
 #include "../settings.h"
 
 typedef struct
