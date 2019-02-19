@@ -436,7 +436,7 @@ int main(int argc, char *argv[])
     while (!restserver_quit)
     {
         tv.tv_sec = 5;
-        tv.tv_usec = tv.tv_sec * 1000;
+        tv.tv_usec = 0;
 
         rest_lock(&rest);
         res = lwm2m_step(rest.lwm2m, &tv.tv_sec);
