@@ -49,7 +49,22 @@ int psk_callback(gnutls_session_t session, const char *username, gnutls_datum_t 
 
 void set_psk_callback_data(void *context);
 
-int dtls_connection_api_init(connection_api_t **conn_api, int port, int address_family,
+/*
+ * Initialize a DTLS connection context
+ *
+ * Parameters:
+ *      api - API context pointer. Is set after return,
+ *      port - UDP port to bind to,
+ *      address_family - UDP socket family. Can be: AF_INET, AF_INET6 or AF_UNSPEC,
+ *      cert_file - path to a ECDHE-ECDSA certificate in file system,
+ *      key_file - path to a matching x509 private key file,
+ *      data - pointer to a data structure for use in a PSK authentication callback
+ *
+ * Returns:
+ *      0 on success,
+ *      negative value on error
+ */
+int dtls_connection_api_init(connection_api_t **api, int port, int address_family,
                              const char *cert_file, const char *key_file, void *data);
 
 int connection_start_secure(void *this);

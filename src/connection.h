@@ -39,6 +39,18 @@ typedef struct _connection_t
     size_t                  addr_len;
 } connection_t;
 
+/*
+ * Initialize a UDP connection context
+ *
+ * Parameters:
+ *      api - API context pointer. Is set after return,
+ *      port - UDP port to bind to,
+ *      address_family - UDP socket family. Can be: AF_INET, AF_INET6 or AF_UNSPEC
+ *
+ * Returns:
+ *      0 on success,
+ *      negative value on error
+ */
 int udp_connection_api_init(connection_api_t **api, int port, int address_family);
 
 int connection_start(void *this);

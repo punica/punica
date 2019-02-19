@@ -28,10 +28,100 @@
 #include "rest-utils.h"
 #include "settings.h"
 
+/*
+ * Connection API functions. Used for socket creation, management and communication.
+ * API initialization depends on communication instance implementation:
+ *
+ *      For UDP sockets call udp_connection_api_init()
+ *
+ *      For DTLS sockets call dtls_connection_api_init()
+ *
+ * Refer to said functions prototypes for further instructions.
+ * All API initialization functions set an connection_api_t pointer that needs to be
+ * provided to all API functions as the first parameter.
+*/
+
+/*
+ * Initializes and starts a connection context
+ *
+ * Prototype:
+ *      f_start(void *context);
+ *
+ * Parameters:
+ *      context - connection context pointer
+ *
+ * Returns:
+ *      0 on success,
+ *      negative value on error
+*/
 typedef int (*f_start_t)(void *);
+/*
+ * POSIX recv style function that deals with incoming connections
+ * and fills provided buffer with received data
+ *
+ * Prototype:
+ *      f_receive(void *context, uint8_t *buffer, size_t size, void **connection,
+ *                struct timeval *tv);
+ *
+ * Parameters:
+ *      context - connection context pointer,
+ *      buffer - preallocated buffer for received data storing,
+ *      size - length of buffer,
+ *      connection - server/client connection context for upper communications layers.
+ *      Has set value after return,
+ *      tv - timeout value
+ *
+ * Returns:
+ *      0 on no data available,
+ *      positive value of length of data received,
+ *      negative value on error
+*/
 typedef int (*f_receive_t)(void *, uint8_t *, size_t, void **, struct timeval *);
+/*
+ * Send data to peer
+ *
+ * Prototype:
+ *      f_send(void *context, void *connection, uint8_t *buffer, size_t length);
+ *
+ * Parameters:
+ *      context - connection context pointer,
+ *      connection - server/client connection context for upper communications layers,
+ *      buffer - data to be sent,
+ *      length - length of data to be sent
+ *
+ * Returns:
+ *      0 on success,
+ *      negative value on error
+*/
 typedef int (*f_send_t)(void *, void *, uint8_t *, size_t);
+/*
+ * Close connection with peer
+ *
+ * Prototype:
+ *      f_close(void *context, void *connection);
+ *
+ * Parameters:
+ *      context - connection context pointer,
+ *      connection - server/client connection context for upper communications layers
+ *
+ * Returns:
+ *      0 on success,
+ *      negative value on error
+*/
 typedef int (*f_close_t)(void *, void *);
+/*
+ * Stops and deinitializes communication context. Closes connections with all peers
+ *
+ * Prototype:
+ *      f_stop(void *context);
+ *
+ * Parameters:
+ *      context - connection context pointer
+ *
+ * Returns:
+ *      0 on success,
+ *      negative value on error
+*/
 typedef int (*f_stop_t)(void *);
 
 typedef struct connection_api_t
