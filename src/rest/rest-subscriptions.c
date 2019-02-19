@@ -295,7 +295,7 @@ static int rest_subscriptions_delete_cb_unsafe(punica_core_t *punica,
 
     if (res == COAP_404_NOT_FOUND)
     {
-        log_message(LOG_LEVEL_WARN, "[WARNING] LwM2M and restserver subscriptions mismatch!");
+        log_message(LOG_LEVEL_WARN, "[WARNING] LwM2M and REST subscriptions mismatch!");
     }
     else if (res != 0)
     {

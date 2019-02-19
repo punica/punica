@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef RESTSERVER_H
-#define RESTSERVER_H
+#ifndef PUNICA_CORE_H
+#define PUNICA_CORE_H
 
 #include <liblwm2m.h>
 #include <ulfius.h>
@@ -105,5 +105,5 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
 int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context);
 int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context);
 
-#endif // RESTSERVER_H
+#endif // PUNICA_CORE_H
 
