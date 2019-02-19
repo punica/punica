@@ -22,7 +22,7 @@
 #include "rest-list.h"
 #include "settings.h"
 
-int database_load_file(rest_context_t *rest)
+int database_load_file(punica_core_t *punica)
 {
     json_error_t error;
     size_t index;
@@ -39,15 +39,15 @@ int database_load_file(rest_context_t *rest)
         goto exit;
     }
 
-    rest->devicesList = device_list;
-    if (rest->settings->coap.database_file == NULL)
+    punica->devicesList = device_list;
+    if (punica->settings->coap.database_file == NULL)
     {
 //      internal list created, nothing more to do here
         ret = 0;
         goto exit;
     }
 
-    j_database = json_load_file(rest->settings->coap.database_file, 0, &error);
+    j_database = json_load_file(punica->settings->coap.database_file, 0, &error);
     if (j_database == NULL)
     {
         fprintf(stdout, "%s:%d - database file not found, must be created with /devices REST API\r\n",

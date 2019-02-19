@@ -24,7 +24,7 @@
 
 typedef struct
 {
-    rest_context_t *rest;
+    punica_core_t *punica;
     rest_async_response_t *response;
 } rest_observe_context_t;
 
@@ -50,7 +50,7 @@ static void rest_observe_cb(uint16_t clientID, lwm2m_uri_t *uriP, int count,
                             (data == NULL) ? coap_to_http_status(count) : HTTP_200_OK,
                             data, dataLength);
 
-    rest_notify_async_response(ctx->rest, response);
+    rest_notify_async_response(ctx->punica, response);
 }
 
 static void rest_unobserve_cb(uint16_t clientID, lwm2m_uri_t *uriP, int count,
@@ -61,13 +61,13 @@ static void rest_unobserve_cb(uint16_t clientID, lwm2m_uri_t *uriP, int count,
 
     log_message(LOG_LEVEL_INFO, "[UNOBSERVE-RESPONSE] id=%s\n", ctx->response->id);
 
-    rest_list_remove(ctx->rest->observeList, ctx->response);
+    rest_list_remove(ctx->punica->observeList, ctx->response);
 
     rest_async_response_delete(ctx->response);
     free(ctx);
 }
 
-static int rest_subscriptions_put_cb_unsafe(rest_context_t *rest,
+static int rest_subscriptions_put_cb_unsafe(punica_core_t *punica,
                                             const ulfius_req_t *req,
                                             ulfius_resp_t *resp)
 {
@@ -92,7 +92,7 @@ static int rest_subscriptions_put_cb_unsafe(rest_context_t *rest,
 
     /* Find requested client */
     name = u_map_get(req->map_url, "name");
-    client = rest_endpoints_find_client(rest->lwm2m->clientList, name);
+    client = rest_endpoints_find_client(punica->lwm2m->clientList, name);
     if (client == NULL)
     {
         ulfius_set_empty_body_response(resp, 404);
@@ -152,7 +152,7 @@ static int rest_subscriptions_put_cb_unsafe(rest_context_t *rest,
             goto exit;
         }
 
-        observe_context->rest = rest;
+        observe_context->punica = punica;
         observe_context->response = rest_async_response_new();
         if (observe_context->response == NULL)
         {
@@ -160,7 +160,7 @@ static int rest_subscriptions_put_cb_unsafe(rest_context_t *rest,
         }
 
         res = lwm2m_observe(
-                  rest->lwm2m, client->internalID, &uri,
+                  punica->lwm2m, client->internalID, &uri,
                   rest_observe_cb, observe_context
               );
         if (res != 0)
@@ -168,7 +168,7 @@ static int rest_subscriptions_put_cb_unsafe(rest_context_t *rest,
             goto exit;
         }
 
-        rest_list_add(rest->observeList, observe_context->response);
+        rest_list_add(punica->observeList, observe_context->response);
     }
 
     jresponse = json_object();
@@ -196,17 +196,17 @@ exit:
 
 int rest_subscriptions_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
-    rest_context_t *rest = (rest_context_t *)context;
+    punica_core_t *punica = (punica_core_t *)context;
     int ret;
 
-    rest_lock(rest);
-    ret = rest_subscriptions_put_cb_unsafe(rest, req, resp);
-    rest_unlock(rest);
+    rest_lock(punica);
+    ret = rest_subscriptions_put_cb_unsafe(punica, req, resp);
+    rest_unlock(punica);
 
     return ret;
 }
 
-static int rest_subscriptions_delete_cb_unsafe(rest_context_t *rest,
+static int rest_subscriptions_delete_cb_unsafe(punica_core_t *punica,
                                                const ulfius_req_t *req,
                                                ulfius_resp_t *resp)
 {
@@ -230,7 +230,7 @@ static int rest_subscriptions_delete_cb_unsafe(rest_context_t *rest,
 
     /* Find requested client */
     name = u_map_get(req->map_url, "name");
-    client = rest_endpoints_find_client(rest->lwm2m->clientList, name);
+    client = rest_endpoints_find_client(punica->lwm2m->clientList, name);
     if (client == NULL)
     {
         ulfius_set_empty_body_response(resp, 404);
@@ -289,7 +289,7 @@ static int rest_subscriptions_delete_cb_unsafe(rest_context_t *rest,
 
     // using dummy callback (rest_unobserve_cb), because NULL callback causes segmentation fault
     res = lwm2m_observe_cancel(
-              rest->lwm2m, client->internalID, &uri,
+              punica->lwm2m, client->internalID, &uri,
               rest_unobserve_cb, observe_context
           );
 
@@ -313,12 +313,12 @@ exit:
 
 int rest_subscriptions_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
-    rest_context_t *rest = (rest_context_t *)context;
+    punica_core_t *punica = (punica_core_t *)context;
     int ret;
 
-    rest_lock(rest);
-    ret = rest_subscriptions_delete_cb_unsafe(rest, req, resp);
-    rest_unlock(rest);
+    rest_lock(punica);
+    ret = rest_subscriptions_delete_cb_unsafe(punica, req, resp);
+    rest_unlock(punica);
 
     return ret;
 }

@@ -123,8 +123,8 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
                        lwm2m_media_type_t format, uint8_t *data, int dataLength,
                        void *userData)
 {
-    rest_context_t *rest = (rest_context_t *)userData;
-    lwm2m_context_t *lwm2m = rest->lwm2m;
+    punica_core_t *punica = (punica_core_t *)userData;
+    lwm2m_context_t *lwm2m = punica->lwm2m;
     lwm2m_client_t *client;
     lwm2m_client_object_t *obj;
     lwm2m_list_t *ins;
@@ -142,7 +142,7 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
             if (regNotif != NULL)
             {
                 rest_notif_registration_set(regNotif, client->name);
-                rest_notify_registration(rest, regNotif);
+                rest_notify_registration(punica, regNotif);
             }
             else
             {
@@ -158,7 +158,7 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
             if (updateNotif != NULL)
             {
                 rest_notif_update_set(updateNotif, client->name);
-                rest_notify_update(rest, updateNotif);
+                rest_notify_update(punica, updateNotif);
             }
             else
             {
@@ -196,7 +196,7 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
         if (deregNotif != NULL)
         {
             rest_notif_deregistration_set(deregNotif, client->name);
-            rest_notify_deregistration(rest, deregNotif);
+            rest_notify_deregistration(punica, deregNotif);
         }
         else
         {
@@ -255,7 +255,7 @@ int main(int argc, char *argv[])
     fd_set readfds;
     struct timeval tv;
     int res;
-    rest_context_t rest;
+    punica_core_t punica;
     char coap_port[6];
 
     static settings_t settings =
@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
 
     init_signals();
 
-    rest_init(&rest, &settings);
+    rest_init(&punica, &settings);
 
     /* Socket section */
     snprintf(coap_port, sizeof(coap_port), "%d", settings.coap.port);
@@ -316,14 +316,14 @@ int main(int argc, char *argv[])
     }
 
     /* Server section */
-    rest.lwm2m = lwm2m_init(NULL);
-    if (rest.lwm2m == NULL)
+    punica.lwm2m = lwm2m_init(NULL);
+    if (punica.lwm2m == NULL)
     {
         log_message(LOG_LEVEL_FATAL, "Failed to create LwM2M server!\n");
         return -1;
     }
 
-    lwm2m_set_monitoring_callback(rest.lwm2m, client_monitor_cb, &rest);
+    lwm2m_set_monitoring_callback(punica.lwm2m, client_monitor_cb, &punica);
 
     /* REST server section */
     struct _u_instance instance;
@@ -342,40 +342,40 @@ int main(int argc, char *argv[])
 
     // Endpoints
     ulfius_add_endpoint_by_val(&instance, "GET", "/endpoints", NULL, 10,
-                               &rest_endpoints_cb, &rest);
+                               &rest_endpoints_cb, &punica);
     ulfius_add_endpoint_by_val(&instance, "GET", "/endpoints", ":name", 10,
-                               &rest_endpoints_name_cb, &rest);
+                               &rest_endpoints_name_cb, &punica);
     // Devices
     ulfius_add_endpoint_by_val(&instance, "GET", "/devices", NULL, 10,
-                               &rest_devices_get_cb, &rest);
+                               &rest_devices_get_cb, &punica);
     ulfius_add_endpoint_by_val(&instance, "GET", "/devices", ":id", 10,
-                               &rest_devices_get_name_cb, &rest);
+                               &rest_devices_get_name_cb, &punica);
     ulfius_add_endpoint_by_val(&instance, "PUT", "/devices", ":id", 10,
-                               &rest_devices_put_cb, &rest);
+                               &rest_devices_put_cb, &punica);
     ulfius_add_endpoint_by_val(&instance, "POST", "/devices", NULL, 10,
-                               &rest_devices_post_cb, &rest);
+                               &rest_devices_post_cb, &punica);
     ulfius_add_endpoint_by_val(&instance, "DELETE", "/devices", ":id", 10,
-                               &rest_devices_delete_cb, &rest);
+                               &rest_devices_delete_cb, &punica);
 
     // Resources
     ulfius_add_endpoint_by_val(&instance, "*", "/endpoints", ":name/*", 10,
-                               &rest_resources_rwe_cb, &rest);
+                               &rest_resources_rwe_cb, &punica);
 
     // Notifications
     ulfius_add_endpoint_by_val(&instance, "GET", "/notification/callback", NULL, 10,
-                               &rest_notifications_get_callback_cb, &rest);
+                               &rest_notifications_get_callback_cb, &punica);
     ulfius_add_endpoint_by_val(&instance, "PUT", "/notification/callback", NULL, 10,
-                               &rest_notifications_put_callback_cb, &rest);
+                               &rest_notifications_put_callback_cb, &punica);
     ulfius_add_endpoint_by_val(&instance, "DELETE", "/notification/callback", NULL, 10,
-                               &rest_notifications_delete_callback_cb, &rest);
+                               &rest_notifications_delete_callback_cb, &punica);
     ulfius_add_endpoint_by_val(&instance, "GET", "/notification/pull", NULL, 10,
-                               &rest_notifications_pull_cb, &rest);
+                               &rest_notifications_pull_cb, &punica);
 
     // Subscriptions
     ulfius_add_endpoint_by_val(&instance, "PUT", "/subscriptions", ":name/*", 10,
-                               &rest_subscriptions_put_cb, &rest);
+                               &rest_subscriptions_put_cb, &punica);
     ulfius_add_endpoint_by_val(&instance, "DELETE", "/subscriptions", ":name/*", 10,
-                               &rest_subscriptions_delete_cb, &rest);
+                               &rest_subscriptions_delete_cb, &punica);
 
     // Version
     ulfius_add_endpoint_by_val(&instance, "GET", "/version", NULL, 1, &rest_version_cb, NULL);
@@ -441,19 +441,19 @@ int main(int argc, char *argv[])
         tv.tv_sec = 5;
         tv.tv_usec = 0;
 
-        rest_lock(&rest);
-        res = lwm2m_step(rest.lwm2m, &tv.tv_sec);
+        rest_lock(&punica);
+        res = lwm2m_step(punica.lwm2m, &tv.tv_sec);
         if (res)
         {
             log_message(LOG_LEVEL_ERROR, "lwm2m_step() error: %d\n", res);
         }
 
-        res = rest_step(&rest, &tv);
+        res = rest_step(&punica, &tv);
         if (res)
         {
             log_message(LOG_LEVEL_ERROR, "rest_step() error: %d\n", res);
         }
-        rest_unlock(&rest);
+        rest_unlock(&punica);
 
         res = select(FD_SETSIZE, &readfds, NULL, NULL, &tv);
         if (res < 0)
@@ -468,9 +468,9 @@ int main(int argc, char *argv[])
 
         if (FD_ISSET(sock, &readfds))
         {
-            rest_lock(&rest);
-            socket_receive(rest.lwm2m, sock);
-            rest_unlock(&rest);
+            rest_lock(&punica);
+            socket_receive(punica.lwm2m, sock);
+            rest_unlock(&punica);
         }
 
     }
@@ -478,8 +478,8 @@ int main(int argc, char *argv[])
     ulfius_stop_framework(&instance);
     ulfius_clean_instance(&instance);
 
-    lwm2m_close(rest.lwm2m);
-    rest_cleanup(&rest);
+    lwm2m_close(punica.lwm2m);
+    rest_cleanup(&punica);
 
     jwt_cleanup(&settings.http.security.jwt);
 
