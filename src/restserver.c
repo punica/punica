@@ -463,7 +463,9 @@ int main(int argc, char *argv[])
         }
         else if (res)
         {
+            rest_lock(&rest);
             lwm2m_handle_packet(rest.lwm2m, buffer, res, connection);
+            rest_unlock(&rest);
         }
     }
 
