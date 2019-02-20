@@ -35,6 +35,7 @@ typedef struct secure_connection_context_t
     gnutls_datum_t cookie_key;
     gnutls_psk_server_credentials_t server_psk;
     void *data;
+    f_psk_cb_t psk_cb;
 } secure_connection_context_t;
 
 static ssize_t prv_net_send(gnutls_transport_ptr_t context, const void *data, size_t size)
@@ -175,7 +176,7 @@ static int prv_connection_init(void *this, device_connection_t *connection,
     gnutls_certificate_server_set_request(connection->session, GNUTLS_CERT_REQUIRE);
     gnutls_dtls_prestate_set(connection->session, prestate);
     gnutls_transport_set_ptr(connection->session, (void *)((intptr_t)connection->sock));
-    gnutls_session_set_ptr(connection->session, context->data);
+    gnutls_session_set_ptr(connection->session, context);
 
     ret = 0;
 exit:
@@ -186,7 +187,7 @@ exit:
     return ret;
 }
 
-static device_connection_t *connection_new_incoming(void *this)
+static device_connection_t *prv_connection_new_incoming(void *this)
 {
     secure_connection_context_t *context = (secure_connection_context_t *)this;
     int ret;
@@ -245,8 +246,33 @@ static device_connection_t *connection_new_incoming(void *this)
     return conn;
 }
 
+static int prv_psk_callback(gnutls_session_t session, const char *name, gnutls_datum_t *key)
+{
+    secure_connection_context_t *context;
+    uint8_t *psk_buff;
+    size_t psk_len;
+
+    context = gnutls_session_get_ptr(session);
+
+    if (context->psk_cb(name, context->data, &psk_buff, &psk_len))
+    {
+        return -1;
+    }
+
+    key->data = malloc(psk_len);
+    if (key->data == NULL)
+    {
+        return -1;
+    }
+
+    key->size = psk_len;
+    memcpy(key->data, psk_buff, psk_len);
+
+    return 0;
+}
+
 int dtls_connection_api_init(connection_api_t **conn_api, int port, int address_family,
-                             const char *certificate_file, const char *private_key_file, void *data)
+                             const char *certificate_file, const char *private_key_file, void *data, f_psk_cb_t psk_cb)
 {
     secure_connection_context_t *context;
     context = calloc(1, sizeof(secure_connection_context_t));
@@ -260,6 +286,7 @@ int dtls_connection_api_init(connection_api_t **conn_api, int port, int address_
     context->certificate_file = certificate_file;
     context->private_key_file = private_key_file;
     context->data = data;
+    context->psk_cb = psk_cb;
 
     context->api.f_start = connection_start_secure;
     context->api.f_receive = connection_receive_secure;
@@ -315,7 +342,7 @@ int connection_start_secure(void *this)
         goto exit;
     }
 
-    gnutls_psk_set_server_credentials_function(context->server_psk, psk_callback);
+    gnutls_psk_set_server_credentials_function(context->server_psk, prv_psk_callback);
 
     context->listen_socket = prv_new_socket(this);
     ret = context->listen_socket;
@@ -379,7 +406,7 @@ int connection_receive_secure(void *this, uint8_t *buffer, size_t size, void **c
 
     if (FD_ISSET(context->listen_socket, &read_fds))
     {
-        device_connection_t *conn_new = connection_new_incoming(this);
+        device_connection_t *conn_new = prv_connection_new_incoming(this);
         if (conn_new == NULL)
         {
             log_message(LOG_LEVEL_WARN, "Failed to connect to device\n");

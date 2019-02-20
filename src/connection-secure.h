@@ -45,8 +45,6 @@ typedef struct _device_connection_t
     socklen_t addr_size;
 } device_connection_t;
 
-int psk_callback(gnutls_session_t session, const char *username, gnutls_datum_t *key);
-
 /*
  * Initialize a DTLS connection context
  *
@@ -56,14 +54,15 @@ int psk_callback(gnutls_session_t session, const char *username, gnutls_datum_t 
  *      address_family - UDP socket family. Can be: AF_INET, AF_INET6 or AF_UNSPEC,
  *      cert_file - path to a ECDHE-ECDSA certificate in file system,
  *      key_file - path to a matching x509 private key file,
- *      data - pointer to a data structure for use in a PSK authentication callback
+ *      data - pointer to a data structure for use in a PSK authentication callback,
+ *      psk_cb - pointer to callback used during DTLS handshake with PSK key exchange
  *
  * Returns:
  *      0 on success,
  *      negative value on error
  */
 int dtls_connection_api_init(connection_api_t **api, int port, int address_family,
-                             const char *cert_file, const char *key_file, void *data);
+                             const char *cert_file, const char *key_file, void *data, f_psk_cb_t psk_cb);
 
 int connection_start_secure(void *this);
 

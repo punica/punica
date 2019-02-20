@@ -19,7 +19,6 @@ set(PUNICA_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/security.c
     ${CMAKE_CURRENT_LIST_DIR}/connection.c
     ${CMAKE_CURRENT_LIST_DIR}/connection-secure.c
-    ${CMAKE_CURRENT_LIST_DIR}/connection-callback.c
     ${CMAKE_CURRENT_LIST_DIR}/database.c
     )
 

@@ -90,7 +90,8 @@ static void init_signals(void)
     }
 }
 
-static int api_init(connection_api_t **conn_api, coap_settings_t *coap, void *data)
+static int api_init(connection_api_t **conn_api, coap_settings_t *coap, void *data,
+                    f_psk_cb_t psk_cb)
 {
     if (coap->security_mode == PUNICA_COAP_MODE_INSECURE)
     {
@@ -99,7 +100,7 @@ static int api_init(connection_api_t **conn_api, coap_settings_t *coap, void *da
     else if (coap->security_mode == PUNICA_COAP_MODE_SECURE)
     {
         return dtls_connection_api_init(conn_api, coap->port, AF_INET6, coap->certificate_file,
-                                        coap->private_key_file, data);
+                                        coap->private_key_file, data, psk_cb);
     }
     else
     {
@@ -239,6 +240,68 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
     }
 }
 
+int psk_find_callback(const char *name, void *data, uint8_t **psk_buffer, size_t *psk_len)
+{
+    database_entry_t *device_data;
+    rest_list_entry_t *device_entry;
+    rest_list_t *device_list = (rest_list_t *)data;
+
+    if (device_list == NULL)
+    {
+        return -1;
+    }
+
+    for (device_entry = device_list->head; device_entry != NULL; device_entry = device_entry->next)
+    {
+        device_data = (database_entry_t *)device_entry->data;
+
+        if (memcmp(name, device_data->psk_id, device_data->psk_id_len) == 0)
+        {
+            *psk_buffer = device_data->psk;
+            *psk_len = device_data->psk_len;
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
+uint8_t lwm2m_buffer_send(void *session, uint8_t *buffer, size_t length, void *user_data)
+{
+    connection_api_t *conn_api = (connection_api_t *)user_data;
+
+    if (session == NULL)
+    {
+        log_message(LOG_LEVEL_ERROR, "Failed sending %lu bytes, missing connection\n", length);
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
+    if (conn_api->f_send(conn_api, session, buffer, length) < 0)
+    {
+        log_message(LOG_LEVEL_ERROR, "Failed sending %lu bytes\n", length);
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
+    return COAP_NO_ERROR;
+}
+
+bool lwm2m_session_is_equal(void *session1, void *session2, void *userData)
+{
+    return (session1 == session2);
+}
+
+int lwm2m_client_validate(char *name, void *session, void *user_data)
+{
+    connection_api_t *api = (connection_api_t *)user_data;
+
+    if (api->f_validate == NULL)
+    {
+        return 0;
+    }
+
+    return api->f_validate(name, session);
+}
+
 int main(int argc, char *argv[])
 {
     struct timeval tv;
@@ -298,7 +361,7 @@ int main(int argc, char *argv[])
 
     rest_init(&rest, &settings);
 
-    if (api_init(&conn_api, &settings.coap, (void *)rest.devicesList) != 0)
+    if (api_init(&conn_api, &settings.coap, (void *)rest.devicesList, psk_find_callback) != 0)
     {
         return -1;
     }

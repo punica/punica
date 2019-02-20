@@ -152,6 +152,26 @@ typedef struct connection_api_t
     f_validate_t f_validate;
 } connection_api_t;
 
+/*
+ * Called during DTLS handshake with PSK key exchange. User has to search for user 'name'
+ * credentials in database 'data', which was provided to connection context during
+ * initialization. Found psk has to be pointed at by 'psk', and it's length set in 'psk_len'
+ *
+ * Prototype:
+ *      f_psk_cb(const char *name, void *data, uint8_t **psk, size_t *psk_len);
+ *
+ * Parameters:
+ *      name - DTLS client name,
+ *      data - pointer to database storing client credentials,
+ *      psk - pointer to psk buffer,
+ *      psk_len - psk buffer length
+ *
+ * Returns:
+ *      0 on success,
+ *      negative value on error or not found
+*/
+typedef int (*f_psk_cb_t)(const char *, void *, uint8_t **, size_t *);
+
 typedef struct _u_request ulfius_req_t;
 typedef struct _u_response ulfius_resp_t;
 
