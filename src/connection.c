@@ -191,28 +191,6 @@ int connection_send(void *this, void *connection, uint8_t *buffer, size_t length
     int nbSent;
     size_t offset;
 
-#ifdef WITH_LOGS
-    char s[INET6_ADDRSTRLEN];
-    in_port_t port;
-
-    s[0] = 0;
-
-    if (AF_INET == conn->addr.sin6_family)
-    {
-        struct sockaddr_in *saddr = (struct sockaddr_in *)&conn->addr;
-        inet_ntop(saddr->sin_family, &saddr->sin_addr, s, INET6_ADDRSTRLEN);
-        port = saddr->sin_port;
-    }
-    else if (AF_INET6 == conn->addr.sin6_family)
-    {
-        struct sockaddr_in6 *saddr = (struct sockaddr_in6 *)&conn->addr;
-        inet_ntop(saddr->sin6_family, &saddr->sin6_addr, s, INET6_ADDRSTRLEN);
-        port = saddr->sin6_port;
-    }
-
-    fprintf(stderr, "Sending %lu bytes to [%s]:%hu\r\n", length, s, ntohs(port));
-#endif
-
     offset = 0;
     while (offset != length)
     {
