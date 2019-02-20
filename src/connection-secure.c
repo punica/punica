@@ -23,6 +23,15 @@
 
 #define BUFFER_SIZE 1024
 
+typedef struct _device_connection_t
+{
+    struct _device_connection_t *next;
+    int sock;
+    gnutls_session_t session;
+    struct sockaddr_storage addr;
+    socklen_t addr_size;
+} device_connection_t;
+
 typedef struct secure_connection_context_t
 {
     connection_api_t api;
