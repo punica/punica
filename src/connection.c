@@ -18,11 +18,6 @@
  */
 
 #include "connection.h"
-#include <ctype.h>
-#include <stdlib.h>
-#include <string.h>
-#include <liblwm2m.h>
-#include "logging.h"
 
 typedef struct connection_context_t
 {

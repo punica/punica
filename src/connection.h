@@ -27,9 +27,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <liblwm2m.h>
 #include "restserver.h"
-#include "settings.h"
 
 typedef struct _connection_t
 {

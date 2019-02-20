@@ -18,9 +18,6 @@
  */
 
 #include "connection-secure.h"
-#include <stdio.h>
-#include <gnutls/dtls.h>
-#include <gnutls/gnutls.h>
 
 #define BUFFER_SIZE 1024
 
