@@ -1,5 +1,4 @@
 const mbedtls = require('node-mbedtls');
-const coap = require('coap');
 const sensors = require('restserver-api/8dev_emulate/nodes/sensorInstances');
 const fs = require('fs');
 
@@ -30,7 +29,8 @@ class ClientSecureInterface {
         authmode: mbedtls.SSL_VERIFY_REQUIRED,
         ciphersuites: [
           0xC0AE,
-        ]
+        ],
+        type: 'udp4'
       };
 
       this.sens = new sensors.Sensor3700(options);
