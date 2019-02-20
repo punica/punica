@@ -32,8 +32,6 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <gnutls/dtls.h>
-#include <gnutls/gnutls.h>
 #include "restserver.h"
 
 typedef struct _device_connection_t
