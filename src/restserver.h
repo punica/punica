@@ -123,14 +123,33 @@ typedef int (*f_close_t)(void *, void *);
  *      negative value on error
 */
 typedef int (*f_stop_t)(void *);
+/*
+ * Used to supply a callback for CoAP client validation
+ *
+ * Prototype:
+ *      f_validate(char *name, void *connection);
+ *
+ * Parameters:
+ *      name - registering client name,
+ *      connection - server/client connection context for upper communications layers
+ *
+ * Returns:
+ *      0 on success,
+ *      negative value on client not authorized
+ *
+ * Notes:
+ *      This functions is an exception in connection API that doesn't use the context pointer
+*/
+typedef int (*f_validate_t)(char *, void *);
 
 typedef struct connection_api_t
 {
-    f_start_t   f_start;
-    f_receive_t f_receive;
-    f_send_t    f_send;
-    f_close_t   f_close;
-    f_stop_t    f_stop;
+    f_start_t    f_start;
+    f_receive_t  f_receive;
+    f_send_t     f_send;
+    f_close_t    f_close;
+    f_stop_t     f_stop;
+    f_validate_t f_validate;
 } connection_api_t;
 
 typedef struct _u_request ulfius_req_t;

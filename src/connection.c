@@ -115,6 +115,7 @@ int udp_connection_api_init(connection_api_t **conn_api, int port, int address_f
     context->api.f_send = connection_send;
     context->api.f_close = connection_close;
     context->api.f_stop = connection_stop;
+    context->api.f_validate = NULL;
     *conn_api = &context->api;
 
     return 0;

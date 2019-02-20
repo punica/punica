@@ -76,4 +76,6 @@ int connection_close_secure(void *this, void *connection);
 
 int connection_stop_secure(void *this);
 
+int connection_validate_secure(char *name, void *connection);
+
 #endif

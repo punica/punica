@@ -269,6 +269,7 @@ int dtls_connection_api_init(connection_api_t **conn_api, int port, int address_
     context->api.f_send = connection_send_secure;
     context->api.f_close = connection_close_secure;
     context->api.f_stop = connection_stop_secure;
+    context->api.f_validate = connection_validate_secure;
     *conn_api = &context->api;
 
     return 0;
@@ -472,4 +473,51 @@ int connection_stop_secure(void *this)
     free(context);
 
     return 0;
+}
+
+int connection_validate_secure(char *name, void *connection)
+{
+    device_connection_t *conn = (device_connection_t *)connection;
+    gnutls_x509_crt_t cert;
+    const gnutls_datum_t *cert_list;
+    char common_name[256];
+    size_t size;
+    gnutls_cipher_algorithm_t cipher;
+    gnutls_kx_algorithm_t key_ex;
+
+    cipher = gnutls_cipher_get(conn->session);
+    key_ex = gnutls_kx_get(conn->session);
+
+    if (!(key_ex == GNUTLS_KX_ECDHE_ECDSA && (cipher == GNUTLS_CIPHER_AES_128_CCM_8 ||
+                                              cipher == GNUTLS_CIPHER_AES_128_CBC)))
+    {
+        return 0;
+    }
+
+    cert_list = gnutls_certificate_get_peers(conn->session, NULL);
+    if (cert_list == NULL)
+    {
+        return -1;
+    }
+    if (gnutls_x509_crt_init(&cert) != GNUTLS_E_SUCCESS)
+    {
+        return -1;
+    }
+    if (gnutls_x509_crt_import(cert, &cert_list[0], GNUTLS_X509_FMT_DER))
+    {
+        return -1;
+    }
+
+    size = sizeof(common_name);
+    if (gnutls_x509_crt_get_dn_by_oid(cert, GNUTLS_OID_X520_COMMON_NAME, 0, 0, common_name, &size))
+    {
+        return -1;
+    }
+
+    if (strcmp(name, common_name) == 0)
+    {
+        return 0;
+    }
+
+    return -1;
 }
