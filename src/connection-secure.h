@@ -64,17 +64,5 @@ typedef struct _device_connection_t
 int dtls_connection_api_init(connection_api_t **api, int port, int address_family,
                              const char *cert_file, const char *key_file, void *data, f_psk_cb_t psk_cb);
 
-int connection_start_secure(void *this);
-
-int connection_receive_secure(void *this, uint8_t *buffer, size_t size, void **connection,
-                              struct timeval *tv);
-
-int connection_send_secure(void *this, void *connection, uint8_t *buffer, size_t length);
-
-int connection_close_secure(void *this, void *connection);
-
-int connection_stop_secure(void *this);
-
-int connection_validate_secure(char *name, void *connection);
 
 #endif

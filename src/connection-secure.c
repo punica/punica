@@ -38,6 +38,13 @@ typedef struct secure_connection_context_t
     f_psk_cb_t psk_cb;
 } secure_connection_context_t;
 
+static int connection_start_secure(void *this);
+static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, void **connection, struct timeval *tv);
+static int connection_send_secure(void *this, void *connection, uint8_t *buffer, size_t length);
+static int connection_close_secure(void *this, void *connection);
+static int connection_stop_secure(void *this);
+static int connection_validate_secure(char *name, void *connection);
+
 static ssize_t prv_net_send(gnutls_transport_ptr_t context, const void *data, size_t size)
 {
     device_connection_t *conn = (device_connection_t *)context;
@@ -299,7 +306,7 @@ int dtls_connection_api_init(connection_api_t **conn_api, int port, int address_
     return 0;
 }
 
-int connection_start_secure(void *this)
+static int connection_start_secure(void *this)
 {
     secure_connection_context_t *context = (secure_connection_context_t *)this;
     int ret = -1;
@@ -357,7 +364,7 @@ exit:
     return ret;
 }
 
-int connection_receive_secure(void *this, uint8_t *buffer, size_t size, void **connection,
+static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, void **connection,
                               struct timeval *tv)
 {
     secure_connection_context_t *context = (secure_connection_context_t *)this;
@@ -420,7 +427,7 @@ int connection_receive_secure(void *this, uint8_t *buffer, size_t size, void **c
     return 0;
 }
 
-int connection_close_secure(void *this, void *connection)
+static int connection_close_secure(void *this, void *connection)
 {
     secure_connection_context_t *context = (secure_connection_context_t *)this;
     device_connection_t *conn = (device_connection_t *)connection;
@@ -465,14 +472,14 @@ free:
     return 0;
 }
 
-int connection_send_secure(void *this, void *connection, uint8_t *buffer, size_t length)
+static int connection_send_secure(void *this, void *connection, uint8_t *buffer, size_t length)
 {
     device_connection_t *conn = (device_connection_t *)connection;
 
     return gnutls_record_send(conn->session, buffer, length);
 }
 
-int connection_stop_secure(void *this)
+static int connection_stop_secure(void *this)
 {
     secure_connection_context_t *context = (secure_connection_context_t *)this;
     device_connection_t *curr, *next;
@@ -499,7 +506,7 @@ int connection_stop_secure(void *this)
     return 0;
 }
 
-int connection_validate_secure(char *name, void *connection)
+static int connection_validate_secure(char *name, void *connection)
 {
     device_connection_t *conn = (device_connection_t *)connection;
     gnutls_x509_crt_t cert;
