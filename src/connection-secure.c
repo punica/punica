@@ -50,7 +50,8 @@ typedef struct secure_connection_context_t
 } secure_connection_context_t;
 
 static int connection_start_secure(void *this);
-static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, void **connection, struct timeval *tv);
+static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, void **connection,
+                                     struct timeval *tv);
 static int connection_send_secure(void *this, void *connection, uint8_t *buffer, size_t length);
 static int connection_close_secure(void *this, void *connection);
 static int connection_stop_secure(void *this);
@@ -74,8 +75,7 @@ static int prv_new_socket(void *this)
     hints.ai_family = context->address_family;
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_protocol = IPPROTO_UDP;
-    hints.ai_flags = AI_ADDRCONFIG;
-    hints.ai_flags |= AI_PASSIVE;
+    hints.ai_flags = AI_ADDRCONFIG | AI_PASSIVE;
 
     sprintf(port_str, "%d", context->port);
     if (getaddrinfo(NULL, port_str, &hints, &addr_list) != 0)
@@ -174,7 +174,7 @@ static int prv_connection_init(void *this, device_connection_t *connection,
     secure_connection_context_t *context = (secure_connection_context_t *)this;
     int ret = -1;
 
-    if (gnutls_init(&connection->session, GNUTLS_SERVER | GNUTLS_DATAGRAM))
+    if (gnutls_init(&connection->session, GNUTLS_SERVER | GNUTLS_DATAGRAM | GNUTLS_NONBLOCK))
     {
         goto exit;
     }
@@ -208,8 +208,6 @@ exit:
 static device_connection_t *prv_connection_new_incoming(void *this)
 {
     secure_connection_context_t *context = (secure_connection_context_t *)this;
-    int ret;
-    const char *err_str;
     gnutls_dtls_prestate_st prestate;
     device_connection_t *conn;
 
@@ -234,22 +232,6 @@ static device_connection_t *prv_connection_new_incoming(void *this)
 
         if (prv_connection_init(this, conn, &prestate))
         {
-            close(conn->sock);
-            free(conn);
-            return NULL;
-        }
-
-        do
-        {
-            ret = gnutls_handshake(conn->session);
-        } while (ret == GNUTLS_E_AGAIN);
-
-        if (ret < 0)
-        {
-            err_str = gnutls_strerror(ret);
-            log_message(LOG_LEVEL_WARN, "Handshake failed with message: '%s'\n", err_str);
-
-            gnutls_deinit(conn->session);
             close(conn->sock);
             free(conn);
             return NULL;
@@ -376,16 +358,17 @@ exit:
 }
 
 static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, void **connection,
-                              struct timeval *tv)
+                                     struct timeval *tv)
 {
     secure_connection_context_t *context = (secure_connection_context_t *)this;
     int ret, nfds = 0;
     fd_set read_fds;
     device_connection_t *conn_curr = context->connection_list;
-
-    FD_ZERO(&read_fds);
+    const char *err_str;
 
 //  set active file descriptors and calculate required nfds
+    FD_ZERO(&read_fds);
+
     while (conn_curr != NULL)
     {
         FD_SET(conn_curr->sock, &read_fds);
@@ -408,27 +391,47 @@ static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, v
         return ret;
     }
 
+//  manage client connections
     conn_curr = context->connection_list;
     while (conn_curr != NULL)
     {
         if (FD_ISSET(conn_curr->sock, &read_fds))
         {
-            *connection = conn_curr;
-            conn_curr->addr_size = sizeof(conn_curr->addr);
-            ret = recvfrom(conn_curr->sock, buffer, size, MSG_PEEK,
-                           (struct sockaddr *)&conn_curr->addr, &conn_curr->addr_size);
-            return gnutls_record_recv(conn_curr->session, buffer, ret);
+            if (gnutls_session_get_desc(conn_curr->session) == NULL)
+            {
+                ret = gnutls_handshake(conn_curr->session);
+
+                //handshake continues until success
+                if (ret != GNUTLS_E_AGAIN && ret != GNUTLS_E_SUCCESS)
+                {
+                    err_str = gnutls_strerror(ret);
+                    log_message(LOG_LEVEL_WARN, "Handshake failed with message: '%s'\n", err_str);
+
+                    connection_close_secure(this, conn_curr);
+                    return 0;
+                }
+            }
+            else
+            {
+                *connection = conn_curr;
+                conn_curr->addr_size = sizeof(conn_curr->addr);
+
+                ret = recvfrom(conn_curr->sock, buffer, size, MSG_PEEK,
+                               (struct sockaddr *)&conn_curr->addr, &conn_curr->addr_size);
+                return gnutls_record_recv(conn_curr->session, buffer, ret);
+            }
         }
         conn_curr = conn_curr->next;
     }
 
+//  expecting a new client connection
     if (FD_ISSET(context->listen_socket, &read_fds))
     {
         device_connection_t *conn_new = prv_connection_new_incoming(this);
         if (conn_new == NULL)
         {
             log_message(LOG_LEVEL_WARN, "Failed to connect to device\n");
-            return -1;
+            return 0;
         }
 
         conn_new->next = context->connection_list;
