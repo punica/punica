@@ -36,11 +36,11 @@ typedef struct secure_connection_context_t
 {
     connection_api_t api;
     device_connection_t *connection_list;
+    device_connection_t *connection_listen;
     int port;
     int address_family;
     const char *certificate_file;
     const char *private_key_file;
-    int listen_socket;
     gnutls_certificate_credentials_t server_cert;
     gnutls_priority_t priority_cache;
     gnutls_datum_t cookie_key;
@@ -70,6 +70,10 @@ static int prv_new_socket(void *this)
     int sock, enable;
     struct addrinfo hints, *addr_list, *cur;
     char port_str[16];
+//    struct timeval tv;
+//
+//    tv.tv_sec = 40;
+//    tv.tv_usec = 0;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = context->address_family;
@@ -99,6 +103,13 @@ static int prv_new_socket(void *this)
             continue;
         }
 
+//        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)))
+//        {
+//            close(sock);
+//            sock = -1;
+//            continue;
+//        }
+
         if (bind(sock, cur->ai_addr, cur->ai_addrlen))
         {
             close(sock);
@@ -111,61 +122,6 @@ static int prv_new_socket(void *this)
 
     freeaddrinfo(addr_list);
     return sock;
-}
-
-static int prv_switch_sockets(void *this, device_connection_t *connection)
-{
-    secure_connection_context_t *context = (secure_connection_context_t *)this;
-
-    if (connect(context->listen_socket, (struct sockaddr *)&connection->addr,
-                sizeof(struct sockaddr_storage)))
-    {
-        return -1;
-    }
-
-    connection->sock = context->listen_socket;
-    context->listen_socket = prv_new_socket(this);
-
-    return 0;
-}
-
-static int prv_cookie_negotiate(void *this, device_connection_t *connection,
-                                gnutls_dtls_prestate_st *prestate)
-{
-    secure_connection_context_t *context = (secure_connection_context_t *)this;
-    int ret;
-    char buffer[BUFFER_SIZE];
-
-    for (int i = 0; i < 2; i++)
-    {
-        connection->addr_size = sizeof(connection->addr);
-
-        ret = recvfrom(connection->sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&connection->addr,
-                       &connection->addr_size);
-        if (ret > 0)
-        {
-            memset(prestate, 0, sizeof(gnutls_dtls_prestate_st));
-
-            ret = gnutls_dtls_cookie_verify(&context->cookie_key, &connection->addr, sizeof(connection->addr),
-                                            buffer,
-                                            ret, prestate);
-            if (ret == 0)
-            {
-                return 0;
-            }
-            else
-            {
-                gnutls_dtls_cookie_send(&context->cookie_key, &connection->addr, sizeof(connection->addr), prestate,
-                                        connection, prv_net_send);
-            }
-        }
-        else
-        {
-            return -1;
-        }
-    }
-
-    return -1;
 }
 
 static int prv_connection_init(void *this, device_connection_t *connection,
@@ -205,47 +161,6 @@ exit:
     return ret;
 }
 
-static device_connection_t *prv_connection_new_incoming(void *this)
-{
-    secure_connection_context_t *context = (secure_connection_context_t *)this;
-    gnutls_dtls_prestate_st prestate;
-    device_connection_t *conn;
-
-    conn = (device_connection_t *)malloc(sizeof(device_connection_t));
-    if (conn == NULL)
-    {
-        return NULL;
-    }
-    conn->sock = context->listen_socket;
-
-    if (prv_cookie_negotiate(this, conn, &prestate) == 0)
-    {
-//      the current socket will be taken over by the client connection and a new one created for listening for incoming connections
-        if (prv_switch_sockets(this, conn))
-        {
-            context->listen_socket = prv_new_socket(this);
-
-            close(conn->sock);
-            free(conn);
-            return NULL;
-        }
-
-        if (prv_connection_init(this, conn, &prestate))
-        {
-            close(conn->sock);
-            free(conn);
-            return NULL;
-        }
-    }
-    else
-    {
-        free(conn);
-        return NULL;
-    }
-
-    return conn;
-}
-
 static int prv_psk_callback(gnutls_session_t session, const char *name, gnutls_datum_t *key)
 {
     secure_connection_context_t *context;
@@ -269,6 +184,26 @@ static int prv_psk_callback(gnutls_session_t session, const char *name, gnutls_d
     memcpy(key->data, psk_buff, psk_len);
 
     return 0;
+}
+
+static device_connection_t *prv_new_connection_listen(void *this)
+{
+    device_connection_t *conn;
+
+    conn = calloc(1, sizeof(device_connection_t));
+    if (conn == NULL)
+    {
+        return NULL;
+    }
+
+    conn->sock = prv_new_socket(this);
+    if (conn->sock <= 0)
+    {
+        free(conn);
+        return NULL;
+    }
+
+    return conn;
 }
 
 int dtls_connection_api_init(connection_api_t **conn_api, int port, int address_family,
@@ -342,10 +277,15 @@ static int connection_start_secure(void *this)
         goto exit;
     }
 
+    context->connection_listen = prv_new_connection_listen(this);
+    if (context->connection_listen == NULL)
+    {
+        goto exit;
+    }
+
     gnutls_psk_set_server_credentials_function(context->server_psk, prv_psk_callback);
 
-    context->listen_socket = prv_new_socket(this);
-    ret = context->listen_socket;
+    ret = context->connection_listen->sock;
 
 exit:
     if (ret <= 0)
@@ -361,10 +301,14 @@ static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, v
                                      struct timeval *tv)
 {
     secure_connection_context_t *context = (secure_connection_context_t *)this;
-    int ret, nfds = 0;
+    int ret, sock, nfds = 0;
     fd_set read_fds;
-    device_connection_t *conn_curr = context->connection_list;
+    device_connection_t *conn_new, *conn_curr = context->connection_list;
     const char *err_str;
+    gnutls_dtls_prestate_st prestate;
+
+//  to reduce code redundancy
+    sock = context->connection_listen->sock;
 
 //  set active file descriptors and calculate required nfds
     FD_ZERO(&read_fds);
@@ -379,10 +323,10 @@ static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, v
         conn_curr = conn_curr->next;
     }
 
-    FD_SET(context->listen_socket, &read_fds);
-    if (context->listen_socket >= nfds)
+    FD_SET(sock, &read_fds);
+    if (sock >= nfds)
     {
-        nfds = context->listen_socket + 1;
+        nfds = sock + 1;
     }
 
     ret = select(nfds, &read_fds, NULL, NULL, tv);
@@ -413,29 +357,71 @@ static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, v
             }
             else
             {
-                *connection = conn_curr;
                 conn_curr->addr_size = sizeof(conn_curr->addr);
 
                 ret = recvfrom(conn_curr->sock, buffer, size, MSG_PEEK,
                                (struct sockaddr *)&conn_curr->addr, &conn_curr->addr_size);
-                return gnutls_record_recv(conn_curr->session, buffer, ret);
+                ret = gnutls_record_recv(conn_curr->session, buffer, ret);
+
+                if (ret <= 0)
+                {
+                    connection_close_secure(this, conn_curr);
+                }
+
+                *connection = conn_curr;
+                return ret;
             }
         }
         conn_curr = conn_curr->next;
     }
 
 //  expecting a new client connection
-    if (FD_ISSET(context->listen_socket, &read_fds))
+    if (FD_ISSET(sock, &read_fds))
     {
-        device_connection_t *conn_new = prv_connection_new_incoming(this);
-        if (conn_new == NULL)
-        {
-            log_message(LOG_LEVEL_WARN, "Failed to connect to device\n");
-            return 0;
-        }
+        context->connection_listen->addr_size = sizeof(context->connection_listen->addr);
 
-        conn_new->next = context->connection_list;
-        context->connection_list = conn_new;
+        //TODO: do MSG_PEEK so that same payload later goes to handshake
+        //then need to clear buffer
+        ret = recvfrom(sock, buffer, size, 0,
+                       (struct sockaddr *)&context->connection_listen->addr, &context->connection_listen->addr_size);
+        if (ret > 0)
+        {
+            memset(&prestate, 0, sizeof(gnutls_dtls_prestate_st));
+
+            ret = gnutls_dtls_cookie_verify(&context->cookie_key, &context->connection_listen->addr,
+                                            sizeof(context->connection_listen->addr), buffer, ret, &prestate);
+            if (ret == GNUTLS_E_BAD_COOKIE)
+            {
+                gnutls_dtls_cookie_send(&context->cookie_key, &context->connection_listen->addr,
+                                        sizeof(context->connection_listen->addr), &prestate, context->connection_listen, prv_net_send);
+            }
+            else if (ret == 0)
+            {
+                conn_new = context->connection_listen;
+
+                context->connection_listen = prv_new_connection_listen(this);
+                if (context->connection_listen == NULL)
+                {
+                    log_message(LOG_LEVEL_ERROR, "Failed to allocate new connection - client connection will fail\n");
+                    context->connection_listen = conn_new;
+                    return 0;
+                }
+
+//              the current socket will be taken over by the client connection
+                if (connect(conn_new->sock, (struct sockaddr *)&conn_new->addr, sizeof(conn_new->addr)) == 0)
+                {
+                    connection_close_secure(this, conn_new);
+                }
+
+                if (prv_connection_init(this, conn_new, &prestate))
+                {
+                    connection_close_secure(this, conn_new);
+                }
+
+                conn_new->next = context->connection_list;
+                context->connection_list = conn_new;
+            }
+        }
     }
 
     return 0;
@@ -447,6 +433,7 @@ static int connection_close_secure(void *this, void *connection)
     device_connection_t *conn = (device_connection_t *)connection;
     int ret;
 
+//  TODO: what if connection not yet added to list?
     if (context->connection_list == NULL)
     {
         return 0;
@@ -514,7 +501,8 @@ static int connection_stop_secure(void *this)
     gnutls_psk_free_server_credentials(context->server_psk);
     gnutls_global_deinit();
 
-    close(context->listen_socket);
+    close(context->connection_listen->sock);
+    free(context->connection_listen);
     free(context);
 
     return 0;
