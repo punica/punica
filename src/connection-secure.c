@@ -20,12 +20,12 @@
 #include "connection-secure.h"
 #include <gnutls/dtls.h>
 #include <gnutls/gnutls.h>
+#include "rest-list.h"
 
 #define BUFFER_SIZE 1024
 
 typedef struct _device_connection_t
 {
-    struct _device_connection_t *next;
     int sock;
     gnutls_session_t session;
     struct sockaddr_storage addr;
@@ -35,7 +35,7 @@ typedef struct _device_connection_t
 typedef struct secure_connection_context_t
 {
     connection_api_t api;
-    device_connection_t *connection_list;
+    rest_list_t *connection_list;
     device_connection_t *connection_listen;
     int port;
     int address_family;
@@ -277,9 +277,16 @@ static int connection_start_secure(void *this)
         goto exit;
     }
 
+    context->connection_list = rest_list_new();
+    if (context->connection_list == NULL)
+    {
+        goto exit;
+    }
+
     context->connection_listen = prv_new_connection_listen(this);
     if (context->connection_listen == NULL)
     {
+        rest_list_delete(context->connection_list);
         goto exit;
     }
 
@@ -303,24 +310,25 @@ static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, v
     secure_connection_context_t *context = (secure_connection_context_t *)this;
     int ret, sock, nfds = 0;
     fd_set read_fds;
-    device_connection_t *conn_new, *conn_curr = context->connection_list;
+    device_connection_t *conn;
+    rest_list_entry_t *conn_entry;
     const char *err_str;
     gnutls_dtls_prestate_st prestate;
 
 //  to reduce code redundancy
     sock = context->connection_listen->sock;
-
 //  set active file descriptors and calculate required nfds
     FD_ZERO(&read_fds);
 
-    while (conn_curr != NULL)
+    for (conn_entry = context->connection_list->head; conn_entry != NULL; conn_entry = conn_entry->next)
     {
-        FD_SET(conn_curr->sock, &read_fds);
-        if (conn_curr->sock >= nfds)
+        conn = (device_connection_t *)conn_entry->data;
+
+        FD_SET(conn->sock, &read_fds);
+        if (conn->sock >= nfds)
         {
-            nfds = conn_curr->sock + 1;
+            nfds = conn->sock + 1;
         }
-        conn_curr = conn_curr->next;
     }
 
     FD_SET(sock, &read_fds);
@@ -336,14 +344,15 @@ static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, v
     }
 
 //  manage client connections
-    conn_curr = context->connection_list;
-    while (conn_curr != NULL)
+    for (conn_entry = context->connection_list->head; conn_entry != NULL; conn_entry = conn_entry->next)
     {
-        if (FD_ISSET(conn_curr->sock, &read_fds))
+        conn = (device_connection_t *)conn_entry->data;
+
+        if (FD_ISSET(conn->sock, &read_fds))
         {
-            if (gnutls_session_get_desc(conn_curr->session) == NULL)
+            if (gnutls_session_get_desc(conn->session) == NULL)
             {
-                ret = gnutls_handshake(conn_curr->session);
+                ret = gnutls_handshake(conn->session);
 
                 //handshake continues until success
                 if (ret != GNUTLS_E_AGAIN && ret != GNUTLS_E_SUCCESS)
@@ -351,28 +360,29 @@ static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, v
                     err_str = gnutls_strerror(ret);
                     log_message(LOG_LEVEL_WARN, "Handshake failed with message: '%s'\n", err_str);
 
-                    connection_close_secure(this, conn_curr);
+                    rest_list_remove(context->connection_list, conn);
+                    connection_close_secure(this, conn);
                     return 0;
                 }
             }
             else
             {
-                conn_curr->addr_size = sizeof(conn_curr->addr);
+                conn->addr_size = sizeof(conn->addr);
 
-                ret = recvfrom(conn_curr->sock, buffer, size, MSG_PEEK,
-                               (struct sockaddr *)&conn_curr->addr, &conn_curr->addr_size);
-                ret = gnutls_record_recv(conn_curr->session, buffer, ret);
+                ret = recvfrom(conn->sock, buffer, size, MSG_PEEK,
+                               (struct sockaddr *)&conn->addr, &conn->addr_size);
+                ret = gnutls_record_recv(conn->session, buffer, ret);
 
                 if (ret <= 0)
                 {
-                    connection_close_secure(this, conn_curr);
+                    rest_list_remove(context->connection_list, conn);
+                    connection_close_secure(this, conn);
                 }
 
-                *connection = conn_curr;
+                *connection = conn;
                 return ret;
             }
         }
-        conn_curr = conn_curr->next;
     }
 
 //  expecting a new client connection
@@ -397,29 +407,28 @@ static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, v
             }
             else if (ret == 0)
             {
-                conn_new = context->connection_listen;
+                conn = context->connection_listen;
 
                 context->connection_listen = prv_new_connection_listen(this);
                 if (context->connection_listen == NULL)
                 {
                     log_message(LOG_LEVEL_ERROR, "Failed to allocate new connection - client connection will fail\n");
-                    context->connection_listen = conn_new;
+                    context->connection_listen = conn;
                     return 0;
                 }
 
 //              the current socket will be taken over by the client connection
-                if (connect(conn_new->sock, (struct sockaddr *)&conn_new->addr, sizeof(conn_new->addr)) == 0)
+                if (connect(conn->sock, (struct sockaddr *)&conn->addr, sizeof(conn->addr)))
                 {
-                    connection_close_secure(this, conn_new);
+                    connection_close_secure(this, conn);
                 }
 
-                if (prv_connection_init(this, conn_new, &prestate))
+                if (prv_connection_init(this, conn, &prestate))
                 {
-                    connection_close_secure(this, conn_new);
+                    connection_close_secure(this, conn);
                 }
 
-                conn_new->next = context->connection_list;
-                context->connection_list = conn_new;
+                rest_list_add(context->connection_list, conn);
             }
         }
     }
@@ -429,45 +438,28 @@ static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, v
 
 static int connection_close_secure(void *this, void *connection)
 {
-    secure_connection_context_t *context = (secure_connection_context_t *)this;
     device_connection_t *conn = (device_connection_t *)connection;
     int ret;
 
-//  TODO: what if connection not yet added to list?
-    if (context->connection_list == NULL)
+    if (conn == NULL)
     {
         return 0;
     }
 
-    if (conn == context->connection_list)
+    if (conn->session)
     {
-        context->connection_list = conn->next;
-        goto free;
-    }
-
-    device_connection_t *conn_curr = context->connection_list;
-    do
-    {
-        if (conn_curr->next == conn)
+        do
         {
-            conn_curr->next = conn->next;
-            goto free;
+            ret = gnutls_bye(conn->session, GNUTLS_SHUT_RDWR);
+        } while (ret == GNUTLS_E_AGAIN);
+
+        if (ret != GNUTLS_E_SUCCESS)
+        {
+            return -1;
         }
-        conn_curr = conn_curr->next;
-    } while (conn_curr->next != NULL);
-
-free:
-    do
-    {
-        ret = gnutls_bye(conn->session, GNUTLS_SHUT_RDWR);
-    } while (ret == GNUTLS_E_AGAIN);
-
-    if (ret != GNUTLS_E_SUCCESS)
-    {
-        return -1;
+        gnutls_deinit(conn->session);
     }
 
-    gnutls_deinit(conn->session);
     close(conn->sock);
     free(conn);
     return 0;
@@ -483,18 +475,20 @@ static int connection_send_secure(void *this, void *connection, uint8_t *buffer,
 static int connection_stop_secure(void *this)
 {
     secure_connection_context_t *context = (secure_connection_context_t *)this;
-    device_connection_t *curr, *next;
+    device_connection_t *conn;
+    rest_list_entry_t *conn_entry;
 
-    curr = context->connection_list;
-    while (curr != NULL)
+    for (conn_entry = context->connection_list->head; conn_entry != NULL; conn_entry = conn_entry->next)
     {
-        next = curr->next;
-        if (connection_close_secure(this, curr))
+        conn = (device_connection_t *)conn_entry->data;
+
+        if (connection_close_secure(this, conn))
         {
             log_message(LOG_LEVEL_ERROR, "Failed to deinit session with client\n");
         }
-        curr = next;
     }
+
+    rest_list_delete(context->connection_list);
 
     gnutls_certificate_free_credentials(context->server_cert);
     gnutls_priority_deinit(context->priority_cache);
