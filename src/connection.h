@@ -36,14 +36,4 @@
  */
 int udp_connection_api_init(connection_api_t **api, int port, int address_family);
 
-int connection_start(void *this);
-
-int connection_close(void *this, void *connection);
-
-int connection_receive(void *this, uint8_t *buffer, size_t size, void **connection,
-                       struct timeval *tv);
-
-int connection_send(void *this, void *connection, uint8_t *buffer, size_t length);
-
-int connection_stop(void *this);
 #endif
