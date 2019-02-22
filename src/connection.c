@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "rest-list.h"
 
 typedef struct _connection_t
 {
@@ -35,7 +36,7 @@ typedef struct _connection_t
 typedef struct connection_context_t
 {
     connection_api_t api;
-    connection_t *connection_list;
+    rest_list_t *connection_list;
     int port;
     int address_family;
     int listen_socket;
@@ -51,16 +52,17 @@ static int connection_stop(void *context_p);
 static connection_t *connection_find(connection_context_t *context, struct sockaddr_storage *addr,
                                      size_t addr_len)
 {
-    connection_t *conn_curr;
+    connection_t *conn;
+    rest_list_entry_t *conn_entry;
 
-    conn_curr = context->connection_list;
-    while (conn_curr != NULL)
+    for (conn_entry = context->connection_list->head; conn_entry != NULL; conn_entry = conn_entry->next)
     {
-        if ((conn_curr->addr_len == addr_len) && (memcmp(&(conn_curr->addr), addr, addr_len) == 0))
+        conn = conn_entry->data;
+
+        if ((conn->addr_len == addr_len) && (memcmp(&(conn->addr), addr, addr_len) == 0))
         {
-            return conn_curr;
+            return conn;
         }
-        conn_curr = conn_curr->next;
     }
 
     return NULL;
@@ -77,7 +79,8 @@ static connection_t *connection_new_incoming(connection_context_t *context, stru
         conn->sock = context->listen_socket;
         memcpy(&(conn->addr), addr, addr_len);
         conn->addr_len = addr_len;
-        conn->next = context->connection_list;
+
+        rest_list_add(context->connection_list, conn);
     }
 
     return conn;
@@ -103,9 +106,9 @@ static int socket_receive(connection_context_t *context, uint8_t *buffer, size_t
     if (conn == NULL)
     {
         conn = connection_new_incoming(context, (struct sockaddr *)&addr, addr_len);
-        if (conn)
+        if (conn == NULL)
         {
-            context->connection_list = conn;
+            return -1;
         }
     }
 
@@ -170,6 +173,13 @@ static int connection_start(void *context_p)
         }
     }
 
+    context->connection_list = rest_list_new();
+    if (context->connection_list == NULL)
+    {
+        close(sock);
+        sock = -1;
+    }
+
     freeaddrinfo(res);
     context->listen_socket = sock;
 
@@ -180,27 +190,14 @@ static int connection_close(void *context_p, void *connection)
 {
     connection_context_t *context = (connection_context_t *)context_p;
     connection_t *conn = (connection_t *)connection;
-    connection_t *conn_curr = context->connection_list;
-    connection_t *next;
 
-    if (conn_curr == NULL)
+    if (conn == NULL)
     {
         return 0;
     }
-    else if (conn == conn_curr)
-    {
-        next = conn_curr->next;
-        free(conn);
-        context->connection_list = next;
-        return 0;
-    }
 
-    while (conn_curr->next != conn)
-    {
-        conn_curr = conn_curr->next;
-    }
+    rest_list_remove(context->connection_list, conn);
 
-    conn_curr->next = conn->next;
     free(conn);
     return 0;
 }
@@ -249,14 +246,14 @@ static int connection_receive(void *context_p, uint8_t *buffer, size_t size, voi
 static int connection_stop(void *context_p)
 {
     connection_context_t *context = (connection_context_t *)context_p;
-    connection_t *curr, *next;
+    connection_t *conn;
+    rest_list_entry_t *conn_entry;
 
-    curr = context->connection_list;
-    while (curr != NULL)
+    for (conn_entry = context->connection_list->head; conn_entry != NULL; conn_entry = conn_entry->next)
     {
-        next = curr->next;
-        connection_close(context, curr);
-        curr = next;
+        conn = conn_entry->data;
+
+        connection_close(context, conn);
     }
 
     close(context->listen_socket);
