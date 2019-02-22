@@ -34,6 +34,6 @@
  *      0 on success,
  *      negative value on error
  */
-int udp_connection_api_init(connection_api_t **api, int port, int address_family);
+connection_api_t *udp_connection_api_init(int port, int address_family);
 
 #endif

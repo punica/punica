@@ -116,13 +116,13 @@ static int socket_receive(connection_context_t *context, uint8_t *buffer, size_t
     return ret;
 }
 
-int udp_connection_api_init(connection_api_t **conn_api, int port, int address_family)
+connection_api_t *udp_connection_api_init(int port, int address_family)
 {
     connection_context_t *context;
     context = calloc(1, sizeof(connection_context_t));
     if (context == NULL)
     {
-        return -1;
+        return NULL;
     }
 
     context->port = port;
@@ -134,9 +134,8 @@ int udp_connection_api_init(connection_api_t **conn_api, int port, int address_f
     context->api.f_close = connection_close;
     context->api.f_stop = connection_stop;
     context->api.f_validate = NULL;
-    *conn_api = &context->api;
 
-    return 0;
+    return &context->api;
 }
 
 static int connection_start(void *context_p)

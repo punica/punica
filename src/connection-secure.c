@@ -212,14 +212,14 @@ static device_connection_t *prv_new_connection_listen(secure_connection_context_
     return conn;
 }
 
-int dtls_connection_api_init(connection_api_t **conn_api, int port, int address_family,
-                             const char *certificate_file, const char *private_key_file, void *data, f_psk_cb_t psk_cb)
+connection_api_t *dtls_connection_api_init(int port, int address_family,
+                                           const char *certificate_file, const char *private_key_file, void *data, f_psk_cb_t psk_cb)
 {
     secure_connection_context_t *context;
     context = calloc(1, sizeof(secure_connection_context_t));
     if (context == NULL)
     {
-        return -1;
+        return NULL;
     }
 
     context->port = port;
@@ -235,9 +235,8 @@ int dtls_connection_api_init(connection_api_t **conn_api, int port, int address_
     context->api.f_close = connection_close_secure;
     context->api.f_stop = connection_stop_secure;
     context->api.f_validate = connection_validate_secure;
-    *conn_api = &context->api;
 
-    return 0;
+    return &context->api;
 }
 
 static int connection_start_secure(void *context_p)

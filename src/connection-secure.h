@@ -38,8 +38,8 @@
  *      0 on success,
  *      negative value on error
  */
-int dtls_connection_api_init(connection_api_t **api, int port, int address_family,
-                             const char *cert_file, const char *key_file, void *data, f_psk_cb_t psk_cb);
+connection_api_t *dtls_connection_api_init(int port, int address_family, const char *cert_file,
+                                           const char *key_file, void *data, f_psk_cb_t psk_cb);
 
 
 #endif

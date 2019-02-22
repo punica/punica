@@ -90,22 +90,22 @@ static void init_signals(void)
     }
 }
 
-static int api_init(connection_api_t **conn_api, coap_settings_t *coap, void *data,
-                    f_psk_cb_t psk_cb)
+static connection_api_t *api_init(coap_settings_t *coap, void *data,
+                                  f_psk_cb_t psk_cb)
 {
     if (coap->security_mode == PUNICA_COAP_MODE_INSECURE)
     {
-        return udp_connection_api_init(conn_api, coap->port, AF_INET6);
+        return udp_connection_api_init(coap->port, AF_INET6);
     }
     else if (coap->security_mode == PUNICA_COAP_MODE_SECURE)
     {
-        return dtls_connection_api_init(conn_api, coap->port, AF_INET6, coap->certificate_file,
+        return dtls_connection_api_init(coap->port, AF_INET6, coap->certificate_file,
                                         coap->private_key_file, data, psk_cb);
     }
     else
     {
         log_message(LOG_LEVEL_FATAL, "Found unsupported CoAP security mode: %d\n", coap->security_mode);
-        return -1;
+        return NULL;
     }
 }
 
@@ -361,7 +361,8 @@ int main(int argc, char *argv[])
 
     rest_init(&rest, &settings);
 
-    if (api_init(&conn_api, &settings.coap, (void *)rest.devicesList, psk_find_callback) != 0)
+    conn_api = api_init(&settings.coap, (void *)rest.devicesList, psk_find_callback);
+    if (conn_api == NULL)
     {
         return -1;
     }
