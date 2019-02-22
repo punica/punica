@@ -401,9 +401,8 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
     {
         context->conn_listen->addr_size = sizeof(context->conn_listen->addr);
 
-        //TODO: do MSG_PEEK so that same payload later goes to handshake
-        //then need to clear buffer
-        ret = recvfrom(sock, buffer, size, 0,
+//      only peek here so that if connection is successful, socket is still active when passing to handshake
+        ret = recvfrom(sock, buffer, size, MSG_PEEK,
                        (struct sockaddr *)&context->conn_listen->addr, &context->conn_listen->addr_size);
         if (ret > 0)
         {
@@ -453,7 +452,12 @@ connect_fail:
                 {
                     rest_list_add(context->connection_list, conn);
                 }
+
+                return 0;
             }
+//          clear socket
+            ret = recvfrom(sock, buffer, size, 0, (struct sockaddr *)&context->conn_listen->addr,
+                           &context->conn_listen->addr_size);
         }
     }
 
