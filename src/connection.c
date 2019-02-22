@@ -41,16 +41,16 @@ typedef struct connection_context_t
     int listen_socket;
 } connection_context_t;
 
-static int connection_start(void *this);
-static int connection_close(void *this, void *connection);
-static int connection_receive(void *this, uint8_t *buffer, size_t size, void **connection,
+static int connection_start(void *context_p);
+static int connection_close(void *context_p, void *connection);
+static int connection_receive(void *context_p, uint8_t *buffer, size_t size, void **connection,
                               struct timeval *tv);
-static int connection_send(void *this, void *connection, uint8_t *buffer, size_t length);
-static int connection_stop(void *this);
+static int connection_send(void *context_p, void *connection, uint8_t *buffer, size_t length);
+static int connection_stop(void *context_p);
 
-static connection_t *connection_find(void *this, struct sockaddr_storage *addr, size_t addr_len)
+static connection_t *connection_find(connection_context_t *context, struct sockaddr_storage *addr,
+                                     size_t addr_len)
 {
-    connection_context_t *context = (connection_context_t *)this;
     connection_t *conn_curr;
 
     conn_curr = context->connection_list;
@@ -66,9 +66,9 @@ static connection_t *connection_find(void *this, struct sockaddr_storage *addr, 
     return NULL;
 }
 
-static connection_t *connection_new_incoming(void *this, struct sockaddr *addr, size_t addr_len)
+static connection_t *connection_new_incoming(connection_context_t *context, struct sockaddr *addr,
+                                             size_t addr_len)
 {
-    connection_context_t *context = (connection_context_t *)this;
     connection_t *conn;
 
     conn = (connection_t *)malloc(sizeof(connection_t));
@@ -83,9 +83,9 @@ static connection_t *connection_new_incoming(void *this, struct sockaddr *addr, 
     return conn;
 }
 
-static int socket_receive(void *this, uint8_t *buffer, size_t size, void **connection)
+static int socket_receive(connection_context_t *context, uint8_t *buffer, size_t size,
+                          void **connection)
 {
-    connection_context_t *context = (connection_context_t *)this;
     int ret;
     connection_t *conn;
     struct sockaddr_storage addr;
@@ -99,10 +99,10 @@ static int socket_receive(void *this, uint8_t *buffer, size_t size, void **conne
         return -1;
     }
 
-    conn = connection_find(this, &addr, addr_len);
+    conn = connection_find(context, &addr, addr_len);
     if (conn == NULL)
     {
-        conn = connection_new_incoming(this, (struct sockaddr *)&addr, addr_len);
+        conn = connection_new_incoming(context, (struct sockaddr *)&addr, addr_len);
         if (conn)
         {
             context->connection_list = conn;
@@ -136,9 +136,9 @@ int udp_connection_api_init(connection_api_t **conn_api, int port, int address_f
     return 0;
 }
 
-static int connection_start(void *this)
+static int connection_start(void *context_p)
 {
-    connection_context_t *context = (connection_context_t *)this;
+    connection_context_t *context = (connection_context_t *)context_p;
     struct addrinfo hints;
     struct addrinfo *res;
     struct addrinfo *p;
@@ -176,9 +176,9 @@ static int connection_start(void *this)
     return sock;
 }
 
-static int connection_close(void *this, void *connection)
+static int connection_close(void *context_p, void *connection)
 {
-    connection_context_t *context = (connection_context_t *)this;
+    connection_context_t *context = (connection_context_t *)context_p;
     connection_t *conn = (connection_t *)connection;
     connection_t *conn_curr = context->connection_list;
     connection_t *next;
@@ -205,7 +205,7 @@ static int connection_close(void *this, void *connection)
     return 0;
 }
 
-static int connection_send(void *this, void *connection, uint8_t *buffer, size_t length)
+static int connection_send(void *context_p, void *connection, uint8_t *buffer, size_t length)
 {
     connection_t *conn = (connection_t *)connection;
     int nbSent;
@@ -222,10 +222,10 @@ static int connection_send(void *this, void *connection, uint8_t *buffer, size_t
     return 0;
 }
 
-static int connection_receive(void *this, uint8_t *buffer, size_t size, void **connection,
+static int connection_receive(void *context_p, uint8_t *buffer, size_t size, void **connection,
                               struct timeval *tv)
 {
-    connection_context_t *context = (connection_context_t *)this;
+    connection_context_t *context = (connection_context_t *)context_p;
     int res;
     fd_set readfds;
 
@@ -240,22 +240,22 @@ static int connection_receive(void *this, uint8_t *buffer, size_t size, void **c
 
     if (FD_ISSET(context->listen_socket, &readfds))
     {
-        return socket_receive(this, buffer, size, connection);
+        return socket_receive(context, buffer, size, connection);
     }
 
     return 0;
 }
 
-static int connection_stop(void *this)
+static int connection_stop(void *context_p)
 {
-    connection_context_t *context = (connection_context_t *)this;
+    connection_context_t *context = (connection_context_t *)context_p;
     connection_t *curr, *next;
 
     curr = context->connection_list;
     while (curr != NULL)
     {
         next = curr->next;
-        connection_close(this, curr);
+        connection_close(context, curr);
         curr = next;
     }
 
