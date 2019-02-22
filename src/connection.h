@@ -20,13 +20,6 @@
 #ifndef CONNECTION_H_
 #define CONNECTION_H_
 
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <unistd.h>
 #include "restserver.h"
 
 typedef struct _connection_t
