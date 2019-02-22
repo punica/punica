@@ -42,7 +42,7 @@ typedef struct secure_connection_context_t
 {
     connection_api_t api;
     rest_list_t *connection_list;
-    device_connection_t *connection_listen;
+    device_connection_t *conn_listen;
     int port;
     int address_family;
     const char *certificate_file;
@@ -63,7 +63,8 @@ static int dtls_connection_close(void *context_p, void *connection);
 static int dtls_connection_stop(void *context_p);
 static int dtls_connection_validate(char *name, void *connection);
 
-static ssize_t dtls_connection_net_send(gnutls_transport_ptr_t context, const void *data, size_t size)
+static ssize_t dtls_connection_net_send(gnutls_transport_ptr_t context, const void *data,
+                                        size_t size)
 {
     device_connection_t *conn = (device_connection_t *)context;
 
@@ -130,8 +131,8 @@ static int dtls_connection_new_socket(secure_connection_context_t *context)
 }
 
 static int dtls_connection_init(secure_connection_context_t *context,
-                               device_connection_t *connection,
-                               gnutls_dtls_prestate_st *prestate)
+                                device_connection_t *connection,
+                                gnutls_dtls_prestate_st *prestate)
 {
     int ret = -1;
 
@@ -166,7 +167,8 @@ exit:
     return ret;
 }
 
-static int dtls_connection_psk_callback(gnutls_session_t session, const char *name, gnutls_datum_t *key)
+static int dtls_connection_psk_callback(gnutls_session_t session, const char *name,
+                                        gnutls_datum_t *key)
 {
     secure_connection_context_t *context;
     uint8_t *psk_buff;
@@ -294,8 +296,8 @@ static int dtls_connection_start(void *context_p)
         goto exit;
     }
 
-    context->connection_listen = dtls_connection_new_listen(context);
-    if (context->connection_listen == NULL)
+    context->conn_listen = dtls_connection_new_listen(context);
+    if (context->conn_listen == NULL)
     {
         rest_list_delete(context->connection_list);
         goto exit;
@@ -303,7 +305,7 @@ static int dtls_connection_start(void *context_p)
 
     gnutls_psk_set_server_credentials_function(context->server_psk, dtls_connection_psk_callback);
 
-    ret = context->connection_listen->sock;
+    ret = context->conn_listen->sock;
 
 exit:
     if (ret <= 0)
@@ -327,7 +329,7 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
     gnutls_dtls_prestate_st prestate;
 
 //  to reduce code redundancy
-    sock = context->connection_listen->sock;
+    sock = context->conn_listen->sock;
 //  set active file descriptors and calculate required nfds
     FD_ZERO(&read_fds);
 
@@ -397,32 +399,32 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
 //  expecting a new client connection
     if (FD_ISSET(sock, &read_fds))
     {
-        context->connection_listen->addr_size = sizeof(context->connection_listen->addr);
+        context->conn_listen->addr_size = sizeof(context->conn_listen->addr);
 
         //TODO: do MSG_PEEK so that same payload later goes to handshake
         //then need to clear buffer
         ret = recvfrom(sock, buffer, size, 0,
-                       (struct sockaddr *)&context->connection_listen->addr, &context->connection_listen->addr_size);
+                       (struct sockaddr *)&context->conn_listen->addr, &context->conn_listen->addr_size);
         if (ret > 0)
         {
             memset(&prestate, 0, sizeof(gnutls_dtls_prestate_st));
 
-            ret = gnutls_dtls_cookie_verify(&context->cookie_key, &context->connection_listen->addr,
-                                            sizeof(context->connection_listen->addr), buffer, ret, &prestate);
+            ret = gnutls_dtls_cookie_verify(&context->cookie_key, &context->conn_listen->addr,
+                                            sizeof(context->conn_listen->addr), buffer, ret, &prestate);
             if (ret == GNUTLS_E_BAD_COOKIE)
             {
-                gnutls_dtls_cookie_send(&context->cookie_key, &context->connection_listen->addr,
-                                        sizeof(context->connection_listen->addr), &prestate, context->connection_listen, dtls_connection_net_send);
+                gnutls_dtls_cookie_send(&context->cookie_key, &context->conn_listen->addr,
+                                        sizeof(context->conn_listen->addr), &prestate, context->conn_listen, dtls_connection_net_send);
             }
             else if (ret == 0)
             {
                 ret = -1;
-                conn = context->connection_listen;
+                conn = context->conn_listen;
 
-                context->connection_listen = dtls_connection_new_listen(context);
-                if (context->connection_listen == NULL)
+                context->conn_listen = dtls_connection_new_listen(context);
+                if (context->conn_listen == NULL)
                 {
-                    context->connection_listen = conn;
+                    context->conn_listen = conn;
                     goto connect_fail;
                 }
 
@@ -521,8 +523,8 @@ static int dtls_connection_stop(void *context_p)
     gnutls_psk_free_server_credentials(context->server_psk);
     gnutls_global_deinit();
 
-    close(context->connection_listen->sock);
-    free(context->connection_listen);
+    close(context->conn_listen->sock);
+    free(context->conn_listen);
 
     return 0;
 }
