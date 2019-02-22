@@ -366,7 +366,6 @@ static int connection_receive_secure(void *context_p, uint8_t *buffer, size_t si
                     err_str = gnutls_strerror(ret);
                     log_message(LOG_LEVEL_WARN, "Handshake failed with message: '%s'\n", err_str);
 
-                    rest_list_remove(context->connection_list, conn);
                     connection_close_secure(context, conn);
                     return 0;
                 }
@@ -381,7 +380,6 @@ static int connection_receive_secure(void *context_p, uint8_t *buffer, size_t si
 
                 if (ret <= 0)
                 {
-                    rest_list_remove(context->connection_list, conn);
                     connection_close_secure(context, conn);
                 }
 
@@ -413,28 +411,41 @@ static int connection_receive_secure(void *context_p, uint8_t *buffer, size_t si
             }
             else if (ret == 0)
             {
+                ret = -1;
                 conn = context->connection_listen;
 
                 context->connection_listen = prv_new_connection_listen(context);
                 if (context->connection_listen == NULL)
                 {
-                    log_message(LOG_LEVEL_ERROR, "Failed to allocate new connection - client connection will fail\n");
                     context->connection_listen = conn;
-                    return 0;
+                    goto connect_fail;
                 }
 
 //              the current socket will be taken over by the client connection
                 if (connect(conn->sock, (struct sockaddr *)&conn->addr, sizeof(conn->addr)))
                 {
-                    connection_close_secure(context, conn);
+                    close(conn->sock);
+                    free(conn);
+                    goto connect_fail;
                 }
 
                 if (prv_connection_init(context, conn, &prestate))
                 {
-                    connection_close_secure(context, conn);
+                    close(conn->sock);
+                    free(conn);
+                    goto connect_fail;
                 }
 
-                rest_list_add(context->connection_list, conn);
+                ret = 0;
+connect_fail:
+                if (ret)
+                {
+                    log_message(LOG_LEVEL_ERROR, "Failed to connect with new device\n");
+                }
+                else
+                {
+                    rest_list_add(context->connection_list, conn);
+                }
             }
         }
     }
@@ -444,6 +455,7 @@ static int connection_receive_secure(void *context_p, uint8_t *buffer, size_t si
 
 static int connection_close_secure(void *context_p, void *connection)
 {
+    secure_connection_context_t *context = (secure_connection_context_t *)context_p;
     device_connection_t *conn = (device_connection_t *)connection;
     int ret;
 
@@ -451,6 +463,8 @@ static int connection_close_secure(void *context_p, void *connection)
     {
         return 0;
     }
+
+    rest_list_remove(context->connection_list, conn);
 
     if (conn->session)
     {
