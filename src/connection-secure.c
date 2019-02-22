@@ -70,9 +70,8 @@ static ssize_t prv_net_send(gnutls_transport_ptr_t context, const void *data, si
     return sendto(conn->sock, data, size, 0, (struct sockaddr *)&conn->addr, conn->addr_size);
 }
 
-static int prv_new_socket(void *this)
+static int prv_new_socket(secure_connection_context_t *context)
 {
-    secure_connection_context_t *context = (secure_connection_context_t *)this;
     int sock, enable;
     struct addrinfo hints, *addr_list, *cur;
     char port_str[16];
@@ -130,10 +129,10 @@ static int prv_new_socket(void *this)
     return sock;
 }
 
-static int prv_connection_init(void *this, device_connection_t *connection,
+static int prv_connection_init(secure_connection_context_t *context,
+                               device_connection_t *connection,
                                gnutls_dtls_prestate_st *prestate)
 {
-    secure_connection_context_t *context = (secure_connection_context_t *)this;
     int ret = -1;
 
     if (gnutls_init(&connection->session, GNUTLS_SERVER | GNUTLS_DATAGRAM | GNUTLS_NONBLOCK))
@@ -192,7 +191,7 @@ static int prv_psk_callback(gnutls_session_t session, const char *name, gnutls_d
     return 0;
 }
 
-static device_connection_t *prv_new_connection_listen(void *this)
+static device_connection_t *prv_new_connection_listen(secure_connection_context_t *context)
 {
     device_connection_t *conn;
 
@@ -202,7 +201,7 @@ static device_connection_t *prv_new_connection_listen(void *this)
         return NULL;
     }
 
-    conn->sock = prv_new_socket(this);
+    conn->sock = prv_new_socket(context);
     if (conn->sock <= 0)
     {
         free(conn);
