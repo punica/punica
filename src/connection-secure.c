@@ -18,8 +18,14 @@
  */
 
 #include "connection-secure.h"
+#include <netdb.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <gnutls/dtls.h>
 #include <gnutls/gnutls.h>
+#include <gnutls/x509.h>
 #include "rest-list.h"
 
 #define BUFFER_SIZE 1024

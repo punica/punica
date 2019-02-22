@@ -20,18 +20,6 @@
 #ifndef CONNECTION_SECURE_H_
 #define CONNECTION_SECURE_H_
 
-#include <arpa/inet.h>
-#include <inttypes.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <signal.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <unistd.h>
 #include "restserver.h"
 
 /*
