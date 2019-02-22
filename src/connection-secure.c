@@ -239,6 +239,13 @@ connection_api_t *dtls_connection_api_init(int port, int address_family,
     return &context->api;
 }
 
+void dtls_connection_api_deinit(void *context_p)
+{
+    secure_connection_context_t *context = (secure_connection_context_t *)context_p;
+
+    free(context);
+}
+
 static int connection_start_secure(void *context_p)
 {
     secure_connection_context_t *context = (secure_connection_context_t *)context_p;
@@ -517,7 +524,6 @@ static int connection_stop_secure(void *context_p)
 
     close(context->connection_listen->sock);
     free(context->connection_listen);
-    free(context);
 
     return 0;
 }

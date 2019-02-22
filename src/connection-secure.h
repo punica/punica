@@ -41,5 +41,12 @@
 connection_api_t *dtls_connection_api_init(int port, int address_family, const char *cert_file,
                                            const char *key_file, void *data, f_psk_cb_t psk_cb);
 
+/*
+ * Deinitialize a DTLS connection context
+ *
+ * Parameters:
+ *      context - API context poiner
+ */
+void dtls_connection_api_deinit(void *context);
 
 #endif

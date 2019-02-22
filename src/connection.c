@@ -138,6 +138,13 @@ connection_api_t *udp_connection_api_init(int port, int address_family)
     return &context->api;
 }
 
+void udp_connection_api_deinit(void *context_p)
+{
+    connection_context_t *context = (connection_context_t *)context_p;
+
+    free(context);
+}
+
 static int connection_start(void *context_p)
 {
     connection_context_t *context = (connection_context_t *)context_p;
@@ -259,7 +266,6 @@ static int connection_stop(void *context_p)
     rest_list_delete(context->connection_list);
 
     close(context->listen_socket);
-    free(context);
 
     return 0;
 }

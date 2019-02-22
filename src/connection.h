@@ -36,4 +36,12 @@
  */
 connection_api_t *udp_connection_api_init(int port, int address_family);
 
+/*
+ * Deinitialize a UDP connection context
+ *
+ * Parameters:
+ *      context - API context pointer
+ */
+void udp_connection_api_deinit(void *context);
+
 #endif

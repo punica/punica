@@ -90,8 +90,7 @@ static void init_signals(void)
     }
 }
 
-static connection_api_t *api_init(coap_settings_t *coap, void *data,
-                                  f_psk_cb_t psk_cb)
+static connection_api_t *api_init(coap_settings_t *coap, void *data, f_psk_cb_t psk_cb)
 {
     if (coap->security_mode == PUNICA_COAP_MODE_INSECURE)
     {
@@ -106,6 +105,18 @@ static connection_api_t *api_init(coap_settings_t *coap, void *data,
     {
         log_message(LOG_LEVEL_FATAL, "Found unsupported CoAP security mode: %d\n", coap->security_mode);
         return NULL;
+    }
+}
+
+static void api_deinit(int security_mode, connection_api_t *api)
+{
+    if (security_mode == PUNICA_COAP_MODE_INSECURE)
+    {
+        udp_connection_api_deinit(api);
+    }
+    else if (security_mode == PUNICA_COAP_MODE_SECURE)
+    {
+        dtls_connection_api_deinit(api);
     }
 }
 
@@ -537,6 +548,7 @@ int main(int argc, char *argv[])
     ulfius_clean_instance(&instance);
 
     conn_api->f_stop(conn_api);
+    api_deinit(settings.coap.security_mode, conn_api);
     lwm2m_close(rest.lwm2m);
     rest_cleanup(&rest);
 
