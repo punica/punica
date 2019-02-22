@@ -26,8 +26,8 @@
 #include <liblwm2m.h>
 #include <ulfius.h>
 
-#include "connection.h"
-#include "connection-secure.h"
+#include "udp_connection_api.h"
+#include "dtls_connection_api.h"
 #include "restserver.h"
 #include "logging.h"
 #include "settings.h"

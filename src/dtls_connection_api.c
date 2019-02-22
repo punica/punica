@@ -56,10 +56,8 @@ typedef struct secure_connection_context_t
 } secure_connection_context_t;
 
 static int connection_start_secure(void *context_p);
-static int connection_receive_secure(void *context_p, uint8_t *buffer, size_t size,
-                                     void **connection, struct timeval *tv);
-static int connection_send_secure(void *context_p, void *connection, uint8_t *buffer,
-                                  size_t length);
+static int connection_receive_secure(void *context_p, uint8_t *buffer, size_t size, void **connection, struct timeval *tv);
+static int connection_send_secure(void *context_p, void *connection, uint8_t *buffer, size_t length);
 static int connection_close_secure(void *context_p, void *connection);
 static int connection_stop_secure(void *context_p);
 static int connection_validate_secure(char *name, void *connection);
