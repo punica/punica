@@ -17,7 +17,7 @@
  *
  */
 
-#include "connection.h"
+#include "udp_connection_api.h"
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,15 +42,15 @@ typedef struct connection_context_t
     int listen_socket;
 } connection_context_t;
 
-static int connection_start(void *context_p);
-static int connection_close(void *context_p, void *connection);
-static int connection_receive(void *context_p, uint8_t *buffer, size_t size, void **connection,
-                              struct timeval *tv);
-static int connection_send(void *context_p, void *connection, uint8_t *buffer, size_t length);
-static int connection_stop(void *context_p);
+static int udp_connection_start(void *context_p);
+static int udp_connection_close(void *context_p, void *connection);
+static int udp_connection_receive(void *context_p, uint8_t *buffer, size_t size, void **connection,
+                                  struct timeval *tv);
+static int udp_connection_send(void *context_p, void *connection, uint8_t *buffer, size_t length);
+static int udp_connection_stop(void *context_p);
 
-static connection_t *connection_find(connection_context_t *context, struct sockaddr_storage *addr,
-                                     size_t addr_len)
+static connection_t *udp_connection_find(connection_context_t *context,
+                                         struct sockaddr_storage *addr, size_t addr_len)
 {
     connection_t *conn;
     rest_list_entry_t *conn_entry;
@@ -68,8 +68,8 @@ static connection_t *connection_find(connection_context_t *context, struct socka
     return NULL;
 }
 
-static connection_t *connection_new_incoming(connection_context_t *context, struct sockaddr *addr,
-                                             size_t addr_len)
+static connection_t *udp_connection_new_incoming(connection_context_t *context,
+                                                 struct sockaddr *addr, size_t addr_len)
 {
     connection_t *conn;
 
@@ -86,8 +86,9 @@ static connection_t *connection_new_incoming(connection_context_t *context, stru
     return conn;
 }
 
-static int socket_receive(connection_context_t *context, uint8_t *buffer, size_t size,
-                          void **connection)
+static int udp_connection_socket_receive(connection_context_t *context, uint8_t *buffer,
+                                         size_t size,
+                                         void **connection)
 {
     int ret;
     connection_t *conn;
@@ -102,10 +103,10 @@ static int socket_receive(connection_context_t *context, uint8_t *buffer, size_t
         return -1;
     }
 
-    conn = connection_find(context, &addr, addr_len);
+    conn = udp_connection_find(context, &addr, addr_len);
     if (conn == NULL)
     {
-        conn = connection_new_incoming(context, (struct sockaddr *)&addr, addr_len);
+        conn = udp_connection_new_incoming(context, (struct sockaddr *)&addr, addr_len);
         if (conn == NULL)
         {
             return -1;
@@ -128,11 +129,11 @@ connection_api_t *udp_connection_api_init(int port, int address_family)
     context->port = port;
     context->address_family = address_family;
 
-    context->api.f_start = connection_start;
-    context->api.f_receive = connection_receive;
-    context->api.f_send = connection_send;
-    context->api.f_close = connection_close;
-    context->api.f_stop = connection_stop;
+    context->api.f_start = udp_connection_start;
+    context->api.f_receive = udp_connection_receive;
+    context->api.f_send = udp_connection_send;
+    context->api.f_close = udp_connection_close;
+    context->api.f_stop = udp_connection_stop;
     context->api.f_validate = NULL;
 
     return &context->api;
@@ -145,7 +146,7 @@ void udp_connection_api_deinit(void *context_p)
     free(context);
 }
 
-static int connection_start(void *context_p)
+static int udp_connection_start(void *context_p)
 {
     connection_context_t *context = (connection_context_t *)context_p;
     struct addrinfo hints;
@@ -192,7 +193,7 @@ static int connection_start(void *context_p)
     return sock;
 }
 
-static int connection_close(void *context_p, void *connection)
+static int udp_connection_close(void *context_p, void *connection)
 {
     connection_context_t *context = (connection_context_t *)context_p;
     connection_t *conn = (connection_t *)connection;
@@ -208,7 +209,7 @@ static int connection_close(void *context_p, void *connection)
     return 0;
 }
 
-static int connection_send(void *context_p, void *connection, uint8_t *buffer, size_t length)
+static int udp_connection_send(void *context_p, void *connection, uint8_t *buffer, size_t length)
 {
     connection_t *conn = (connection_t *)connection;
     int nbSent;
@@ -225,8 +226,8 @@ static int connection_send(void *context_p, void *connection, uint8_t *buffer, s
     return 0;
 }
 
-static int connection_receive(void *context_p, uint8_t *buffer, size_t size, void **connection,
-                              struct timeval *tv)
+static int udp_connection_receive(void *context_p, uint8_t *buffer, size_t size, void **connection,
+                                  struct timeval *tv)
 {
     connection_context_t *context = (connection_context_t *)context_p;
     int res;
@@ -243,13 +244,13 @@ static int connection_receive(void *context_p, uint8_t *buffer, size_t size, voi
 
     if (FD_ISSET(context->listen_socket, &readfds))
     {
-        return socket_receive(context, buffer, size, connection);
+        return udp_connection_socket_receive(context, buffer, size, connection);
     }
 
     return 0;
 }
 
-static int connection_stop(void *context_p)
+static int udp_connection_stop(void *context_p)
 {
     connection_context_t *context = (connection_context_t *)context_p;
     connection_t *conn;
@@ -260,7 +261,7 @@ static int connection_stop(void *context_p)
         conn_next = conn_entry->next;
         conn = conn_entry->data;
 
-        connection_close(context, conn);
+        udp_connection_close(context, conn);
     }
 
     rest_list_delete(context->connection_list);

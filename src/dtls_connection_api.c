@@ -17,7 +17,7 @@
  *
  */
 
-#include "connection-secure.h"
+#include "dtls_connection_api.h"
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,21 +55,22 @@ typedef struct secure_connection_context_t
     f_psk_cb_t psk_cb;
 } secure_connection_context_t;
 
-static int connection_start_secure(void *context_p);
-static int connection_receive_secure(void *context_p, uint8_t *buffer, size_t size, void **connection, struct timeval *tv);
-static int connection_send_secure(void *context_p, void *connection, uint8_t *buffer, size_t length);
-static int connection_close_secure(void *context_p, void *connection);
-static int connection_stop_secure(void *context_p);
-static int connection_validate_secure(char *name, void *connection);
+static int dtls_connection_start(void *context_p);
+static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size, void **connection,
+                                   struct timeval *tv);
+static int dtls_connection_send(void *context_p, void *connection, uint8_t *buffer, size_t length);
+static int dtls_connection_close(void *context_p, void *connection);
+static int dtls_connection_stop(void *context_p);
+static int dtls_connection_validate(char *name, void *connection);
 
-static ssize_t prv_net_send(gnutls_transport_ptr_t context, const void *data, size_t size)
+static ssize_t dtls_connection_net_send(gnutls_transport_ptr_t context, const void *data, size_t size)
 {
     device_connection_t *conn = (device_connection_t *)context;
 
     return sendto(conn->sock, data, size, 0, (struct sockaddr *)&conn->addr, conn->addr_size);
 }
 
-static int prv_new_socket(secure_connection_context_t *context)
+static int dtls_connection_new_socket(secure_connection_context_t *context)
 {
     int sock, enable;
     struct addrinfo hints, *addr_list, *cur;
@@ -128,7 +129,7 @@ static int prv_new_socket(secure_connection_context_t *context)
     return sock;
 }
 
-static int prv_connection_init(secure_connection_context_t *context,
+static int dtls_connection_init(secure_connection_context_t *context,
                                device_connection_t *connection,
                                gnutls_dtls_prestate_st *prestate)
 {
@@ -165,7 +166,7 @@ exit:
     return ret;
 }
 
-static int prv_psk_callback(gnutls_session_t session, const char *name, gnutls_datum_t *key)
+static int dtls_connection_psk_callback(gnutls_session_t session, const char *name, gnutls_datum_t *key)
 {
     secure_connection_context_t *context;
     uint8_t *psk_buff;
@@ -190,7 +191,7 @@ static int prv_psk_callback(gnutls_session_t session, const char *name, gnutls_d
     return 0;
 }
 
-static device_connection_t *prv_new_connection_listen(secure_connection_context_t *context)
+static device_connection_t *dtls_connection_new_listen(secure_connection_context_t *context)
 {
     device_connection_t *conn;
 
@@ -200,7 +201,7 @@ static device_connection_t *prv_new_connection_listen(secure_connection_context_
         return NULL;
     }
 
-    conn->sock = prv_new_socket(context);
+    conn->sock = dtls_connection_new_socket(context);
     if (conn->sock <= 0)
     {
         free(conn);
@@ -227,12 +228,12 @@ connection_api_t *dtls_connection_api_init(int port, int address_family,
     context->data = data;
     context->psk_cb = psk_cb;
 
-    context->api.f_start = connection_start_secure;
-    context->api.f_receive = connection_receive_secure;
-    context->api.f_send = connection_send_secure;
-    context->api.f_close = connection_close_secure;
-    context->api.f_stop = connection_stop_secure;
-    context->api.f_validate = connection_validate_secure;
+    context->api.f_start = dtls_connection_start;
+    context->api.f_receive = dtls_connection_receive;
+    context->api.f_send = dtls_connection_send;
+    context->api.f_close = dtls_connection_close;
+    context->api.f_stop = dtls_connection_stop;
+    context->api.f_validate = dtls_connection_validate;
 
     return &context->api;
 }
@@ -244,7 +245,7 @@ void dtls_connection_api_deinit(void *context_p)
     free(context);
 }
 
-static int connection_start_secure(void *context_p)
+static int dtls_connection_start(void *context_p)
 {
     secure_connection_context_t *context = (secure_connection_context_t *)context_p;
     int ret = -1;
@@ -293,14 +294,14 @@ static int connection_start_secure(void *context_p)
         goto exit;
     }
 
-    context->connection_listen = prv_new_connection_listen(context);
+    context->connection_listen = dtls_connection_new_listen(context);
     if (context->connection_listen == NULL)
     {
         rest_list_delete(context->connection_list);
         goto exit;
     }
 
-    gnutls_psk_set_server_credentials_function(context->server_psk, prv_psk_callback);
+    gnutls_psk_set_server_credentials_function(context->server_psk, dtls_connection_psk_callback);
 
     ret = context->connection_listen->sock;
 
@@ -314,8 +315,8 @@ exit:
     return ret;
 }
 
-static int connection_receive_secure(void *context_p, uint8_t *buffer, size_t size,
-                                     void **connection, struct timeval *tv)
+static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size,
+                                   void **connection, struct timeval *tv)
 {
     secure_connection_context_t *context = (secure_connection_context_t *)context_p;
     int ret, sock, nfds = 0;
@@ -370,7 +371,7 @@ static int connection_receive_secure(void *context_p, uint8_t *buffer, size_t si
                     err_str = gnutls_strerror(ret);
                     log_message(LOG_LEVEL_WARN, "Handshake failed with message: '%s'\n", err_str);
 
-                    connection_close_secure(context, conn);
+                    dtls_connection_close(context, conn);
                     return 0;
                 }
             }
@@ -384,7 +385,7 @@ static int connection_receive_secure(void *context_p, uint8_t *buffer, size_t si
 
                 if (ret <= 0)
                 {
-                    connection_close_secure(context, conn);
+                    dtls_connection_close(context, conn);
                 }
 
                 *connection = conn;
@@ -411,14 +412,14 @@ static int connection_receive_secure(void *context_p, uint8_t *buffer, size_t si
             if (ret == GNUTLS_E_BAD_COOKIE)
             {
                 gnutls_dtls_cookie_send(&context->cookie_key, &context->connection_listen->addr,
-                                        sizeof(context->connection_listen->addr), &prestate, context->connection_listen, prv_net_send);
+                                        sizeof(context->connection_listen->addr), &prestate, context->connection_listen, dtls_connection_net_send);
             }
             else if (ret == 0)
             {
                 ret = -1;
                 conn = context->connection_listen;
 
-                context->connection_listen = prv_new_connection_listen(context);
+                context->connection_listen = dtls_connection_new_listen(context);
                 if (context->connection_listen == NULL)
                 {
                     context->connection_listen = conn;
@@ -433,7 +434,7 @@ static int connection_receive_secure(void *context_p, uint8_t *buffer, size_t si
                     goto connect_fail;
                 }
 
-                if (prv_connection_init(context, conn, &prestate))
+                if (dtls_connection_init(context, conn, &prestate))
                 {
                     close(conn->sock);
                     free(conn);
@@ -457,7 +458,7 @@ connect_fail:
     return 0;
 }
 
-static int connection_close_secure(void *context_p, void *connection)
+static int dtls_connection_close(void *context_p, void *connection)
 {
     secure_connection_context_t *context = (secure_connection_context_t *)context_p;
     device_connection_t *conn = (device_connection_t *)connection;
@@ -489,14 +490,14 @@ static int connection_close_secure(void *context_p, void *connection)
     return 0;
 }
 
-static int connection_send_secure(void *context_p, void *connection, uint8_t *buffer, size_t length)
+static int dtls_connection_send(void *context_p, void *connection, uint8_t *buffer, size_t length)
 {
     device_connection_t *conn = (device_connection_t *)connection;
 
     return gnutls_record_send(conn->session, buffer, length);
 }
 
-static int connection_stop_secure(void *context_p)
+static int dtls_connection_stop(void *context_p)
 {
     secure_connection_context_t *context = (secure_connection_context_t *)context_p;
     device_connection_t *conn;
@@ -507,7 +508,7 @@ static int connection_stop_secure(void *context_p)
         conn_next = conn_entry->next;
         conn = (device_connection_t *)conn_entry->data;
 
-        if (connection_close_secure(context, conn))
+        if (dtls_connection_close(context, conn))
         {
             log_message(LOG_LEVEL_ERROR, "Failed to deinit session with client\n");
         }
@@ -526,7 +527,7 @@ static int connection_stop_secure(void *context_p)
     return 0;
 }
 
-static int connection_validate_secure(char *name, void *connection)
+static int dtls_connection_validate(char *name, void *connection)
 {
     device_connection_t *conn = (device_connection_t *)connection;
     gnutls_x509_crt_t cert;
