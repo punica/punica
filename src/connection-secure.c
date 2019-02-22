@@ -55,12 +55,13 @@ typedef struct secure_connection_context_t
     f_psk_cb_t psk_cb;
 } secure_connection_context_t;
 
-static int connection_start_secure(void *this);
-static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, void **connection,
-                                     struct timeval *tv);
-static int connection_send_secure(void *this, void *connection, uint8_t *buffer, size_t length);
-static int connection_close_secure(void *this, void *connection);
-static int connection_stop_secure(void *this);
+static int connection_start_secure(void *context_p);
+static int connection_receive_secure(void *context_p, uint8_t *buffer, size_t size,
+                                     void **connection, struct timeval *tv);
+static int connection_send_secure(void *context_p, void *connection, uint8_t *buffer,
+                                  size_t length);
+static int connection_close_secure(void *context_p, void *connection);
+static int connection_stop_secure(void *context_p);
 static int connection_validate_secure(char *name, void *connection);
 
 static ssize_t prv_net_send(gnutls_transport_ptr_t context, const void *data, size_t size)
@@ -239,9 +240,9 @@ int dtls_connection_api_init(connection_api_t **conn_api, int port, int address_
     return 0;
 }
 
-static int connection_start_secure(void *this)
+static int connection_start_secure(void *context_p)
 {
-    secure_connection_context_t *context = (secure_connection_context_t *)this;
+    secure_connection_context_t *context = (secure_connection_context_t *)context_p;
     int ret = -1;
 
     if (gnutls_global_init())
@@ -288,7 +289,7 @@ static int connection_start_secure(void *this)
         goto exit;
     }
 
-    context->connection_listen = prv_new_connection_listen(this);
+    context->connection_listen = prv_new_connection_listen(context);
     if (context->connection_listen == NULL)
     {
         rest_list_delete(context->connection_list);
@@ -309,10 +310,10 @@ exit:
     return ret;
 }
 
-static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, void **connection,
-                                     struct timeval *tv)
+static int connection_receive_secure(void *context_p, uint8_t *buffer, size_t size,
+                                     void **connection, struct timeval *tv)
 {
-    secure_connection_context_t *context = (secure_connection_context_t *)this;
+    secure_connection_context_t *context = (secure_connection_context_t *)context_p;
     int ret, sock, nfds = 0;
     fd_set read_fds;
     device_connection_t *conn;
@@ -366,7 +367,7 @@ static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, v
                     log_message(LOG_LEVEL_WARN, "Handshake failed with message: '%s'\n", err_str);
 
                     rest_list_remove(context->connection_list, conn);
-                    connection_close_secure(this, conn);
+                    connection_close_secure(context, conn);
                     return 0;
                 }
             }
@@ -381,7 +382,7 @@ static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, v
                 if (ret <= 0)
                 {
                     rest_list_remove(context->connection_list, conn);
-                    connection_close_secure(this, conn);
+                    connection_close_secure(context, conn);
                 }
 
                 *connection = conn;
@@ -414,7 +415,7 @@ static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, v
             {
                 conn = context->connection_listen;
 
-                context->connection_listen = prv_new_connection_listen(this);
+                context->connection_listen = prv_new_connection_listen(context);
                 if (context->connection_listen == NULL)
                 {
                     log_message(LOG_LEVEL_ERROR, "Failed to allocate new connection - client connection will fail\n");
@@ -425,12 +426,12 @@ static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, v
 //              the current socket will be taken over by the client connection
                 if (connect(conn->sock, (struct sockaddr *)&conn->addr, sizeof(conn->addr)))
                 {
-                    connection_close_secure(this, conn);
+                    connection_close_secure(context, conn);
                 }
 
-                if (prv_connection_init(this, conn, &prestate))
+                if (prv_connection_init(context, conn, &prestate))
                 {
-                    connection_close_secure(this, conn);
+                    connection_close_secure(context, conn);
                 }
 
                 rest_list_add(context->connection_list, conn);
@@ -441,7 +442,7 @@ static int connection_receive_secure(void *this, uint8_t *buffer, size_t size, v
     return 0;
 }
 
-static int connection_close_secure(void *this, void *connection)
+static int connection_close_secure(void *context_p, void *connection)
 {
     device_connection_t *conn = (device_connection_t *)connection;
     int ret;
@@ -470,16 +471,16 @@ static int connection_close_secure(void *this, void *connection)
     return 0;
 }
 
-static int connection_send_secure(void *this, void *connection, uint8_t *buffer, size_t length)
+static int connection_send_secure(void *context_p, void *connection, uint8_t *buffer, size_t length)
 {
     device_connection_t *conn = (device_connection_t *)connection;
 
     return gnutls_record_send(conn->session, buffer, length);
 }
 
-static int connection_stop_secure(void *this)
+static int connection_stop_secure(void *context_p)
 {
-    secure_connection_context_t *context = (secure_connection_context_t *)this;
+    secure_connection_context_t *context = (secure_connection_context_t *)context_p;
     device_connection_t *conn;
     rest_list_entry_t *conn_entry;
 
@@ -487,7 +488,7 @@ static int connection_stop_secure(void *this)
     {
         conn = (device_connection_t *)conn_entry->data;
 
-        if (connection_close_secure(this, conn))
+        if (connection_close_secure(context, conn))
         {
             log_message(LOG_LEVEL_ERROR, "Failed to deinit session with client\n");
         }
