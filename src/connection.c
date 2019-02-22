@@ -246,14 +246,17 @@ static int connection_stop(void *context_p)
 {
     connection_context_t *context = (connection_context_t *)context_p;
     connection_t *conn;
-    rest_list_entry_t *conn_entry;
+    rest_list_entry_t *conn_entry, *conn_next;
 
-    for (conn_entry = context->connection_list->head; conn_entry != NULL; conn_entry = conn_entry->next)
+    for (conn_entry = context->connection_list->head; conn_entry != NULL; conn_entry = conn_next)
     {
+        conn_next = conn_entry->next;
         conn = conn_entry->data;
 
         connection_close(context, conn);
     }
+
+    rest_list_delete(context->connection_list);
 
     close(context->listen_socket);
     free(context);

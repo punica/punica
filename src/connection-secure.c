@@ -495,10 +495,11 @@ static int connection_stop_secure(void *context_p)
 {
     secure_connection_context_t *context = (secure_connection_context_t *)context_p;
     device_connection_t *conn;
-    rest_list_entry_t *conn_entry;
+    rest_list_entry_t *conn_entry, *conn_next;
 
-    for (conn_entry = context->connection_list->head; conn_entry != NULL; conn_entry = conn_entry->next)
+    for (conn_entry = context->connection_list->head; conn_entry != NULL; conn_entry = conn_next)
     {
+        conn_next = conn_entry->next;
         conn = (device_connection_t *)conn_entry->data;
 
         if (connection_close_secure(context, conn))
