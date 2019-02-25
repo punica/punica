@@ -10,45 +10,76 @@ chai.use(chai_http);
 
 describe('Secure endpoints interface', () => {
 
-  let client = undefined;
+  let clientPsk = undefined;
+  let clientCert = undefined;
+  let serverURI = '::1';
+  let serverPort = 5556;
+  let socketType = 'udp6';
+  let restURI = 'localhost';
+  let restPort = 8889;
+
+  const clientPskOptions = {
+    clientName: 'test-client-psk',
+    serverURI: serverURI,
+    serverPort: serverPort,
+    socketType: socketType,
+    cipher: 'psk',
+    psk: 'psk1',
+    pskIdentity: 'pskid1',
+  };
+
+  const clientCertOptions = {
+    clientName: 'test-client-cert',
+    serverURI: serverURI,
+    serverPort: serverPort,
+    socketType: socketType,
+    cipher: 'cert',
+    CAPath: '../../ecdsa.pem',
+    certificatePath: '../../ecdsa.pem',
+    keyPath: '../../ecdsa.key',
+  };
 
   const jwt = {
     credentials: '{"name":"admin","secret":"not-same-as-name"}',
-    access_token: undefined,
+    accessToken: undefined,
   };
 
   before((done) => {
-    client = new ClientInterface();
-    client.connect(() => {
-      const options = {
-        host: 'localhost',
-        port: '8889',
-        ca: [
-          fs.readFileSync('../../certificate.pem'),
-        ],
-      };
-      options.path = '/authenticate';
-      options.method = 'POST';
-      options.agent = new https.Agent(options);
-      options.headers = {
-        'Content-Type': 'application/json',
-      };
+    clientPsk = new ClientInterface(clientPskOptions);
+    clientCert = new ClientInterface(clientCertOptions);
 
-      const authenticationRequest = https.request(options, (authenticationResponse) => {
-        let data = '';
+    clientPsk.connect(() => {
+      clientCert.connect(() => {
+        const options = {
+          host: restURI,
+          port: restPort,
+          ca: [
+            fs.readFileSync('../../certificate.pem'),
+          ],
+        };
+        options.path = '/authenticate';
+        options.method = 'POST';
+        options.agent = new https.Agent(options);
+        options.headers = {
+          'Content-Type': 'application/json',
+        };
 
-        authenticationResponse.on('data', (chunk) => {
-          data = data + chunk;
+        const authenticationRequest = https.request(options, (authenticationResponse) => {
+          let data = '';
+
+          authenticationResponse.on('data', (chunk) => {
+            data = data + chunk;
+          });
+
+          authenticationResponse.on('end', () => {
+            const parsedBody = JSON.parse(data);
+            jwt.accessToken = parsedBody['access_token'];
+            done();
+          });
         });
-
-        authenticationResponse.on('end', () => {
-          const parsedBody = JSON.parse(data);
-          jwt.access_token = parsedBody['access_token'];
-          done();
-        });
+        authenticationRequest.write(jwt.credentials);
+        authenticationRequest.end();
       });
-      authenticationRequest.write(jwt.credentials);
-      authenticationRequest.end();
     });
   });
 
@@ -57,15 +88,15 @@ describe('Secure endpoints interface', () => {
 
   it('should list all endpoints on /endpoints', (done) => {
     const options = {
-      host: 'localhost',
-      port: '8889',
+      host: restURI,
+      port: restPort,
       ca: [
         fs.readFileSync('../../certificate.pem'),
       ],
       path: '/endpoints',
       method: 'GET',
       headers: {
-        'Authorization': 'Bearer ' + jwt.access_token,
+        'Authorization': 'Bearer ' + jwt.accessToken,
       },
     };
     options.agent = new https.Agent(options);
@@ -83,12 +114,12 @@ describe('Secure endpoints interface', () => {
 
         res.should.have.header('content-type', 'application/json');
         parsedBody.should.be.a('array');
-        parsedBody.length.should.be.eql(1);
+        parsedBody.length.should.be.eql(1); //TODO: 2, check for new names
         parsedBody[0].should.be.a('object');
         parsedBody[0].should.have.property('name');
         parsedBody[0].should.have.property('status');
         parsedBody[0].should.have.property('q');
-        parsedBody[0].name.should.be.eql(client.name);
+        parsedBody[0].name.should.be.eql(clientCert.name);
         parsedBody[0].status.should.be.eql('ACTIVE');
         parsedBody[0].q.should.be.a('boolean');
 
@@ -99,15 +130,15 @@ describe('Secure endpoints interface', () => {
 
   it('should list all resources on /endpoints/{endpoint-name}', (done) => {
     const options = {
-      host: 'localhost',
-      port: '8889',
+      host: restURI,
+      port: restPort,
       ca: [
         fs.readFileSync('../../certificate.pem'),
       ],
-      path: '/endpoints/' + client.name,
+      path: '/endpoints/' + clientCert.name,
       method: 'GET',
       headers: {
-        'Authorization': 'Bearer ' + jwt.access_token,
+        'Authorization': 'Bearer ' + jwt.accessToken,
       },
     };
     options.agent = new https.Agent(options);
@@ -138,15 +169,15 @@ describe('Secure endpoints interface', () => {
 
   it('should return 404 when endpoint not found', (done) => {
     const options = {
-      host: 'localhost',
-      port: '8889',
+      host: restURI,
+      port: restPort,
       ca: [
         fs.readFileSync('../../certificate.pem'),
       ],
       path: '/endpoints/not-found',
       method: 'GET',
       headers: {
-        'Authorization': 'Bearer ' + jwt.access_token,
+        'Authorization': 'Bearer ' + jwt.accessToken,
       },
     };
     options.agent = new https.Agent(options);
