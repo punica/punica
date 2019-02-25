@@ -456,8 +456,8 @@ connect_fail:
                 return 0;
             }
 //          clear socket
-            ret = recvfrom(sock, buffer, size, 0, (struct sockaddr *)&context->conn_listen->addr,
-                           &context->conn_listen->addr_size);
+            recvfrom(sock, buffer, size, 0, (struct sockaddr *)&context->conn_listen->addr,
+                     &context->conn_listen->addr_size);
         }
     }
 
