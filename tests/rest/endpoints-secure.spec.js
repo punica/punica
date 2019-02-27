@@ -98,16 +98,4 @@ describe('Secure endpoints interface', () => {
       should.not.exist(err);
     });
   });
-
-  it('should deny client with invalid pskid', (done) => {
-    let clientPsk = new ClientInterface(pskOptionsWrongId);
-
-    clientPsk.connect((err) => {
-      if (err) {
-        done();
-      } else {
-        done(new Error('Server accepted client with invalid pskid'));
-      }
-    });
-  });
 });
