@@ -18,7 +18,6 @@ class ClientSecureInterface {
         queueMode: true,
         endpointClientName: options.clientName,
         serverURI: options.serverURI,
-        clientPort: clientPort,
         serverPort: options.serverPort,
         type: options.socketType,
       };
@@ -33,35 +32,40 @@ class ClientSecureInterface {
         const pk_key = new mbedtls.PKContext();
         pk_key.parse_key(server_key, Buffer.from(''));
 
-        dtlsOptions.cacert = cacert;
-        dtlsOptions.pk_key = pk_key;
-        dtlsOptions.authmode = mbedtls.SSL_VERIFY_REQUIRED;
-        dtlsOptions.ciphersuites = [
-          0xC0AE
-        ];
+        this.client = new mbedtls.Connection(dtlsOptions);
+        this.client.ssl_config.ca_chain(cacert, null);
+        this.client.ssl_config.own_cert(cacert, pk_key);
+        this.client.ssl_config.authmode(mbedtls.SSL_VERIFY_REQUIRED);
+        this.client.ssl_config.ciphersuites([0xC0AE]);
 
       } else if (options.cipher == 'psk') {
         const psk = Buffer.from(options.psk);
         const pskIdentity = Buffer.from(options.pskIdentity);
 
-        dtlsOptions.pskIdentity = pskIdentity;
-        dtlsOptions.psk = psk;
-        dtlsOptions.ciphersuites = [
-          0xC0A8
-        ];
+        this.client = new mbedtls.Connection(dtlsOptions);
+        this.client.ssl_config.psk(psk, pskIdentity);
+        this.client.ssl_config.ciphersuites([0xC0A8]);
 
       } else {
-          //TODO: error
+        throw Error('Unsupported dtls ciphersuite');
       }
 
+      dtlsOptions.clientPort = this.client;
       this.sens = new sensors.Sensor3700(dtlsOptions);
   }
 
   connect(callback) {
       this.sens.start();
 
-      this.sens.on('handshake', () => {
+      this.sens.on('registered', () => {
         callback();
+      });
+
+      this.sens.on('error', (error) => {
+      });
+
+      this.client.on('error', (error) => {
+        callback(error);
       });
   }
 }
