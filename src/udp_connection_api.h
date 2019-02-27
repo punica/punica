@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef CONNECTION_H_
-#define CONNECTION_H_
+#ifndef UDP_CONNECTION_API_H_
+#define UDP_CONNECTION_API_H_
 
 #include "restserver.h"
 

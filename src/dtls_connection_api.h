@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef CONNECTION_SECURE_H_
-#define CONNECTION_SECURE_H_
+#ifndef DTLS_CONNECTION_API_H_
+#define DTLS_CONNECTION_API_H_
 
 #include "restserver.h"
 
