@@ -69,7 +69,8 @@ typedef int (*f_start_t)(void *context);
  *      positive value of length of data received,
  *      negative value on error
 */
-typedef int (*f_receive_t)(void *context, uint8_t *buffer, size_t size, void **connection, struct timeval *tv);
+typedef int (*f_receive_t)(void *context, uint8_t *buffer, size_t size, void **connection,
+                           struct timeval *tv);
 /*
  * Send data to peer
  *
