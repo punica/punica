@@ -44,9 +44,6 @@
 /*
  * Initializes and starts a connection context
  *
- * Prototype:
- *      f_start(void *context);
- *
  * Parameters:
  *      context - connection context pointer
  *
@@ -54,14 +51,10 @@
  *      0 on success,
  *      negative value on error
 */
-typedef int (*f_start_t)(void *);
+typedef int (*f_start_t)(void *context);
 /*
  * POSIX recv style function that deals with incoming connections
  * and fills provided buffer with received data
- *
- * Prototype:
- *      f_receive(void *context, uint8_t *buffer, size_t size, void **connection,
- *                struct timeval *tv);
  *
  * Parameters:
  *      context - connection context pointer,
@@ -76,12 +69,9 @@ typedef int (*f_start_t)(void *);
  *      positive value of length of data received,
  *      negative value on error
 */
-typedef int (*f_receive_t)(void *, uint8_t *, size_t, void **, struct timeval *);
+typedef int (*f_receive_t)(void *context, uint8_t *buffer, size_t size, void **connection, struct timeval *tv);
 /*
  * Send data to peer
- *
- * Prototype:
- *      f_send(void *context, void *connection, uint8_t *buffer, size_t length);
  *
  * Parameters:
  *      context - connection context pointer,
@@ -93,12 +83,9 @@ typedef int (*f_receive_t)(void *, uint8_t *, size_t, void **, struct timeval *)
  *      0 on success,
  *      negative value on error
 */
-typedef int (*f_send_t)(void *, void *, uint8_t *, size_t);
+typedef int (*f_send_t)(void *context, void *connection, uint8_t *buffer, size_t length);
 /*
  * Close connection with peer
- *
- * Prototype:
- *      f_close(void *context, void *connection);
  *
  * Parameters:
  *      context - connection context pointer,
@@ -108,12 +95,9 @@ typedef int (*f_send_t)(void *, void *, uint8_t *, size_t);
  *      0 on success,
  *      negative value on error
 */
-typedef int (*f_close_t)(void *, void *);
+typedef int (*f_close_t)(void *context, void *connection);
 /*
  * Stops and deinitializes communication context. Closes connections with all peers
- *
- * Prototype:
- *      f_stop(void *context);
  *
  * Parameters:
  *      context - connection context pointer
@@ -122,12 +106,9 @@ typedef int (*f_close_t)(void *, void *);
  *      0 on success,
  *      negative value on error
 */
-typedef int (*f_stop_t)(void *);
+typedef int (*f_stop_t)(void *context);
 /*
  * Used to supply a callback for CoAP client validation
- *
- * Prototype:
- *      f_validate(char *name, void *connection);
  *
  * Parameters:
  *      name - registering client name,
@@ -140,7 +121,7 @@ typedef int (*f_stop_t)(void *);
  * Notes:
  *      This functions is an exception in connection API that doesn't use the context pointer
 */
-typedef int (*f_validate_t)(char *, void *);
+typedef int (*f_validate_t)(char *name, void *connection);
 
 typedef struct connection_api_t
 {
@@ -157,9 +138,6 @@ typedef struct connection_api_t
  * credentials in database 'data', which was provided to connection context during
  * initialization. Found psk has to be pointed at by 'psk', and it's length set in 'psk_len'
  *
- * Prototype:
- *      f_psk_cb(const char *name, void *data, uint8_t **psk, size_t *psk_len);
- *
  * Parameters:
  *      name - DTLS client name,
  *      data - pointer to database storing client credentials,
@@ -170,7 +148,7 @@ typedef struct connection_api_t
  *      0 on success,
  *      negative value on error or not found
 */
-typedef int (*f_psk_cb_t)(const char *, void *, uint8_t **, size_t *);
+typedef int (*f_psk_cb_t)(const char *name, void *data, uint8_t **psk, size_t *psk_len);
 
 typedef struct _u_request ulfius_req_t;
 typedef struct _u_response ulfius_resp_t;
