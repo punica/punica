@@ -1,4 +1,4 @@
-const chai = require('chaiZ');
+const chai = require('chai');
 const chai_http = require('chai-http');
 const should = chai.should();
 var server = require('./server-if');
