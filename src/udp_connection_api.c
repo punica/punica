@@ -27,7 +27,6 @@
 
 typedef struct _connection_t
 {
-    struct _connection_t   *next;
     int                     sock;
     struct sockaddr_in6     addr;
     size_t                  addr_len;
