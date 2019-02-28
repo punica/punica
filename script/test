@@ -47,6 +47,10 @@ OTHER_TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/other_certificate.pem"
 
 CERTTOOL_BIN="certtool"
 
+TMP_DIR=$(mktemp -d)
+REGULAR_PUNICA_LOG_FILE="${TMP_DIR}/regular_punica.log"
+SECURE_PUNICA_LOG_FILE="${TMP_DIR}/secure_punica.log"
+
 generate_key_and_certificate () {
     if [ "$#" -ne 3 ]; then
         echo "Illegal number of parameters"
@@ -100,8 +104,14 @@ get_path_level() {
 }
 
 run_punica () {
+    punica_log_file="/dev/null"
     initial_punica_arguments=""
     punica_command="${BUILD_DIR}/punica ${initial_punica_arguments}"
+
+    if ! [ -z "$3" ]; then
+        punica_log_file="$3"
+        punica_command="valgrind --leak-check=yes ${punica_command}"
+    fi
 
     if ! [ -z "$1" ]; then
         strip_level="$(get_path_level ${PROJECT_ROOT_DIR})"
@@ -114,14 +124,49 @@ run_punica () {
         punica_command="${punica_command} ${punica_arguments}"
     fi
 
-    eval "${punica_command} > /dev/null &"
+    eval "${punica_command} > ${punica_log_file}  2>&1 &"
 
     echo $!
 }
 
 stop_punica () {
     eval "kill -2 $1"
-    wait $1 || true
+    while [ -e /proc/$1 ]
+    do
+        sleep .5
+    done
+}
+
+log_leak_check () {
+    if [ -z "$1" ]; then
+        (>&2 echo "Invalid punica leak report log file!")
+        return 1
+    fi
+
+    echo "  - checking for leaks in $1" >> ${LOG_FILE} 2>&1
+
+    leak_summary=$(eval "tail -n 11 $1")
+
+    definite_leaks=$(echo "${leak_summary}" | awk 'NR == 2 {print $4; exit}')
+    indirect_leaks=$(echo "${leak_summary}" | awk 'NR == 3 {print $4; exit}')
+    possible_leaks=$(echo "${leak_summary}" | awk 'NR == 4 {print $4; exit}')
+    reachable_memory=$(echo "${leak_summary}" | awk 'NR == 5 {print $4; exit}')
+    suppressed=$(echo "${leak_summary}" | awk 'NR == 6 {print $3; exit}')
+
+    if [ "${definite_leaks}" != "0" ]\
+    || [ "${indirect_leaks}" != "0" ]\
+    || [ "${possible_leaks}" != "0" ]\
+    || [ "${reachable_memory}" != "0" ]\
+    || [ "${suppressed}" != "0" ];
+    then
+        (>&2 echo "Punica memory leaks found!")
+        echo "${leak_summary}" >> ${LOG_FILE} 2>&1
+        (>&2 echo "\n\nRefer to \"${LOG_FILE}\" for more detailed information")
+
+        return 1
+    fi
+
+    return 0
 }
 
 echo "==> Checking code style..."
@@ -140,8 +185,8 @@ generate_key_and_certificate ${OTHER_TEST_PRIVATE_KEY} ${OTHER_TEST_CERTIFICATE}
 eval "cp ${PROJECT_ROOT_DIR}/tests/rest/database.json ${PROJECT_ROOT_DIR}/tests/rest/_database.json"
 
 echo "==> Starting punica(-s)..."
-REGULAR_PUNICA_PID=$(run_punica "regular" "-d ${PROJECT_ROOT_DIR}/tests/rest/_database.json")
-SECURE_PUNICA_PID=$(run_punica "secure" "-c ${PROJECT_ROOT_DIR}/tests/rest/secure.cfg")
+REGULAR_PUNICA_PID=$(run_punica "regular" "-d ${PROJECT_ROOT_DIR}/tests/rest/_database.json" "${REGULAR_PUNICA_LOG_FILE}")
+SECURE_PUNICA_PID=$(run_punica "secure" "-c ${PROJECT_ROOT_DIR}/tests/rest/secure.cfg" "${SECURE_PUNICA_LOG_FILE}")
 
 echo "==> Running coverage tests..."
 test_status=1
@@ -155,6 +200,13 @@ echo "==> Stopping punica(-s)..."
 stop_punica $REGULAR_PUNICA_PID
 stop_punica $SECURE_PUNICA_PID
 eval "rm -f ${PROJECT_ROOT_DIR}/tests/rest/_database.json"
+
+if [ ${test_status} -eq 0 ];
+then
+    echo "==> Checking for leaks..."
+    log_leak_check "${REGULAR_PUNICA_LOG_FILE}" && log_leak_check "${SECURE_PUNICA_LOG_FILE}" || test_status=1
+fi
+eval "rm -r ${TMP_DIR}"
 
 echo "Finished testing!"
 
