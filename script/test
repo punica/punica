@@ -44,6 +44,8 @@ TEST_PRIVATE_KEY="${PROJECT_ROOT_DIR}/private.key"
 TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/certificate.pem"
 OTHER_TEST_PRIVATE_KEY="${PROJECT_ROOT_DIR}/other_private.key"
 OTHER_TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/other_certificate.pem"
+ECDSA_TEST_PRIVATE_KEY="${PROJECT_ROOT_DIR}/ecdsa.key"
+ECDSA_TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/ecdsa.pem"
 
 CERTTOOL_BIN="certtool"
 
@@ -76,6 +78,29 @@ generate_key_and_certificate () {
         (>&2 echo "\n\nRefer to \"${LOG_FILE}\" for more detailed information")
         return 1
     }
+
+    return 0
+}
+
+generate_key_and_certificate_ecdsa () {
+    if [ "$#" -ne 2 ]; then
+        echo "Illegal number of parameters"
+        return 1
+    fi
+
+    if [ -z "$1" ]; then
+        echo "Private key file name argument is missing or is invalid"
+        return 1
+    fi
+
+    if [ -z "$2" ]; then
+        echo "Certificate file name argument is missing or is invalid"
+        return 1
+    fi
+
+    openssl ecparam -name prime256v1 -genkey -out $1
+
+    openssl req -new -x509 -key $1 -out $2 -days 365 -subj '/CN=localhost'
 
     return 0
 }
@@ -136,12 +161,13 @@ fi
 echo "==> Generating security files..."
 generate_key_and_certificate ${TEST_PRIVATE_KEY} ${TEST_CERTIFICATE} ${CERTIFICATE_SETTINGS_TEMPLATE}
 generate_key_and_certificate ${OTHER_TEST_PRIVATE_KEY} ${OTHER_TEST_CERTIFICATE} ${CERTIFICATE_SETTINGS_TEMPLATE}
+generate_key_and_certificate_ecdsa ${ECDSA_TEST_PRIVATE_KEY} ${ECDSA_TEST_CERTIFICATE}
 
 eval "cp ${PROJECT_ROOT_DIR}/tests/rest/database.json ${PROJECT_ROOT_DIR}/tests/rest/_database.json"
 
 echo "==> Starting punica(-s)..."
 REGULAR_PUNICA_PID=$(run_punica "regular" "-d ${PROJECT_ROOT_DIR}/tests/rest/_database.json")
-SECURE_PUNICA_PID=$(run_punica "secure" "-c ${PROJECT_ROOT_DIR}/tests/rest/secure.cfg")
+SECURE_PUNICA_PID=$(run_punica "secure" "-c ${PROJECT_ROOT_DIR}/tests/rest/secure.cfg -d ${PROJECT_ROOT_DIR}/tests/rest/database.json")
 
 echo "==> Running coverage tests..."
 test_status=1

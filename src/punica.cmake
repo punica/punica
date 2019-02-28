@@ -17,6 +17,8 @@ set(PUNICA_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/logging.c
     ${CMAKE_CURRENT_LIST_DIR}/settings.c
     ${CMAKE_CURRENT_LIST_DIR}/security.c
+    ${CMAKE_CURRENT_LIST_DIR}/udp_connection_api.c
+    ${CMAKE_CURRENT_LIST_DIR}/dtls_connection_api.c
     ${CMAKE_CURRENT_LIST_DIR}/database.c
     )
 
