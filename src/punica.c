@@ -245,8 +245,8 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
 int psk_find_callback(const char *name, void *data, uint8_t **psk_buffer, size_t *psk_len)
 {
     database_entry_t *device_data;
-    rest_list_entry_t *device_entry;
-    rest_list_t *device_list = (rest_list_t *)data;
+    linked_list_entry_t *device_entry;
+    linked_list_t *device_list = (linked_list_t *)data;
 
     if (device_list == NULL)
     {
