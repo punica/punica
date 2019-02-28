@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef RESTSERVER_H
-#define RESTSERVER_H
+#ifndef PUNICA_H
+#define PUNICA_H
 
 #include <liblwm2m.h>
 #include <ulfius.h>
@@ -28,6 +28,128 @@
 #include "rest_utils.h"
 #include "settings.h"
 
+/*
+ * Connection API functions. Used for socket creation, management and communication.
+ * API initialization depends on communication instance implementation:
+ *
+ *      For UDP sockets call udp_connection_api_init()
+ *
+ *      For DTLS sockets call dtls_connection_api_init()
+ *
+ * Refer to said functions prototypes for further instructions.
+ * All API initialization functions set an connection_api_t pointer that needs to be
+ * provided to all API functions as the first parameter.
+*/
+
+/*
+ * Initializes and starts a connection context
+ *
+ * Parameters:
+ *      context - connection context pointer
+ *
+ * Returns:
+ *      0 on success,
+ *      negative value on error
+*/
+typedef int (*f_start_t)(void *context);
+/*
+ * POSIX recv style function that deals with incoming connections
+ * and fills provided buffer with received data
+ *
+ * Parameters:
+ *      context - connection context pointer,
+ *      buffer - preallocated buffer for received data storing,
+ *      size - length of buffer,
+ *      connection - server/client connection context for upper communications layers.
+ *      Has set value after return,
+ *      tv - timeout value
+ *
+ * Returns:
+ *      0 on no data available,
+ *      positive value of length of data received,
+ *      negative value on error
+*/
+typedef int (*f_receive_t)(void *context, uint8_t *buffer, size_t size, void **connection,
+                           struct timeval *tv);
+/*
+ * Send data to peer
+ *
+ * Parameters:
+ *      context - connection context pointer,
+ *      connection - server/client connection context for upper communications layers,
+ *      buffer - data to be sent,
+ *      length - length of data to be sent
+ *
+ * Returns:
+ *      0 on success,
+ *      negative value on error
+*/
+typedef int (*f_send_t)(void *context, void *connection, uint8_t *buffer, size_t length);
+/*
+ * Close connection with peer
+ *
+ * Parameters:
+ *      context - connection context pointer,
+ *      connection - server/client connection context for upper communications layers
+ *
+ * Returns:
+ *      0 on success,
+ *      negative value on error
+*/
+typedef int (*f_close_t)(void *context, void *connection);
+/*
+ * Stops and deinitializes communication context. Closes connections with all peers
+ *
+ * Parameters:
+ *      context - connection context pointer
+ *
+ * Returns:
+ *      0 on success,
+ *      negative value on error
+*/
+typedef int (*f_stop_t)(void *context);
+/*
+ * Used to supply a callback for CoAP client validation
+ *
+ * Parameters:
+ *      name - registering client name,
+ *      connection - server/client connection context for upper communications layers
+ *
+ * Returns:
+ *      0 on success,
+ *      negative value on client not authorized
+ *
+ * Notes:
+ *      This functions is an exception in connection API that doesn't use the context pointer
+*/
+typedef int (*f_validate_t)(char *name, void *connection);
+
+typedef struct connection_api_t
+{
+    f_start_t    f_start;
+    f_receive_t  f_receive;
+    f_send_t     f_send;
+    f_close_t    f_close;
+    f_stop_t     f_stop;
+    f_validate_t f_validate;
+} connection_api_t;
+
+/*
+ * Called during DTLS handshake with PSK key exchange. User has to search for user 'name'
+ * credentials in database 'data', which was provided to connection context during
+ * initialization. Found psk has to be pointed at by 'psk', and it's length set in 'psk_len'
+ *
+ * Parameters:
+ *      name - DTLS client name,
+ *      data - pointer to database storing client credentials,
+ *      psk - pointer to psk buffer,
+ *      psk_len - psk buffer length
+ *
+ * Returns:
+ *      0 on success,
+ *      negative value on error or not found
+*/
+typedef int (*f_psk_cb_t)(const char *name, void *data, uint8_t **psk, size_t *psk_len);
 
 typedef struct _u_request ulfius_req_t;
 typedef struct _u_response ulfius_resp_t;
@@ -105,5 +227,5 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
 int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context);
 int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context);
 
-#endif // RESTSERVER_H
+#endif // PUNICA_H
 

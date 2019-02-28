@@ -29,6 +29,13 @@
 #include "security.h"
 #include "rest_utils.h"
 
+typedef enum
+{
+    PUNICA_COAP_MODE_INSECURE,
+    PUNICA_COAP_MODE_SECURE,
+    PUNICA_COAP_MODE_BOTH
+} punica_coap_mode_t;
+
 typedef struct
 {
     uint16_t port;
@@ -37,7 +44,10 @@ typedef struct
 
 typedef struct
 {
+    uint16_t security_mode;
     uint16_t port;
+    char *private_key_file;
+    char *certificate_file;
     char *database_file;
 } coap_settings_t;
 

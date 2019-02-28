@@ -20,7 +20,7 @@
 #include "settings.h"
 #include "rest_core_types.h"
 #include "rest-list.h"
-#include "restserver.h"
+#include "punica.h"
 
 int database_load_file(rest_context_t *rest)
 {
