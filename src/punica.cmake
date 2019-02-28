@@ -8,7 +8,6 @@ set(PUNICA_SOURCES_DIR ${CMAKE_CURRENT_LIST_DIR})
 set(PUNICA_SOURCES
     ${PUNICA_SOURCES}
     ${PUNICA_SOURCES_DIR}/punica.c
-    ${PUNICA_SOURCES_DIR}/punica_core.c
     ${PUNICA_SOURCES_DIR}/linked_list.c
     ${PUNICA_SOURCES_DIR}/logging.c
     ${PUNICA_SOURCES_DIR}/settings.c
