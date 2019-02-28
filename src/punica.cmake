@@ -3,7 +3,7 @@
 set(PUNICA_SOURCES_DIR ${CMAKE_CURRENT_LIST_DIR})
 
 set(PUNICA_SOURCES
-    ${CMAKE_CURRENT_LIST_DIR}/restserver.c
+    ${CMAKE_CURRENT_LIST_DIR}/punica.c
     ${CMAKE_CURRENT_LIST_DIR}/rest-core.c
     ${CMAKE_CURRENT_LIST_DIR}/rest-core-types.c
     ${CMAKE_CURRENT_LIST_DIR}/rest-endpoints.c
@@ -17,6 +17,8 @@ set(PUNICA_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/logging.c
     ${CMAKE_CURRENT_LIST_DIR}/settings.c
     ${CMAKE_CURRENT_LIST_DIR}/security.c
+    ${CMAKE_CURRENT_LIST_DIR}/udp_connection_api.c
+    ${CMAKE_CURRENT_LIST_DIR}/dtls_connection_api.c
     ${CMAKE_CURRENT_LIST_DIR}/database.c
     )
 

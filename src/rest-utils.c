@@ -21,7 +21,7 @@
 
 #include "rest-utils.h"
 
-#include "restserver.h"
+#include "punica.h"
 
 #define DATABASE_UUID_KEY_BIT       0x1
 #define DATABASE_PSK_KEY_BIT        0x2
