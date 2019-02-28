@@ -24,8 +24,8 @@
 #include <ulfius.h>
 
 #include "http_codes.h"
-#include "rest-core-types.h"
-#include "rest-utils.h"
+#include "rest_core_types.h"
+#include "rest_utils.h"
 #include "settings.h"
 
 
@@ -38,7 +38,7 @@ typedef struct
 
     lwm2m_context_t *lwm2m;
 
-    // rest-core
+    // rest_core
     json_t *callback;
 
     // rest-notifications

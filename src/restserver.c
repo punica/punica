@@ -33,7 +33,7 @@
 #include "version.h"
 #include "security.h"
 #include "rest-list.h"
-#include "rest-authentication.h"
+#include "rest_authentication.h"
 
 static volatile int restserver_quit;
 static void sigint_handler(int signo)

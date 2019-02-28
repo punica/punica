@@ -19,7 +19,7 @@
 #include <string.h>
 #include <uuid/uuid.h>
 
-#include "rest-utils.h"
+#include "rest_utils.h"
 
 #include "restserver.h"
 

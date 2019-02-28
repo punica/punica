@@ -17,7 +17,7 @@
  *
  */
 
-#include "rest-core-types.h"
+#include "rest_core_types.h"
 
 #include <assert.h>
 #include <stdio.h>

@@ -18,7 +18,7 @@
  */
 
 #include "settings.h"
-#include "rest-core-types.h"
+#include "rest_core_types.h"
 #include "rest-list.h"
 #include "restserver.h"
 
