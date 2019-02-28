@@ -166,8 +166,8 @@ generate_key_and_certificate_ecdsa ${ECDSA_TEST_PRIVATE_KEY} ${ECDSA_TEST_CERTIF
 eval "cp ${PROJECT_ROOT_DIR}/tests/rest/database.json ${PROJECT_ROOT_DIR}/tests/rest/_database.json"
 
 echo "==> Starting punica(-s)..."
-REGULAR_PUNICA_PID=$(run_punica "regular")
-SECURE_PUNICA_PID=$(run_punica "secure" "-c ${PROJECT_ROOT_DIR}/tests/rest/secure.cfg -d ${PROJECT_ROOT_DIR}/tests/rest/_database.json")
+REGULAR_PUNICA_PID=$(run_punica "regular" "-d ${PROJECT_ROOT_DIR}/tests/rest/_database.json")
+SECURE_PUNICA_PID=$(run_punica "secure" "-c ${PROJECT_ROOT_DIR}/tests/rest/secure.cfg -d ${PROJECT_ROOT_DIR}/tests/rest/database.json")
 
 echo "==> Running coverage tests..."
 test_status=1
