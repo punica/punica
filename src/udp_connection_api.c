@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "rest-list.h"
+#include "linked_list.h"
 
 typedef struct _connection_t
 {
@@ -35,7 +35,7 @@ typedef struct _connection_t
 typedef struct connection_context_t
 {
     connection_api_t api;
-    rest_list_t *connection_list;
+    linked_list_t *connection_list;
     int port;
     int address_family;
     int listen_socket;
@@ -52,7 +52,7 @@ static connection_t *udp_connection_find(connection_context_t *context,
                                          struct sockaddr_storage *addr, size_t addr_len)
 {
     connection_t *conn;
-    rest_list_entry_t *conn_entry;
+    linked_list_entry_t *conn_entry;
 
     for (conn_entry = context->connection_list->head; conn_entry != NULL; conn_entry = conn_entry->next)
     {
@@ -79,7 +79,7 @@ static connection_t *udp_connection_new_incoming(connection_context_t *context,
         memcpy(&(conn->addr), addr, addr_len);
         conn->addr_len = addr_len;
 
-        rest_list_add(context->connection_list, conn);
+        linked_list_add(context->connection_list, conn);
     }
 
     return conn;
@@ -179,7 +179,7 @@ static int udp_connection_start(void *context_p)
         }
     }
 
-    context->connection_list = rest_list_new();
+    context->connection_list = linked_list_new();
     if (context->connection_list == NULL)
     {
         close(sock);
@@ -202,7 +202,7 @@ static int udp_connection_close(void *context_p, void *connection)
         return 0;
     }
 
-    rest_list_remove(context->connection_list, conn);
+    linked_list_remove(context->connection_list, conn);
 
     free(conn);
     return 0;
@@ -253,7 +253,7 @@ static int udp_connection_stop(void *context_p)
 {
     connection_context_t *context = (connection_context_t *)context_p;
     connection_t *conn;
-    rest_list_entry_t *conn_entry, *conn_next;
+    linked_list_entry_t *conn_entry, *conn_next;
 
     for (conn_entry = context->connection_list->head; conn_entry != NULL; conn_entry = conn_next)
     {
@@ -263,7 +263,7 @@ static int udp_connection_stop(void *context_p)
         udp_connection_close(context, conn);
     }
 
-    rest_list_delete(context->connection_list);
+    linked_list_delete(context->connection_list);
 
     close(context->listen_socket);
 

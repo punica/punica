@@ -13,6 +13,8 @@ set(PUNICA_SOURCES
     ${PUNICA_SOURCES_DIR}/settings.c
     ${PUNICA_SOURCES_DIR}/security.c
     ${PUNICA_SOURCES_DIR}/database.c
+    ${PUNICA_SOURCES_DIR}/udp_connection_api.c
+    ${PUNICA_SOURCES_DIR}/dtls_connection_api.c
     )
 
 set(PUNICA_SOURCES ${PUNICA_SOURCES} ${REST_SOURCES})

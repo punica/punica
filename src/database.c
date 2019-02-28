@@ -19,7 +19,7 @@
 
 #include "settings.h"
 #include "rest/rest_core_types.h"
-#include "rest-list.h"
+#include "linked_list.h"
 #include "punica.h"
 
 int database_load_file(rest_context_t *rest)
@@ -31,7 +31,7 @@ int database_load_file(rest_context_t *rest)
     int ret = 1;
     database_entry_t *curr;
 
-    rest_list_t *device_list = rest_list_new();
+    linked_list_t *device_list = linked_list_new();
     if (device_list == 0)
     {
         fprintf(stderr, "%s:%d - failed to allocate device list\r\n",
@@ -60,7 +60,7 @@ int database_load_file(rest_context_t *rest)
     {
         fprintf(stderr, "%s:%d - database file must contain a json array\r\n",
                 __FILE__, __LINE__);
-        rest_list_delete(device_list);
+        linked_list_delete(device_list);
         goto exit;
     }
 
@@ -92,7 +92,7 @@ int database_load_file(rest_context_t *rest)
             goto free_device;
         }
 
-        rest_list_add(device_list, (void *)curr);
+        linked_list_add(device_list, (void *)curr);
         continue;
 
 free_device:

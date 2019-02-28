@@ -26,7 +26,7 @@
 #include <gnutls/dtls.h>
 #include <gnutls/gnutls.h>
 #include <gnutls/x509.h>
-#include "rest-list.h"
+#include "linked_list.h"
 
 #define BUFFER_SIZE 1024
 
@@ -41,7 +41,7 @@ typedef struct _device_connection_t
 typedef struct secure_connection_context_t
 {
     connection_api_t api;
-    rest_list_t *connection_list;
+    linked_list_t *connection_list;
     device_connection_t *conn_listen;
     int port;
     int address_family;
@@ -290,7 +290,7 @@ static int dtls_connection_start(void *context_p)
         goto exit;
     }
 
-    context->connection_list = rest_list_new();
+    context->connection_list = linked_list_new();
     if (context->connection_list == NULL)
     {
         goto exit;
@@ -299,7 +299,7 @@ static int dtls_connection_start(void *context_p)
     context->conn_listen = dtls_connection_new_listen(context);
     if (context->conn_listen == NULL)
     {
-        rest_list_delete(context->connection_list);
+        linked_list_delete(context->connection_list);
         goto exit;
     }
 
@@ -324,7 +324,7 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
     int ret, sock, nfds = 0;
     fd_set read_fds;
     device_connection_t *conn;
-    rest_list_entry_t *conn_entry;
+    linked_list_entry_t *conn_entry;
     const char *err_str;
     gnutls_dtls_prestate_st prestate;
 
@@ -450,7 +450,7 @@ connect_fail:
                 }
                 else
                 {
-                    rest_list_add(context->connection_list, conn);
+                    linked_list_add(context->connection_list, conn);
                 }
 
                 return 0;
@@ -475,7 +475,7 @@ static int dtls_connection_close(void *context_p, void *connection)
         return 0;
     }
 
-    rest_list_remove(context->connection_list, conn);
+    linked_list_remove(context->connection_list, conn);
 
     if (conn->session)
     {
@@ -507,7 +507,7 @@ static int dtls_connection_stop(void *context_p)
 {
     secure_connection_context_t *context = (secure_connection_context_t *)context_p;
     device_connection_t *conn;
-    rest_list_entry_t *conn_entry, *conn_next;
+    linked_list_entry_t *conn_entry, *conn_next;
 
     for (conn_entry = context->connection_list->head; conn_entry != NULL; conn_entry = conn_next)
     {
@@ -520,7 +520,7 @@ static int dtls_connection_stop(void *context_p)
         }
     }
 
-    rest_list_delete(context->connection_list);
+    linked_list_delete(context->connection_list);
 
     gnutls_certificate_free_credentials(context->server_cert);
     gnutls_priority_deinit(context->priority_cache);
