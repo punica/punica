@@ -3,6 +3,11 @@ language: c
 sudo: required
 dist: xenial
 
+# Build only master, tags and PR's
+# This prevents double builds on PRs (PR + branch build).
+# https://github.com/travis-ci/travis-ci/issues/1147#issuecomment-441393807
+if: type != push OR branch = master OR branch =~ /^v\d+\.\d+(\.\d+)?(-\S*)?$/
+
 compiler: 
   - gcc
 
