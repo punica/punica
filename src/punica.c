@@ -26,9 +26,9 @@
 #include <liblwm2m.h>
 #include <ulfius.h>
 
+#include "punica.h"
 #include "udp_connection_api.h"
 #include "dtls_connection_api.h"
-#include "restserver.h"
 #include "logging.h"
 #include "settings.h"
 #include "version.h"
@@ -36,15 +36,15 @@
 #include "rest-list.h"
 #include "rest-authentication.h"
 
-static volatile int restserver_quit;
+static volatile int punica_quit;
 static void sigint_handler(int signo)
 {
-    restserver_quit = 1;
+    punica_quit = 1;
 }
 
 /**
  * Function called if we get a SIGPIPE. Does counting.
- * exmp. killall -13  restserver
+ * exmp. killall -13  punica
  * @param sig will be SIGPIPE (ignored)
  */
 static void sigpipe_handler(int sig)
@@ -499,7 +499,7 @@ int main(int argc, char *argv[])
     }
 
     /* Main section */
-    while (!restserver_quit)
+    while (!punica_quit)
     {
         tv.tv_sec = 5;
         tv.tv_usec = 0;

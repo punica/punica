@@ -20,7 +20,7 @@
 #ifndef DTLS_CONNECTION_API_H_
 #define DTLS_CONNECTION_API_H_
 
-#include "restserver.h"
+#include "punica.h"
 
 /*
  * Initialize a DTLS connection context
