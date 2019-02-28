@@ -234,14 +234,7 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
             log_message(LOG_LEVEL_ERROR, "[MONITOR] Failed to allocate deregistration notification!\n");
         }
 
-        if (conn_api->f_close(conn_api, client->sessionH))
-        {
-            log_message(LOG_LEVEL_ERROR, "[MONITOR] Failed to deregister client %d.\n", clientID);
-        }
-        else
-        {
-            log_message(LOG_LEVEL_INFO, "[MONITOR] Client %d deregistered.\n", clientID);
-        }
+        log_message(LOG_LEVEL_INFO, "[MONITOR] Client %d deregistered.\n", clientID);
 
         break;
     }
