@@ -170,11 +170,10 @@ REGULAR_PUNICA_PID=$(run_punica "regular")
 SECURE_PUNICA_PID=$(run_punica "secure" "-c ${PROJECT_ROOT_DIR}/tests/rest/secure.cfg -d ${PROJECT_ROOT_DIR}/tests/rest/_database.json")
 
 echo "==> Running coverage tests..."
+test_status=1
 if eval "cd ${PROJECT_ROOT_DIR}/tests/rest" && npm install && npm test
 then
-    coverage_tests_status=0
-else
-    coverage_tests_status=1
+    test_status=0
 fi
 cd -
 
@@ -184,3 +183,5 @@ stop_punica $SECURE_PUNICA_PID
 eval "rm -f ${PROJECT_ROOT_DIR}/tests/rest/_database.json"
 
 echo "Finished testing!"
+
+exit $test_status
