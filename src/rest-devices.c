@@ -19,15 +19,15 @@
 
 #include <string.h>
 
+#include "linked_list.h"
 #include "punica.h"
-#include "rest-list.h"
 #include "settings.h"
 
-static int rest_devices_update_list(rest_list_t *list, json_t *jdevice)
+static int rest_devices_update_list(linked_list_t *list, json_t *jdevice)
 {
     const char *string;
     json_t *jstring;
-    rest_list_entry_t *device_entry;
+    linked_list_entry_t *device_entry;
     database_entry_t *device_data;
     uint8_t *oldpsk, *oldid;
     uint8_t binary_buffer[512];
@@ -89,9 +89,9 @@ static int rest_devices_update_list(rest_list_t *list, json_t *jdevice)
     return -1;
 }
 
-static int rest_devices_remove_list(rest_list_t *list, const char *id)
+static int rest_devices_remove_list(linked_list_t *list, const char *id)
 {
-    rest_list_entry_t *device_entry;
+    linked_list_entry_t *device_entry;
     database_entry_t *device_data;
 
     for (device_entry = list->head; device_entry != NULL; device_entry = device_entry->next)
@@ -100,7 +100,7 @@ static int rest_devices_remove_list(rest_list_t *list, const char *id)
 
         if (strcmp(id, device_data->uuid) == 0)
         {
-            rest_list_remove(list, (void *)device_data);
+            linked_list_remove(list, (void *)device_data);
             return 0;
         }
     }
@@ -131,9 +131,9 @@ static json_t *rest_devices_prepare_resp(database_entry_t *device_entry)
 int rest_devices_get_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
     rest_context_t *rest = (rest_context_t *)context;
-    rest_list_t *device_list = rest->devicesList;
+    linked_list_t *device_list = rest->devicesList;
     database_entry_t *device_data;
-    rest_list_entry_t *device_entry;
+    linked_list_entry_t *device_entry;
     json_t *j_devices = NULL;
     json_t *j_entry_object;
 
@@ -165,9 +165,9 @@ exit:
 int rest_devices_get_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
     rest_context_t *rest = (rest_context_t *)context;
-    rest_list_t *device_list = rest->devicesList;
+    linked_list_t *device_list = rest->devicesList;
     database_entry_t *device_data;
-    rest_list_entry_t *device_entry;
+    linked_list_entry_t *device_entry;
     json_t *j_entry_object = NULL;
 
     rest_lock(rest);
@@ -241,7 +241,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         ulfius_set_empty_body_response(resp, 500);
         goto exit;
     }
-    rest_list_add(rest->devicesList, device_entry);
+    linked_list_add(rest->devicesList, device_entry);
 
 //  if database file not specified then only save locally
     if (rest->settings->coap.database_file)

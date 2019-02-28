@@ -162,7 +162,7 @@ static jwt_error_t access_token_check_scope(char *access_token, jwt_settings_t *
     char *grants_string;
     const char *user_name;
     json_t *j_grants;
-    rest_list_entry_t *entry;
+    linked_list_entry_t *entry;
     user_t *user = NULL, *user_entry;
     jwt_t *jwt;
     jwt_error_t status;
@@ -239,7 +239,7 @@ int rest_authenticate_cb(const struct _u_request *request, struct _u_response *r
     json_t *j_request_body, *j_response_body;
     jwt_t *jwt = NULL;
     jwt_settings_t *jwt_settings = (jwt_settings_t *)user_data;
-    rest_list_entry_t *entry;
+    linked_list_entry_t *entry;
     user_t *user = NULL, *user_entry;
     char *token;
     const char *user_name, *user_secret;
