@@ -32,7 +32,7 @@
 #include "settings.h"
 #include "version.h"
 #include "security.h"
-#include "rest-list.h"
+#include "linked_list.h"
 #include "rest-authentication.h"
 
 static volatile int restserver_quit;

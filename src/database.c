@@ -19,7 +19,7 @@
 
 #include "settings.h"
 #include "rest-core-types.h"
-#include "rest-list.h"
+#include "linked_list.h"
 #include "restserver.h"
 
 int database_load_file(rest_context_t *rest)
