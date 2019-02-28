@@ -155,7 +155,6 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
 {
     rest_context_t *rest = (rest_context_t *)userData;
     lwm2m_context_t *lwm2m = rest->lwm2m;
-    connection_api_t *conn_api = (connection_api_t *)lwm2m->userData;
     lwm2m_client_t *client;
     lwm2m_client_object_t *obj;
     lwm2m_list_t *ins;
