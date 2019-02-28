@@ -26,8 +26,9 @@
 #include <liblwm2m.h>
 #include <ulfius.h>
 
-#include "connection.h"
 #include "punica.h"
+#include "udp_connection_api.h"
+#include "dtls_connection_api.h"
 #include "logging.h"
 #include "settings.h"
 #include "version.h"
@@ -89,6 +90,35 @@ static void init_signals(void)
     }
 }
 
+static connection_api_t *api_init(coap_settings_t *coap, void *data, f_psk_cb_t psk_cb)
+{
+    if (coap->security_mode == PUNICA_COAP_MODE_INSECURE)
+    {
+        return udp_connection_api_init(coap->port, AF_INET6);
+    }
+    else if (coap->security_mode == PUNICA_COAP_MODE_SECURE)
+    {
+        return dtls_connection_api_init(coap->port, AF_INET6, coap->certificate_file,
+                                        coap->private_key_file, data, psk_cb);
+    }
+    else
+    {
+        log_message(LOG_LEVEL_FATAL, "Found unsupported CoAP security mode: %d\n", coap->security_mode);
+        return NULL;
+    }
+}
+
+static void api_deinit(int security_mode, connection_api_t *api)
+{
+    if (security_mode == PUNICA_COAP_MODE_INSECURE)
+    {
+        udp_connection_api_deinit(api);
+    }
+    else if (security_mode == PUNICA_COAP_MODE_SECURE)
+    {
+        dtls_connection_api_deinit(api);
+    }
+}
 
 const char *binding_to_string(lwm2m_binding_t bind)
 {
@@ -212,51 +242,76 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
     }
 }
 
-int socket_receive(lwm2m_context_t *lwm2m, int sock)
+int psk_find_callback(const char *name, void *data, uint8_t **psk_buffer, size_t *psk_len)
 {
-    int nbytes;
-    uint8_t buf[1500];
-    struct sockaddr_storage addr;
-    socklen_t addrLen = sizeof(addr);
-    connection_t *con;
-    static connection_t *connectionList = NULL;
+    database_entry_t *device_data;
+    rest_list_entry_t *device_entry;
+    rest_list_t *device_list = (rest_list_t *)data;
 
-    memset(buf, 0, sizeof(buf));
-
-    nbytes = recvfrom(sock, buf, sizeof(buf), 0, (struct sockaddr *)&addr, &addrLen);
-
-    if (nbytes < 0)
+    if (device_list == NULL)
     {
-        log_message(LOG_LEVEL_FATAL, "recvfrom() error: %d\n", nbytes);
         return -1;
     }
 
-    con = connection_find(connectionList, &addr, addrLen);
-    if (con == NULL)
+    for (device_entry = device_list->head; device_entry != NULL; device_entry = device_entry->next)
     {
-        con = connection_new_incoming(connectionList, sock, (struct sockaddr *)&addr, addrLen);
-        if (con)
+        device_data = (database_entry_t *)device_entry->data;
+
+        if (memcmp(name, device_data->psk_id, device_data->psk_id_len) == 0)
         {
-            connectionList = con;
+            *psk_buffer = device_data->psk;
+            *psk_len = device_data->psk_len;
+            return 0;
         }
     }
 
-    if (con)
+    return -1;
+}
+
+uint8_t lwm2m_buffer_send(void *session, uint8_t *buffer, size_t length, void *user_data)
+{
+    connection_api_t *conn_api = (connection_api_t *)user_data;
+
+    if (session == NULL)
     {
-        lwm2m_handle_packet(lwm2m, buf, nbytes, con);
+        log_message(LOG_LEVEL_ERROR, "Failed sending %lu bytes, missing connection\n", length);
+        return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
-    return 0;
+    if (conn_api->f_send(conn_api, session, buffer, length) < 0)
+    {
+        log_message(LOG_LEVEL_ERROR, "Failed sending %lu bytes\n", length);
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
+    return COAP_NO_ERROR;
+}
+
+bool lwm2m_session_is_equal(void *session1, void *session2, void *userData)
+{
+    return (session1 == session2);
+}
+
+int lwm2m_client_validate(char *name, void *session, void *user_data)
+{
+    connection_api_t *api = (connection_api_t *)user_data;
+
+    if (api->f_validate == NULL)
+    {
+        return 0;
+    }
+
+    return api->f_validate(name, session);
 }
 
 int main(int argc, char *argv[])
 {
-    int sock;
-    fd_set readfds;
     struct timeval tv;
     int res;
     rest_context_t rest;
-    char coap_port[6];
+    connection_api_t *conn_api;
+    uint8_t buffer[1500];
+    void *connection;
 
     static settings_t settings =
     {
@@ -278,7 +333,10 @@ int main(int argc, char *argv[])
             },
         },
         .coap = {
+            .security_mode = PUNICA_COAP_MODE_INSECURE,
             .port = 5555,
+            .private_key_file = NULL,
+            .certificate_file = NULL,
             .database_file = NULL,
         },
         .logging = {
@@ -305,11 +363,17 @@ int main(int argc, char *argv[])
 
     rest_init(&rest, &settings);
 
+    conn_api = api_init(&settings.coap, (void *)rest.devicesList, psk_find_callback);
+    if (conn_api == NULL)
+    {
+        return -1;
+    }
+
     /* Socket section */
-    snprintf(coap_port, sizeof(coap_port), "%d", settings.coap.port);
-    log_message(LOG_LEVEL_INFO, "Creating coap socket on port %s\n", coap_port);
-    sock = create_socket(coap_port, AF_INET6);
-    if (sock < 0)
+    log_message(LOG_LEVEL_INFO, "Creating coap socket on port %d\n", settings.coap.port);
+
+    res = conn_api->f_start(conn_api);
+    if (res < 0)
     {
         log_message(LOG_LEVEL_FATAL, "Failed to create socket!\n");
         return -1;
@@ -322,6 +386,8 @@ int main(int argc, char *argv[])
         log_message(LOG_LEVEL_FATAL, "Failed to create LwM2M server!\n");
         return -1;
     }
+
+    rest.lwm2m->userData = conn_api;
 
     lwm2m_set_monitoring_callback(rest.lwm2m, client_monitor_cb, &rest);
 
@@ -435,9 +501,6 @@ int main(int argc, char *argv[])
     /* Main section */
     while (!punica_quit)
     {
-        FD_ZERO(&readfds);
-        FD_SET(sock, &readfds);
-
         tv.tv_sec = 5;
         tv.tv_usec = 0;
 
@@ -455,29 +518,28 @@ int main(int argc, char *argv[])
         }
         rest_unlock(&rest);
 
-        res = select(FD_SETSIZE, &readfds, NULL, NULL, &tv);
+        res = conn_api->f_receive(conn_api, buffer, sizeof(buffer), &connection, &tv);
         if (res < 0)
         {
             if (errno == EINTR)
             {
                 continue;
             }
-
-            log_message(LOG_LEVEL_ERROR, "select() error: %d\n", res);
+            log_message(LOG_LEVEL_ERROR, "conn_api->f_receive() error: %d\n", res);
         }
-
-        if (FD_ISSET(sock, &readfds))
+        else if (res)
         {
             rest_lock(&rest);
-            socket_receive(rest.lwm2m, sock);
+            lwm2m_handle_packet(rest.lwm2m, buffer, res, connection);
             rest_unlock(&rest);
         }
-
     }
 
     ulfius_stop_framework(&instance);
     ulfius_clean_instance(&instance);
 
+    conn_api->f_stop(conn_api);
+    api_deinit(settings.coap.security_mode, conn_api);
     lwm2m_close(rest.lwm2m);
     rest_cleanup(&rest);
 

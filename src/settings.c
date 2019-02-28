@@ -54,9 +54,53 @@ static void set_coap_settings(json_t *j_section, coap_settings_t *settings)
 
     json_object_foreach(j_section, key, j_value)
     {
-        if (strcasecmp(key, "port") == 0)
+        if (strcasecmp(key, "mode") == 0)
         {
-            settings->port = (uint16_t) json_integer_value(j_value);
+            if (json_is_integer(j_value))
+            {
+                settings->security_mode = (uint16_t) json_integer_value(j_value);
+            }
+            else
+            {
+                fprintf(stdout, "value at key %s:%s must be an integer",
+                        section_name, key);
+            }
+        }
+        else if (strcasecmp(key, "port") == 0)
+        {
+            if (json_is_integer(j_value))
+            {
+                settings->port = (uint16_t) json_integer_value(j_value);
+            }
+            else
+            {
+                fprintf(stdout, "value at key %s:%s must be an integer",
+                        section_name, key);
+            }
+        }
+        else if (strcasecmp(key, "private_key_file") == 0)
+        {
+            if (json_is_string(j_value))
+            {
+                settings->private_key_file = (char *) json_string_value(j_value);
+            }
+            else
+            {
+                fprintf(stdout, "value at key %s:%s must be a string",
+                        section_name, key);
+            }
+        }
+        else if (strcasecmp(key, "certificate_file") == 0)
+        {
+            if (json_is_string(j_value))
+            {
+                settings->certificate_file = (char *) json_string_value(j_value);
+            }
+            else
+            {
+                fprintf(stdout, "value at key %s:%s must be a string",
+                        section_name, key);
+            }
         }
         else if (strcasecmp(key, "database_file") == 0)
         {
