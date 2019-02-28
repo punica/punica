@@ -42,20 +42,20 @@ typedef struct
     json_t *callback;
 
     // rest-notifications
-    rest_list_t *registrationList;
-    rest_list_t *updateList;
-    rest_list_t *deregistrationList;
-    rest_list_t *timeoutList;
-    rest_list_t *asyncResponseList;
+    linked_list_t *registrationList;
+    linked_list_t *updateList;
+    linked_list_t *deregistrationList;
+    linked_list_t *timeoutList;
+    linked_list_t *asyncResponseList;
 
     // rest-resources
-    rest_list_t *pendingResponseList;
+    linked_list_t *pendingResponseList;
 
     // rest-subsciptions
-    rest_list_t *observeList;
+    linked_list_t *observeList;
 
     // rest-devices
-    rest_list_t *devicesList;
+    linked_list_t *devicesList;
 
     settings_t *settings;
 } rest_context_t;

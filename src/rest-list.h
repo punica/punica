@@ -23,17 +23,17 @@
 #include <pthread.h>
 
 
-typedef struct rest_list_entry_t
+typedef struct linked_list_entry_t
 {
-    struct rest_list_entry_t *next;
+    struct linked_list_entry_t *next;
     void *data;
-} rest_list_entry_t;
+} linked_list_entry_t;
 
 typedef struct
 {
     pthread_mutex_t mutex;
-    rest_list_entry_t *head;
-} rest_list_t;
+    linked_list_entry_t *head;
+} linked_list_t;
 
 /**
  * This function creates new list resource.
@@ -41,7 +41,7 @@ typedef struct
  * @return Pointer to a new list instance or NULL on error
  *
  */
-rest_list_t *rest_list_new(void);
+linked_list_t *linked_list_new(void);
 
 /**
  * This functions deletes list resource.
@@ -49,7 +49,7 @@ rest_list_t *rest_list_new(void);
  * @param[in]  list  Pointer to the list which will be delted
  *
  */
-void rest_list_delete(rest_list_t *list);
+void linked_list_delete(linked_list_t *list);
 
 /**
  * Adds data entry to the list.
@@ -57,7 +57,7 @@ void rest_list_delete(rest_list_t *list);
  * @param[in]  list  Pointer to the list
  * @param[in]  data  Data entry to be added
  */
-void rest_list_add(rest_list_t *list, void *data);
+void linked_list_add(linked_list_t *list, void *data);
 
 /**
  * Removes data entry from the list. The data MUST be present in the list,
@@ -67,6 +67,6 @@ void rest_list_add(rest_list_t *list, void *data);
  * @param[in]  list  Pointer to the list
  * @param[in]  data  Data entry to be removed
  */
-void rest_list_remove(rest_list_t *list, void *data);
+void linked_list_remove(linked_list_t *list, void *data);
 
 #endif // REST_LIST_H

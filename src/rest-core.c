@@ -28,13 +28,13 @@ void rest_init(rest_context_t *rest, settings_t *settings)
 {
     memset(rest, 0, sizeof(rest_context_t));
 
-    rest->registrationList = rest_list_new();
-    rest->updateList = rest_list_new();
-    rest->deregistrationList = rest_list_new();
-    rest->timeoutList = rest_list_new();
-    rest->asyncResponseList = rest_list_new();
-    rest->pendingResponseList = rest_list_new();
-    rest->observeList = rest_list_new();
+    rest->registrationList = linked_list_new();
+    rest->updateList = linked_list_new();
+    rest->deregistrationList = linked_list_new();
+    rest->timeoutList = linked_list_new();
+    rest->asyncResponseList = linked_list_new();
+    rest->pendingResponseList = linked_list_new();
+    rest->observeList = linked_list_new();
     rest->settings = settings;
 
     assert(pthread_mutex_init(&rest->mutex, NULL) == 0);
@@ -51,13 +51,13 @@ void rest_cleanup(rest_context_t *rest)
     }
 
     rest_notifications_clear(rest);
-    rest_list_delete(rest->registrationList);
-    rest_list_delete(rest->updateList);
-    rest_list_delete(rest->deregistrationList);
-    rest_list_delete(rest->timeoutList);
-    rest_list_delete(rest->asyncResponseList);
-    rest_list_delete(rest->pendingResponseList);
-    rest_list_delete(rest->observeList);
+    linked_list_delete(rest->registrationList);
+    linked_list_delete(rest->updateList);
+    linked_list_delete(rest->deregistrationList);
+    linked_list_delete(rest->timeoutList);
+    linked_list_delete(rest->asyncResponseList);
+    linked_list_delete(rest->pendingResponseList);
+    linked_list_delete(rest->observeList);
 
     assert(pthread_mutex_destroy(&rest->mutex) == 0);
 }

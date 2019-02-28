@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
         },
     };
 
-    settings.http.security.jwt.users_list = rest_list_new();
+    settings.http.security.jwt.users_list = linked_list_new();
     settings.http.security.jwt.secret_key = (unsigned char *) malloc(
                                                 settings.http.security.jwt.secret_key_length * sizeof(unsigned char));
     rest_get_random(settings.http.security.jwt.secret_key,
