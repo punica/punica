@@ -17,7 +17,7 @@
  *
  */
 
-#include "punica.h"
+#include "../punica.h"
 
 #include <string.h>
 

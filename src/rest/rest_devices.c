@@ -19,9 +19,9 @@
 
 #include <string.h>
 
-#include "punica.h"
-#include "rest-list.h"
-#include "settings.h"
+#include "../punica.h"
+#include "../rest-list.h"
+#include "../settings.h"
 
 static int rest_devices_update_list(rest_list_t *list, json_t *jdevice)
 {

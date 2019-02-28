@@ -20,9 +20,9 @@
 #include <string.h>
 
 #include "rest_authentication.h"
-#include "security.h"
-#include "logging.h"
-#include "http_codes.h"
+#include "../security.h"
+#include "../logging.h"
+#include "../http_codes.h"
 
 static int validate_authentication_body(json_t *authentication_json)
 {

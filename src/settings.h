@@ -27,7 +27,7 @@
 
 #include "logging.h"
 #include "security.h"
-#include "rest_utils.h"
+#include "rest/rest_utils.h"
 
 typedef enum
 {
