@@ -26,7 +26,7 @@
 #include <gnutls/dtls.h>
 #include <gnutls/gnutls.h>
 #include <gnutls/x509.h>
-#include "rest-list.h"
+#include "linked_list.h"
 
 #define BUFFER_SIZE 1024
 
