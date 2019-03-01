@@ -163,20 +163,20 @@ typedef struct
     // rest_core
     json_t *callback;
 
-    // rest-notifications
+    // rest_notifications
     linked_list_t *registrationList;
     linked_list_t *updateList;
     linked_list_t *deregistrationList;
     linked_list_t *timeoutList;
     linked_list_t *asyncResponseList;
 
-    // rest-resources
+    // rest_resources
     linked_list_t *pendingResponseList;
 
-    // rest-subsciptions
+    // rest_subsciptions
     linked_list_t *observeList;
 
-    // rest-devices
+    // rest_devices
     linked_list_t *devicesList;
 
     settings_t *settings;
