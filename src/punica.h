@@ -24,8 +24,8 @@
 #include <ulfius.h>
 
 #include "http_codes.h"
-#include "rest-core-types.h"
-#include "rest-utils.h"
+#include "rest/rest_core_types.h"
+#include "rest/rest_utils.h"
 #include "settings.h"
 
 /*
@@ -160,23 +160,23 @@ typedef struct
 
     lwm2m_context_t *lwm2m;
 
-    // rest-core
+    // rest_core
     json_t *callback;
 
-    // rest-notifications
+    // rest_notifications
     linked_list_t *registrationList;
     linked_list_t *updateList;
     linked_list_t *deregistrationList;
     linked_list_t *timeoutList;
     linked_list_t *asyncResponseList;
 
-    // rest-resources
+    // rest_resources
     linked_list_t *pendingResponseList;
 
-    // rest-subsciptions
+    // rest_subsciptions
     linked_list_t *observeList;
 
-    // rest-devices
+    // rest_devices
     linked_list_t *devicesList;
 
     settings_t *settings;

@@ -20,7 +20,7 @@
 #ifndef REST_UTILS_H
 #define REST_UTILS_H
 
-#include "settings.h"
+#include "../settings.h"
 
 #include <stdlib.h>
 #include <stdint.h>

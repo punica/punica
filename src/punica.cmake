@@ -1,25 +1,22 @@
-# Provides PUNICA_SOURCES variable and defines 'LWM2M_SERVER_MODE'
+# Provides PUNICA_SOURCES, PUNICA_SOURCES_DIR variables
+# and sets 'LWM2M_SERVER_MODE' flag
+
+include(${CMAKE_CURRENT_LIST_DIR}/rest/rest.cmake)
 
 set(PUNICA_SOURCES_DIR ${CMAKE_CURRENT_LIST_DIR})
 
 set(PUNICA_SOURCES
-    ${CMAKE_CURRENT_LIST_DIR}/punica.c
-    ${CMAKE_CURRENT_LIST_DIR}/rest-core.c
-    ${CMAKE_CURRENT_LIST_DIR}/rest-core-types.c
-    ${CMAKE_CURRENT_LIST_DIR}/rest-endpoints.c
-    ${CMAKE_CURRENT_LIST_DIR}/rest-resources.c
-    ${CMAKE_CURRENT_LIST_DIR}/rest-notifications.c
-    ${CMAKE_CURRENT_LIST_DIR}/rest-subscriptions.c
-    ${CMAKE_CURRENT_LIST_DIR}/linked_list.c
-    ${CMAKE_CURRENT_LIST_DIR}/rest-utils.c
-    ${CMAKE_CURRENT_LIST_DIR}/rest-authentication.c
-    ${CMAKE_CURRENT_LIST_DIR}/rest-devices.c
-    ${CMAKE_CURRENT_LIST_DIR}/logging.c
-    ${CMAKE_CURRENT_LIST_DIR}/settings.c
-    ${CMAKE_CURRENT_LIST_DIR}/security.c
-    ${CMAKE_CURRENT_LIST_DIR}/udp_connection_api.c
-    ${CMAKE_CURRENT_LIST_DIR}/dtls_connection_api.c
-    ${CMAKE_CURRENT_LIST_DIR}/database.c
+    ${PUNICA_SOURCES}
+    ${PUNICA_SOURCES_DIR}/punica.c
+    ${PUNICA_SOURCES_DIR}/linked_list.c
+    ${PUNICA_SOURCES_DIR}/logging.c
+    ${PUNICA_SOURCES_DIR}/settings.c
+    ${PUNICA_SOURCES_DIR}/security.c
+    ${PUNICA_SOURCES_DIR}/database.c
+    ${PUNICA_SOURCES_DIR}/udp_connection_api.c
+    ${PUNICA_SOURCES_DIR}/dtls_connection_api.c
     )
+
+set(PUNICA_SOURCES ${PUNICA_SOURCES} ${REST_SOURCES})
 
 add_definitions(-DLWM2M_SERVER_MODE)

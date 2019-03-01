@@ -19,9 +19,8 @@
 
 #include <string.h>
 
-#include "punica.h"
-#include "logging.h"
-
+#include "../punica.h"
+#include "../logging.h"
 
 typedef struct
 {
