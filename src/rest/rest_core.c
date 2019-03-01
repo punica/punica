@@ -20,9 +20,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include "logging.h"
-#include "punica.h"
-#include "database.h"
+#include "../logging.h"
+#include "../punica.h"
+#include "../database.h"
 
 void rest_init(rest_context_t *rest, settings_t *settings)
 {

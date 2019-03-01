@@ -33,8 +33,8 @@
 #include "settings.h"
 #include "version.h"
 #include "security.h"
+#include "rest/rest_authentication.h"
 #include "linked_list.h"
-#include "rest-authentication.h"
 
 static volatile int punica_quit;
 static void sigint_handler(int signo)
