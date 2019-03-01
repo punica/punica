@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "rest-list.h"
+#include "linked_list.h"
 #include "settings.h"
 #include "version.h"
 #include "security.h"
@@ -34,7 +34,7 @@
 
 const char *argp_program_version = PUNICA_FULL_VERSION;
 
-static char doc[] = "Restserver - interface to LwM2M server and all clients connected to it";
+static char doc[] = "Punica - REST interface to LwM2M server and all clients connected to it";
 
 static struct argp_option options[] =
 {
@@ -54,9 +54,53 @@ static void set_coap_settings(json_t *j_section, coap_settings_t *settings)
 
     json_object_foreach(j_section, key, j_value)
     {
-        if (strcasecmp(key, "port") == 0)
+        if (strcasecmp(key, "mode") == 0)
         {
-            settings->port = (uint16_t) json_integer_value(j_value);
+            if (json_is_integer(j_value))
+            {
+                settings->security_mode = (uint16_t) json_integer_value(j_value);
+            }
+            else
+            {
+                fprintf(stdout, "value at key %s:%s must be an integer",
+                        section_name, key);
+            }
+        }
+        else if (strcasecmp(key, "port") == 0)
+        {
+            if (json_is_integer(j_value))
+            {
+                settings->port = (uint16_t) json_integer_value(j_value);
+            }
+            else
+            {
+                fprintf(stdout, "value at key %s:%s must be an integer",
+                        section_name, key);
+            }
+        }
+        else if (strcasecmp(key, "private_key_file") == 0)
+        {
+            if (json_is_string(j_value))
+            {
+                settings->private_key_file = (char *) json_string_value(j_value);
+            }
+            else
+            {
+                fprintf(stdout, "value at key %s:%s must be a string",
+                        section_name, key);
+            }
+        }
+        else if (strcasecmp(key, "certificate_file") == 0)
+        {
+            if (json_is_string(j_value))
+            {
+                settings->certificate_file = (char *) json_string_value(j_value);
+            }
+            else
+            {
+                fprintf(stdout, "value at key %s:%s must be a string",
+                        section_name, key);
+            }
         }
         else if (strcasecmp(key, "database_file") == 0)
         {
@@ -78,10 +122,10 @@ static void set_coap_settings(json_t *j_section, coap_settings_t *settings)
     }
 }
 
-static int set_user_settings(json_t *user_settings, rest_list_t *users_list)
+static int set_user_settings(json_t *user_settings, linked_list_t *users_list)
 {
     user_t *user, *user_entry;
-    rest_list_entry_t *entry;
+    linked_list_entry_t *entry;
     json_t *j_name, *j_secret, *j_scope, *j_scope_value;
     const char *user_name, *user_secret;
     char *scope_value;
@@ -157,7 +201,7 @@ static int set_user_settings(json_t *user_settings, rest_list_t *users_list)
 
     security_user_set(user, user_name, user_secret, j_scope);
 
-    rest_list_add(users_list, user);
+    linked_list_add(users_list, user);
 
     return 0;
 }

@@ -19,7 +19,7 @@
 
 #include <string.h>
 
-#include "restserver.h"
+#include "punica.h"
 #include "logging.h"
 
 
@@ -62,7 +62,7 @@ static void rest_unobserve_cb(uint16_t clientID, lwm2m_uri_t *uriP, int count,
 
     log_message(LOG_LEVEL_INFO, "[UNOBSERVE-RESPONSE] id=%s\n", ctx->response->id);
 
-    rest_list_remove(ctx->rest->observeList, ctx->response);
+    linked_list_remove(ctx->rest->observeList, ctx->response);
 
     rest_async_response_delete(ctx->response);
     free(ctx);
@@ -169,7 +169,7 @@ static int rest_subscriptions_put_cb_unsafe(rest_context_t *rest,
             goto exit;
         }
 
-        rest_list_add(rest->observeList, observe_context->response);
+        linked_list_add(rest->observeList, observe_context->response);
     }
 
     jresponse = json_object();
@@ -296,7 +296,7 @@ static int rest_subscriptions_delete_cb_unsafe(rest_context_t *rest,
 
     if (res == COAP_404_NOT_FOUND)
     {
-        log_message(LOG_LEVEL_WARN, "[WARNING] LwM2M and restserver subscriptions mismatch!");
+        log_message(LOG_LEVEL_WARN, "[WARNING] LwM2M and REST subscriptions mismatch!");
     }
     else if (res != 0)
     {
