@@ -602,9 +602,7 @@ int main(int argc, char *argv[])
     lwm2m_close(rest.lwm2m);
     rest_cleanup(&rest);
 
-    security_unload(&(settings.http.security));
     jwt_cleanup(&settings.http.security.jwt);
-    settings_unload(&settings);
 
     return 0;
 }
