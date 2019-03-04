@@ -20,8 +20,8 @@
 #ifndef PLUGIN_MANAGER_CORE_HPP
 #define PLUGIN_MANAGER_CORE_HPP
 
-#include "../rest_framework/include/rest_framework.hpp"
-#include "../lwm2m_framework/include/lwm2m_framework.hpp"
+#include "./rest_framework/rest_framework.hpp"
+#include "./lwm2m_framework/lwm2m_framework.hpp"
 
 class PluginManagerCore
 {

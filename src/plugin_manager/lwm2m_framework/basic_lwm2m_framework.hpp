@@ -20,7 +20,7 @@
 #ifndef BASIC_LWM2M_FRAMEWORK_HPP
 #define BASIC_LWM2M_FRAMEWORK_HPP
 
-#include "lwm2m_framework.hpp"
+#include "plugin_manager/lwm2m_framework/lwm2m_framework.hpp"
 
 class BasicLwm2mFramework: public Lwm2mFramework
 {

@@ -19,7 +19,7 @@
 
 #include <cstring>
 
-#include "../include/ulfius_request.hpp"
+#include "ulfius_request.hpp"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +27,7 @@ extern "C" {
 
 #include <ulfius.h>
 
-#include "../include/ulfius_request.h"
+#include "ulfius_request.h"
 
 CUlfiusRequest *new_UlfiusRequest(const struct _u_request *u_request)
 {

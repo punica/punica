@@ -20,7 +20,7 @@
 #include <cstring>
 #include <iostream>
 
-#include "../include/ulfius_response.hpp"
+#include "ulfius_response.hpp"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,7 +28,7 @@ extern "C" {
 
 #include <ulfius.h>
 
-#include "../include/ulfius_response.h"
+#include "ulfius_response.h"
 
 CUlfiusResponse *new_UlfiusResponse(struct _u_response *u_response)
 {

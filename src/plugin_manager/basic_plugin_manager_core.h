@@ -22,8 +22,8 @@
 
 #include "ulfius.h"
 
-#include "../rest_framework/include/ulfius_rest_framework.h"
-#include "../lwm2m_framework/include/basic_lwm2m_framework.h"
+#include "./rest_framework/ulfius_rest_framework.h"
+#include "./lwm2m_framework/basic_lwm2m_framework.h"
 
 struct CBasicPluginManagerCore;
 typedef struct CBasicPluginManagerCore CBasicPluginManagerCore;

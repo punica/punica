@@ -20,7 +20,7 @@
 #ifndef ULFIUS_RESPONSE_HPP
 #define ULFIUS_RESPONSE_HPP
 
-#include "response.hpp"
+#include "plugin_manager/rest_framework/response.hpp"
 
 class UlfiusResponse: public Response
 {

@@ -20,7 +20,7 @@
 #ifndef ULFIUS_REQUEST_HPP
 #define ULFIUS_REQUEST_HPP
 
-#include "request.hpp"
+#include "plugin_manager/rest_framework/request.hpp"
 
 class UlfiusRequest: public Request
 {

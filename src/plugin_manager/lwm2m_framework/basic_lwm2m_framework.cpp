@@ -17,13 +17,13 @@
  *
  */
 
-#include "../include/basic_lwm2m_framework.hpp"
+#include "basic_lwm2m_framework.hpp"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "../include/basic_lwm2m_framework.h"
+#include "basic_lwm2m_framework.h"
 
 CBasicLwm2mFramework *new_BasicLwm2mFramework(void *lwm2m_context)
 {

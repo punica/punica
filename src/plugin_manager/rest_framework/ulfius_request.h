@@ -20,7 +20,7 @@
 #ifndef ULFIUS_REQUEST_H
 #define ULFIUS_REQUEST_H
 
-#include "request.h"
+#include "plugin_manager/rest_framework/request.h"
 
 struct CUlfiusRequest;
 typedef struct CUlfiusRequest CUlfiusRequest;

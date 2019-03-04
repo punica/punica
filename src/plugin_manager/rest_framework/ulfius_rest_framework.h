@@ -20,7 +20,7 @@
 #ifndef ULFIUS_REST_FRAMEWORK_H
 #define ULFIUS_REST_FRAMEWORK_H
 
-#include "rest_framework.h"
+#include "plugin_manager/rest_framework/rest_framework.h"
 
 struct CUlfiusRestFramework;
 typedef struct CUlfiusRestFramework CUlfiusRestFramework;

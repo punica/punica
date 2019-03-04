@@ -17,15 +17,15 @@
  *
  */
 
-#include "../rest_framework/include/ulfius_rest_framework.hpp"
-#include "../lwm2m_framework/include/basic_lwm2m_framework.hpp"
-#include "../include/basic_plugin_manager_core.hpp"
+#include "./rest_framework/ulfius_rest_framework.hpp"
+#include "./lwm2m_framework/basic_lwm2m_framework.hpp"
+#include "./basic_plugin_manager_core.hpp"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "../include/basic_plugin_manager_core.h"
+#include "./basic_plugin_manager_core.h"
 
 CBasicPluginManagerCore *new_BasicPluginManagerCore(struct _u_instance *ulfius_instance,
                                                     void *lwm2m_context)

@@ -20,14 +20,14 @@
 #include <dlfcn.h>
 #include <iostream>
 
-#include "../include/basic_plugin_manager_core.hpp"
-#include "../include/basic_plugin_manager.hpp"
+#include "basic_plugin_manager_core.hpp"
+#include "basic_plugin_manager.hpp"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "../include/basic_plugin_manager.h"
+#include "basic_plugin_manager.h"
 
 CBasicPluginManager *new_BasicPluginManager(CBasicPluginManagerCore *c_manager_core)
 {

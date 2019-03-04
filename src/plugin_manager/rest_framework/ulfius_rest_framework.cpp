@@ -19,9 +19,9 @@
 
 #include <cstring>
 
-#include "../include/ulfius_rest_framework.hpp"
-#include "../include/ulfius_request.hpp"
-#include "../include/ulfius_response.hpp"
+#include "ulfius_rest_framework.hpp"
+#include "ulfius_request.hpp"
+#include "ulfius_response.hpp"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,7 +29,7 @@ extern "C" {
 
 #include <ulfius.h>
 
-#include "../include/ulfius_rest_framework.h"
+#include "ulfius_rest_framework.h"
 
 CUlfiusRestFramework *new_UlfiusRestFramework(struct _u_instance *instance)
 {

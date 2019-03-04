@@ -20,7 +20,7 @@
 #ifndef BASIC_PLUGIN_MANAGER_CORE_HPP
 #define BASIC_PLUGIN_MANAGER_CORE_HPP
 
-#include "plugin_manager_core.hpp"
+#include "plugin_manager/plugin_manager_core.hpp"
 
 #ifdef __cplusplus
 extern "C" {

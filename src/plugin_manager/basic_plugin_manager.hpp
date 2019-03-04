@@ -20,7 +20,7 @@
 #ifndef BASIC_PLUGIN_MANAGER_HPP 
 #define BASIC_PLUGIN_MANAGER_HPP 
 
-#include "plugin_manager.hpp"
+#include "plugin_manager/plugin_manager.hpp"
 
 class BasicPluginManager: public PluginManager
 {

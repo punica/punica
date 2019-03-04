@@ -20,7 +20,7 @@
 #ifndef ULFIUS_RESPONSE_H
 #define ULFIUS_RESPONSE_H
 
-#include "response.h"
+#include "plugin_manager/rest_framework/response.h"
 
 struct CUlfiusResponse;
 typedef struct CUlfiusResponse CUlfiusResponse;

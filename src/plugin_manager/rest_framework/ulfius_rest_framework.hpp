@@ -20,8 +20,8 @@
 #ifndef ULFIUS_REST_FRAMEWORK_HPP
 #define ULFIUS_REST_FRAMEWORK_HPP
 
-#include "rest_framework.hpp"
-#include "callback_handler.hpp"
+#include "plugin_manager/rest_framework/rest_framework.hpp"
+#include "plugin_manager/rest_framework/callback_handler.hpp"
 
 std::map<std::string, std::string> ulfiusToStdMap(struct _u_map *ulfius_map);
 
