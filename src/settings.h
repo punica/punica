@@ -27,7 +27,7 @@
 
 #include "logging.h"
 #include "security.h"
-#include "plugin_manager/include/basic_plugin_manager.h"
+#include "plugin_manager/basic_plugin_manager.h"
 #include "rest/rest_utils.h"
 
 typedef enum

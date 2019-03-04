@@ -35,8 +35,8 @@
 #include "security.h"
 #include "rest/rest_authentication.h"
 #include "linked_list.h"
-#include "plugin_manager/include/basic_plugin_manager.h"
-#include "plugin_manager/include/basic_plugin_manager_core.h"
+#include "plugin_manager/basic_plugin_manager.h"
+#include "plugin_manager/basic_plugin_manager_core.h"
 
 static volatile int punica_quit;
 static void sigint_handler(int signo)
