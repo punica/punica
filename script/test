@@ -54,10 +54,10 @@ build_test_plugins () {
 
     for plugin in ${TEST_PLUGINS_DIR}/*/; do
         plugin_build_dir="${plugin}build"
-        rm -r ${plugin_build_dir} || true
-        mkdir -p ${plugin_build_dir}
+        mkdir -p ${plugin_build_dir} || true
         cd ${plugin_build_dir}
         cmake ../
+        make clean
         make
         cd -
     done
