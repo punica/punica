@@ -20,7 +20,7 @@
 #include <vector>
 #include <stdint.h>
 
-#include "../include/test_plugin.hpp"
+#include "test_plugin.hpp"
 
 std::string TestPlugin::getStamp()
 {

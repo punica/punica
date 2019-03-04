@@ -17,7 +17,7 @@
  *
  */
 
-#include "../include/plugin_without_api.hpp"
+#include "plugin_without_api.hpp"
 
 std::string PluginWithoutApi::getStamp()
 {

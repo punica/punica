@@ -17,7 +17,7 @@
  *
  */
 
-#include "../include/plugin_without_create.hpp"
+#include "plugin_without_create.hpp"
 
 static Plugin *NewPluginWithoutCreate(PluginManagerCore *core)
 {

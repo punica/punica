@@ -19,7 +19,7 @@
 
 #include <string>
 
-#include "../../../../../src/plugin_manager/include/plugin.hpp"
+#include "plugin_manager/include/plugin.hpp"
 
 class PluginWithoutApi: public Plugin
 {

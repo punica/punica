@@ -19,23 +19,32 @@
 
 #include <string>
 
-#include "../../../../../src/plugin_manager/include/plugin.hpp"
-#include "../../../../../src/plugin_manager/include/plugin_api.hpp"
-#include "../../../../../src/plugin_manager/include/plugin_manager_core.hpp"
+#include "plugin_manager/rest_framework/rest_framework.hpp"
+#include "plugin_manager/plugin.hpp"
+#include "plugin_manager/plugin_api.hpp"
+#include "plugin_manager/plugin_manager_core.hpp"
 
-class PluginWithoutDestroy: public Plugin
+class TestPlugin: public Plugin
 {
 public:
-    PluginWithoutDestroy() { }
-    ~PluginWithoutDestroy() { }
+    TestPlugin(std::string test_stamp): stamp(test_stamp) { }
+    ~TestPlugin() { }
+
+    std::string getStamp();
+    void setStamp(std::string new_stamp);
+
+private:
+    std::string stamp;
 };
 
-static Plugin *NewPluginWithoutDestroy(PluginManagerCore *core);
-static void DeletePluginWithoutDestroy(Plugin *plugin);
+StatusCode stamp(Request *request, Response *response, void *context);
+
+static Plugin *NewTestPlugin(PluginManagerCore *core);
+static void DeleteTestPlugin(Plugin *plugin);
 
 extern "C" const plugin_api_t PLUGIN_API =
 {
     .version = { 0, 0, 0},
-    .create = NewPluginWithoutDestroy,
-    .destroy = NULL,
+    .create = NewTestPlugin,
+    .destroy = DeleteTestPlugin,
 };

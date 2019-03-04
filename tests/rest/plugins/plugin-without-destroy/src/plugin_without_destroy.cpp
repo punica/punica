@@ -17,7 +17,7 @@
  *
  */
 
-#include "../include/plugin_without_destroy.hpp"
+#include "plugin_without_destroy.hpp"
 
 static Plugin *NewPluginWithoutDestroy(PluginManagerCore *core)
 {

@@ -19,33 +19,23 @@
 
 #include <string>
 
-#include "../../../../../src/plugin_manager/rest_framework/include/rest_framework.hpp"
-#include "../../../../../src/plugin_manager/rest_framework/include/rest_framework.hpp"
-#include "../../../../../src/plugin_manager/include/plugin.hpp"
-#include "../../../../../src/plugin_manager/include/plugin_api.hpp"
-#include "../../../../../src/plugin_manager/include/plugin_manager_core.hpp"
+#include "plugin_manager/include/plugin.hpp"
+#include "plugin_manager/include/plugin_api.hpp"
+#include "plugin_manager/include/plugin_manager_core.hpp"
 
-class TestPlugin: public Plugin
+class PluginWithoutDestroy: public Plugin
 {
 public:
-    TestPlugin(std::string test_stamp): stamp(test_stamp) { }
-    ~TestPlugin() { }
-
-    std::string getStamp();
-    void setStamp(std::string new_stamp);
-
-private:
-    std::string stamp;
+    PluginWithoutDestroy() { }
+    ~PluginWithoutDestroy() { }
 };
 
-StatusCode stamp(Request *request, Response *response, void *context);
-
-static Plugin *NewTestPlugin(PluginManagerCore *core);
-static void DeleteTestPlugin(Plugin *plugin);
+static Plugin *NewPluginWithoutDestroy(PluginManagerCore *core);
+static void DeletePluginWithoutDestroy(Plugin *plugin);
 
 extern "C" const plugin_api_t PLUGIN_API =
 {
     .version = { 0, 0, 0},
-    .create = NewTestPlugin,
-    .destroy = DeleteTestPlugin,
+    .create = NewPluginWithoutDestroy,
+    .destroy = NULL,
 };
