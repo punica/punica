@@ -20,8 +20,6 @@
 #ifndef LWM2M_FRAMEWORK_HPP
 #define LWM2M_FRAMEWORK_HPP
 
-#include <string>
-
 class Lwm2mFramework
 {
 public:
