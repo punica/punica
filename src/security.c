@@ -76,31 +76,6 @@ int security_load(http_security_settings_t *settings)
     return 0;
 }
 
-int security_unload(http_security_settings_t *settings)
-{
-    if (settings->certificate_file != NULL)
-    {
-        free(settings->certificate_file);
-    }
-
-    if (settings->private_key_file != NULL)
-    {
-        free(settings->private_key_file);
-    }
-
-    if (settings->private_key != NULL)
-    {
-        free(settings->private_key);
-    }
-
-    if (settings->certificate != NULL)
-    {
-        free(settings->certificate);
-    }
-
-    return 0;
-}
-
 user_t *security_user_new(void)
 {
     user_t *user;

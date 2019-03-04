@@ -73,8 +73,7 @@ typedef struct
 
 error_t parse_opt(int key, char *arg, struct argp_state *state);
 
-int settings_load(settings_t *settings, int argc, char *argv[]);
-int settings_unload(settings_t *settings);
+int settings_init(int argc, char *argv[], settings_t *settings);
 
 #endif // SETTINGS_H
 

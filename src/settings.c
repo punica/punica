@@ -575,8 +575,3 @@ int settings_load(settings_t *settings, int argc, char *argv[])
 {
     return argp_parse(&argp, argc, argv, 0, 0, settings);
 }
-
-int settings_unload(settings_t *settings)
-{
-    return 0;
-}
