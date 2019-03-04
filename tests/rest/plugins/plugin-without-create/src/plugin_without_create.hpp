@@ -19,9 +19,9 @@
 
 #include <string>
 
-#include "plugin_manager/include/plugin.hpp"
-#include "plugin_manager/include/plugin_api.hpp"
-#include "plugin_manager/include/plugin_manager_core.hpp"
+#include "plugin_manager/plugin.hpp"
+#include "plugin_manager/plugin_api.hpp"
+#include "plugin_manager/plugin_manager_core.hpp"
 
 class PluginWithoutCreate: public Plugin
 {
