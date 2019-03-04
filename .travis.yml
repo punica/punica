@@ -22,3 +22,4 @@ script:
 after_script:
   - bash <(curl -s https://codecov.io/bash) -cZF secure -p secure -s ./
   - bash <(curl -s https://codecov.io/bash) -cZF regular -p regular -s ./
+  - bash <(curl -s https://codecov.io/bash) -cZF plugins -p plugins -s ./
