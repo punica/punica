@@ -112,10 +112,14 @@ set(LIBRARIES ${LIBRARIES} ${WAKAAMA_LIBRARY})
 find_library(UUID_LIBRARY uuid)
 set(LIBRARIES ${LIBRARIES} ${UUID_LIBRARY})
 
+# DL_LIBRARY
+set(LIBRARIES ${LIBRARIES} ${CMAKE_DL_LIBS})
+
 message("ALL libraries: ${LIBRARIES}")
 target_link_libraries(${PROJECT_NAME} ${LIBRARIES})
 
 target_compile_options(${PROJECT_NAME} PRIVATE "-Wall")
+target_compile_options(${PROJECT_NAME} PRIVATE "-O" "-g3")
 
 if(CODE_COVERAGE)
     target_compile_options(${PROJECT_NAME} PRIVATE "-coverage")
