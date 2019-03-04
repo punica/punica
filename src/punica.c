@@ -504,7 +504,7 @@ int main(int argc, char *argv[])
 
     if (settings.http.security.private_key != NULL || settings.http.security.certificate != NULL)
     {
-        if (settings_init(argc, argv, &settings) != 0) 
+        if (settings_init(argc, argv, &settings) != 0)
         {
             return -1;
         }
