@@ -35,6 +35,8 @@
 #include "security.h"
 #include "rest/rest_authentication.h"
 #include "linked_list.h"
+#include "plugin_manager/include/basic_plugin_manager.h"
+#include "plugin_manager/include/basic_plugin_manager_core.h"
 
 static volatile int punica_quit;
 static void sigint_handler(int signo)
@@ -53,7 +55,6 @@ static void sigpipe_handler(int sig)
     sigpipe_cnt++;
     log_message(LOG_LEVEL_ERROR, "SIGPIPE occurs: %d times.\n", sigpipe_cnt);
 }
-
 
 /**
  * setup handlers to ignore SIGPIPE, handle SIGINT...
@@ -88,6 +89,51 @@ static void init_signals(void)
     {
         log_message(LOG_LEVEL_FATAL, "Failed to install SIGPIPE handler: %s\n", strerror(errno));
     }
+}
+
+static int plugins_load(CBasicPluginManager *plugin_manager,
+                        plugins_settings_t *plugins_settings)
+{
+    linked_list_entry_t *entry;
+    plugin_settings_t *plugin;
+    int load_is_successful;
+
+    for (entry = plugins_settings->plugins_list->head;
+         entry != NULL; entry = entry->next)
+    {
+        plugin = entry->data;
+        load_is_successful = BasicPluginManager_loadPlugin(plugin_manager,
+                                                           plugin->path,
+                                                           plugin->name);
+
+        if (load_is_successful)
+        {
+            log_message(LOG_LEVEL_INFO,
+                        "[PLUGINS] Successfuly loaded plugin: \"%s\"\n",
+                        plugin->name);
+        }
+        else
+        {
+            log_message(LOG_LEVEL_ERROR,
+                        "[PLUGINS] Failed to load plugin: \"%s\"\n", plugin->name);
+        }
+    }
+
+    return 0;
+}
+
+static void plugins_unload(plugins_settings_t *plugins_settings)
+{
+    linked_list_entry_t *entry;
+    plugin_settings_t *plugin;
+
+    for (entry = plugins_settings->plugins_list->head;
+         entry != NULL; entry = entry->next)
+    {
+        plugin = entry->data;
+        free(plugin);
+    }
+    free(plugins_settings->plugins_list);
 }
 
 static connection_api_t *api_init(coap_settings_t *coap, void *data, f_psk_cb_t psk_cb)
@@ -312,6 +358,8 @@ int main(int argc, char *argv[])
     connection_api_t *conn_api;
     uint8_t buffer[1500];
     void *connection;
+    CBasicPluginManagerCore *plugin_manager_core;
+    CBasicPluginManager *plugin_manager;
 
     static settings_t settings =
     {
@@ -346,13 +394,15 @@ int main(int argc, char *argv[])
         },
     };
 
+    settings.plugins.plugins_list = linked_list_new();
     settings.http.security.jwt.users_list = linked_list_new();
     settings.http.security.jwt.secret_key = (unsigned char *) malloc(
                                                 settings.http.security.jwt.secret_key_length * sizeof(unsigned char));
+
     rest_get_random(settings.http.security.jwt.secret_key,
                     settings.http.security.jwt.secret_key_length);
 
-    if (settings_init(argc, argv, &settings) != 0)
+    if (settings_load(&settings, argc, argv) != 0)
     {
         return -1;
     }
@@ -498,6 +548,11 @@ int main(int argc, char *argv[])
         }
     }
 
+    /* Plugin manager initialization and loading of plugins */
+    plugin_manager_core = new_BasicPluginManagerCore(&instance, rest.lwm2m);
+    plugin_manager = new_BasicPluginManager(plugin_manager_core);
+    plugins_load(plugin_manager, &settings.plugins);
+
     /* Main section */
     while (!punica_quit)
     {
@@ -535,6 +590,10 @@ int main(int argc, char *argv[])
         }
     }
 
+    delete_BasicPluginManager(plugin_manager);
+    delete_BasicPluginManagerCore(plugin_manager_core);
+    plugins_unload(&settings.plugins);
+
     ulfius_stop_framework(&instance);
     ulfius_clean_instance(&instance);
 
@@ -543,7 +602,9 @@ int main(int argc, char *argv[])
     lwm2m_close(rest.lwm2m);
     rest_cleanup(&rest);
 
+    security_unload(&(settings.http.security));
     jwt_cleanup(&settings.http.security.jwt);
+    settings_unload(&settings);
 
     return 0;
 }

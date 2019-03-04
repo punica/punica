@@ -387,6 +387,102 @@ static void set_logging_settings(json_t *j_section, logging_settings_t *settings
     }
 }
 
+static int set_plugin_settings(json_t *j_plugin_settings,
+                               linked_list_t *plugins_list)
+{
+    linked_list_entry_t *entry;
+    plugin_settings_t *plugin, *plugin_entry;
+    size_t plugin_name_length, plugin_path_length;
+    json_t *j_name, *j_path;
+
+    j_name = json_object_get(j_plugin_settings, "name");
+    j_path = json_object_get(j_plugin_settings, "path");
+
+    if (!json_is_string(j_name))
+    {
+        fprintf(stdout, "Plugin configured without name.\n");
+        return 1;
+    }
+    plugin_name_length = strnlen(json_string_value(j_name),
+                                 J_MAX_LENGTH_PLUGIN_NAME);
+    if (plugin_name_length == 0
+        || plugin_name_length == J_MAX_LENGTH_PLUGIN_NAME)
+    {
+        fprintf(stdout, "Plugin name length is invalid\n");
+        return 1;
+    }
+
+    if (!json_is_string(j_path))
+    {
+        fprintf(stdout, "Plugin configured without path.\n");
+        return 1;
+    }
+    plugin_path_length = strnlen(json_string_value(j_path),
+                                 J_MAX_LENGTH_PLUGIN_NAME);
+    if (plugin_path_length == 0
+        || plugin_path_length == J_MAX_LENGTH_PLUGIN_PATH)
+    {
+        fprintf(stdout, "Plugin path length is invalid\n");
+        return 1;
+    }
+
+    plugin = malloc(sizeof(plugin_settings_t));
+
+    plugin->name = json_string_value(j_name);
+    plugin->path = json_string_value(j_path);
+
+    for (entry = plugins_list->head; entry != NULL; entry = entry->next)
+    {
+        plugin_entry = entry->data;
+        if (strncmp(plugin_entry->name, plugin->name,
+                    J_MAX_LENGTH_PLUGIN_NAME) == 0)
+        {
+            fprintf(stdout,
+                    "Duplicate plugin name \"%s\" entry found.\n",
+                    plugin->name);
+
+            free(plugin);
+            return 1;
+        }
+    }
+
+    linked_list_add(plugins_list, plugin);
+
+    return 0;
+}
+
+static int set_plugins_settings(json_t *j_section,
+                                plugins_settings_t *plugins_settings)
+{
+    int plugin_status, plugins_status = 0;
+    size_t plugin_index;
+    const char *section_name = "plugins";
+    json_t *j_plugin_settings;
+
+    json_array_foreach(j_section, plugin_index, j_plugin_settings)
+    {
+        if (!json_is_object(j_plugin_settings))
+        {
+            fprintf(stdout, "\"%s\" section contains invalid type value\n", section_name);
+            plugins_status = 1;
+        }
+
+        plugin_status = set_plugin_settings(j_plugin_settings,
+                                            plugins_settings->plugins_list);
+        if (plugin_status != 0)
+        {
+            plugins_status = plugin_status;
+        }
+    }
+
+    if (plugins_status != 0)
+    {
+        fprintf(stdout, "Not all entries in \"%s\" section were configured corretly!\n", section_name);
+    }
+
+    return plugins_status;
+}
+
 static int read_config(char *config_name, settings_t *settings)
 {
     json_error_t error;
@@ -416,9 +512,15 @@ static int read_config(char *config_name, settings_t *settings)
         {
             set_logging_settings(j_value, &settings->logging);
         }
+        else if (strcasecmp(section, "plugins") == 0)
+        {
+            set_plugins_settings(j_value, &settings->plugins);
+        }
         else
         {
-            fprintf(stdout, "Unrecognised configuration file section: %s\n", section);
+            fprintf(stdout,
+                    "Unrecognised configuration file section: %s\n",
+                    section);
         }
     }
 
@@ -469,7 +571,12 @@ error_t parse_opt(int key, char *arg, struct argp_state *state)
 
 static struct argp argp = { options, parse_opt, 0, doc };
 
-int settings_init(int argc, char *argv[], settings_t *settings)
+int settings_load(settings_t *settings, int argc, char *argv[])
 {
     return argp_parse(&argp, argc, argv, 0, 0, settings);
+}
+
+int settings_unload(settings_t *settings)
+{
+    return 0;
 }

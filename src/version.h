@@ -20,7 +20,7 @@
 #ifndef VERSION_H
 #define VERSION_H
 
-#define PUNICA_VERSION "0.0.0"
-#define PUNICA_FULL_VERSION "punica 0.0.0"
+#define PUNICA_VERSION "0.1.0"
+#define PUNICA_FULL_VERSION "punica 0.1.0"
 
 #endif // VERSION_H

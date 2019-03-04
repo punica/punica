@@ -27,6 +27,7 @@
 
 #include "logging.h"
 #include "security.h"
+#include "plugin_manager/include/basic_plugin_manager.h"
 #include "rest/rest_utils.h"
 
 typedef enum
@@ -53,14 +54,27 @@ typedef struct
 
 typedef struct
 {
+    const char *name;
+    const char *path;
+} plugin_settings_t;
+
+typedef struct
+{
+    linked_list_t *plugins_list;
+} plugins_settings_t;
+
+typedef struct
+{
     http_settings_t http;
     coap_settings_t coap;
     logging_settings_t logging;
+    plugins_settings_t plugins;
 } settings_t;
 
 error_t parse_opt(int key, char *arg, struct argp_state *state);
 
-int settings_init(int argc, char *argv[], settings_t *settings);
+int settings_load(settings_t *settings, int argc, char *argv[]);
+int settings_unload(settings_t *settings);
 
 #endif // SETTINGS_H
 
