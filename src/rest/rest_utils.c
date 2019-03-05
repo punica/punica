@@ -315,8 +315,8 @@ int device_entry_new_credentials(credentials_mode_t mode, const char *device_nam
         gnutls_x509_crt_init(&ca_cert);
         gnutls_x509_privkey_init(&ca_key);
 
-        gnutls_load_file(rest->settings->coap.certificate_file, &ca_key_buffer);
-        gnutls_load_file(rest->settings->coap.private_key_file, &ca_cert_buffer);
+        gnutls_load_file(rest->settings->coap.certificate_file, &ca_cert_buffer);
+        gnutls_load_file(rest->settings->coap.private_key_file, &ca_key_buffer);
         gnutls_x509_crt_import(ca_cert, &ca_cert_buffer, GNUTLS_X509_FMT_PEM);
         gnutls_x509_privkey_import(ca_key, &ca_key_buffer, GNUTLS_X509_FMT_PEM);
 
