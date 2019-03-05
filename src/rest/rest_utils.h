@@ -34,6 +34,13 @@ typedef struct
     size_t psk_id_len;
 } database_entry_t;
 
+//TODO: rename
+typedef enum
+{
+    MODE_PSK,
+    MODE_CERT,
+} credentials_mode_t;
+
 int coap_to_http_status(int status);
 
 void database_free_entry(database_entry_t *device_entry);
@@ -45,6 +52,8 @@ int database_populate_entry(json_t *j_device_object, database_entry_t *device_en
 int database_populate_new_entry(json_t *j_new_device_object, database_entry_t *device_entry);
 
 int database_prepare_array(json_t *j_array, linked_list_t *device_list);
+
+int device_entry_new_credentials(credentials_mode_t mode, const char *device_name, uint8_t *buffer, size_t buffer_size, void *context);
 
 #endif // REST_UTILS_H
 
