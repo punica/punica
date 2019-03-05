@@ -402,3 +402,20 @@ exit:
 
     return U_CALLBACK_COMPLETE;
 }
+
+int rest_devices_test_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
+{
+    json_t *j_resp;
+    uint8_t buffer[4096];
+
+    if (device_entry_new_credentials(MODE_CERT, "rest_test_1", buffer, sizeof(buffer), context))
+    {
+        ulfius_set_empty_body_response(resp, 500);
+        return U_CALLBACK_COMPLETE;
+    }
+
+    j_resp = json_pack("{s:s}", "cert", buffer);
+
+    ulfius_set_json_body_response(resp, 200, j_resp);
+    return U_CALLBACK_COMPLETE;
+}
