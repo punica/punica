@@ -291,65 +291,117 @@ int database_prepare_array(json_t *j_array, linked_list_t *device_list)
     return 0;
 }
 
-int device_entry_new_credentials(credentials_mode_t mode, const char *device_name, uint8_t *buffer, size_t buffer_size, void *context)
+static void generate_serial(uint8_t *buffer, size_t length)
+{
+    do
+    {
+        rest_get_random(buffer, length);
+    } while ((buffer[0] >> 7) == 1); // Serial number must be positive
+}
+
+static int device_entry_new_psk(const char *device_name, uint8_t *buffer, size_t *buffer_size, void *context)
+{
+    //TODO: implement
+    //TODO: rest_get_random
+    return 0;
+}
+
+static int device_entry_new_certificate(const char *device_name, uint8_t *buffer, size_t *buffer_size, void *context)
 {
     rest_context_t *rest = (rest_context_t *)context;
-    gnutls_x509_crt_t device_cert;
-    gnutls_x509_privkey_t device_key;
-    gnutls_x509_crt_t ca_cert;
-    gnutls_x509_privkey_t ca_key;
-    gnutls_datum_t ca_key_buffer, ca_cert_buffer;
+    gnutls_x509_crt_t device_cert = NULL;
+    gnutls_x509_privkey_t device_key = NULL;
+    gnutls_x509_crt_t ca_cert = NULL;
+    gnutls_x509_privkey_t ca_key = NULL;
+    gnutls_datum_t ca_key_buffer = {NULL, 0};
+    gnutls_datum_t ca_cert_buffer = {NULL, 0};
     unsigned int bits;
-    time_t now;
-    size_t length;
+    time_t activation_time;
+    int ret = -1;
+    uint8_t serial[20];
 
+    //TODO: add checks, maybe goto exit
+    if (gnutls_x509_crt_init(&device_cert)
+        || gnutls_x509_privkey_init(&device_key)
+        || gnutls_x509_crt_init(&ca_cert)
+        || gnutls_x509_privkey_init(&ca_key))
+    {
+        goto exit;
+    }
+
+    if (gnutls_load_file(rest->settings->coap.certificate_file, &ca_cert_buffer)
+        || gnutls_load_file(rest->settings->coap.private_key_file, &ca_key_buffer))
+    {
+        goto exit;
+    }
+
+    if (gnutls_x509_crt_import(ca_cert, &ca_cert_buffer, GNUTLS_X509_FMT_PEM)
+        || gnutls_x509_privkey_import(ca_key, &ca_key_buffer, GNUTLS_X509_FMT_PEM))
+    {
+        goto exit;
+    }
+
+    bits = gnutls_sec_param_to_pk_bits(GNUTLS_PK_ECDSA, GNUTLS_SEC_PARAM_MEDIUM);
+    if (gnutls_x509_privkey_generate(device_key, GNUTLS_PK_ECDSA, bits, 0))
+    {
+        goto exit;
+    }
+
+    //TODO: store serial in device list
+    generate_serial(serial, sizeof(serial));
+    activation_time = time(NULL);
+
+    if (gnutls_x509_crt_set_version(device_cert, 3)
+        || gnutls_x509_crt_set_serial(device_cert, serial, sizeof(serial))
+        || gnutls_x509_crt_set_activation_time(device_cert, activation_time)
+        || gnutls_x509_crt_set_expiration_time(device_cert, activation_time + 60 * 60)
+        || gnutls_x509_crt_set_key(device_cert, device_key))
+    {
+        goto exit;
+    }
+
+    if (gnutls_x509_crt_set_subject_alt_name(device_cert, GNUTLS_SAN_DNSNAME, device_name, strlen(device_name) + 1, GNUTLS_FSAN_SET))
+    {
+        goto exit;
+    }
+    //TODO: should use gnutls_x509_crt_set_subject_alt_othername()
+    //gnutls_x509_crt_set_subject_alt_othername(device_cert, "1.1.1", device_name, strlen(device_name), GNUTLS_FSAN_SET | GNUTLS_FSAN_ENCODE_OCTET_STRING);
+
+    if (gnutls_x509_crt_sign(device_cert, ca_cert, ca_key))
+    {
+        goto exit;
+    }
+
+    if (gnutls_x509_crt_export(device_cert, GNUTLS_X509_FMT_PEM, buffer, buffer_size))
+    {
+        goto exit;
+    }
+
+    ret = 0;
+exit:
+    gnutls_free(ca_cert_buffer.data);
+    gnutls_free(ca_key_buffer.data);
+    gnutls_x509_crt_deinit(device_cert);
+    gnutls_x509_privkey_deinit(device_key);
+    gnutls_x509_crt_deinit(ca_cert);
+    gnutls_x509_privkey_deinit(ca_key);
+
+    return ret;
+}
+
+int device_entry_new_credentials(credentials_mode_t mode, const char *device_name, uint8_t *buffer, size_t *buffer_size, void *context)
+{
     if (mode == MODE_PSK)
     {
-        //TODO: MODE_PSK
+        return device_entry_new_psk(device_name, buffer, buffer_size, context);
     }
     else if (mode == MODE_CERT)
     {
-        //TODO: add checks, maybe goto exit
-        gnutls_x509_crt_init(&device_cert);
-        gnutls_x509_privkey_init(&device_key);
-        gnutls_x509_crt_init(&ca_cert);
-        gnutls_x509_privkey_init(&ca_key);
-
-        gnutls_load_file(rest->settings->coap.certificate_file, &ca_cert_buffer);
-        gnutls_load_file(rest->settings->coap.private_key_file, &ca_key_buffer);
-        gnutls_x509_crt_import(ca_cert, &ca_cert_buffer, GNUTLS_X509_FMT_PEM);
-        gnutls_x509_privkey_import(ca_key, &ca_key_buffer, GNUTLS_X509_FMT_PEM);
-
-        bits = gnutls_sec_param_to_pk_bits(GNUTLS_PK_ECDSA, GNUTLS_SEC_PARAM_MEDIUM);
-        gnutls_x509_privkey_generate(device_key, GNUTLS_PK_ECDSA, bits, 0);
-
-        now = 1;
-        gnutls_x509_crt_set_version(device_cert, 3);
-        gnutls_x509_crt_set_serial(device_cert, &now, sizeof(now));
-        gnutls_x509_crt_set_activation_time(device_cert, now = time(NULL));
-        gnutls_x509_crt_set_expiration_time(device_cert, now + 60 * 60);
-        gnutls_x509_crt_set_key(device_cert, device_key);
-
-        gnutls_x509_crt_set_subject_alt_name(device_cert, GNUTLS_SAN_DNSNAME, device_name, strlen(device_name) + 1, GNUTLS_FSAN_SET);
-        //TODO: should use gnutls_x509_crt_set_subject_alt_othername()
-        //gnutls_x509_crt_set_subject_alt_othername(device_cert, "1.1.1", device_name, strlen(device_name), GNUTLS_FSAN_SET | GNUTLS_FSAN_ENCODE_OCTET_STRING);
-
-        //TODO: set DN's
-//        gnutls_x509_crt_set_dn_by_oid(device_cert, GNUTLS_OID_X520_COUNTRY_NAME, 0, "LT", 2);
-
-        gnutls_x509_crt_sign(device_cert, ca_cert, ca_key);
-
-        length = buffer_size;
-        gnutls_x509_crt_export(device_cert, GNUTLS_X509_FMT_PEM, buffer, &length);
-
-        gnutls_x509_crt_deinit(device_cert);
-        gnutls_x509_privkey_deinit(device_key);
-        gnutls_x509_crt_deinit(ca_cert);
-        gnutls_x509_privkey_deinit(ca_key);
+        return device_entry_new_certificate(device_name, buffer, buffer_size, context);
     }
     else
     {
-        return 1;
+        return -1;
     }
 
     return 0;

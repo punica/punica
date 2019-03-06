@@ -407,8 +407,9 @@ int rest_devices_test_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
 {
     json_t *j_resp;
     uint8_t buffer[4096];
+    size_t buffer_size = sizeof(buffer);
 
-    if (device_entry_new_credentials(MODE_CERT, "rest_test_1", buffer, sizeof(buffer), context))
+    if (device_entry_new_credentials(MODE_CERT, "rest_test_1", buffer, &buffer_size, context))
     {
         ulfius_set_empty_body_response(resp, 500);
         return U_CALLBACK_COMPLETE;

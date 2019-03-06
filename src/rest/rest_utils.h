@@ -53,7 +53,7 @@ int database_populate_new_entry(json_t *j_new_device_object, database_entry_t *d
 
 int database_prepare_array(json_t *j_array, linked_list_t *device_list);
 
-int device_entry_new_credentials(credentials_mode_t mode, const char *device_name, uint8_t *buffer, size_t buffer_size, void *context);
+int device_entry_new_credentials(credentials_mode_t mode, const char *device_name, uint8_t *buffer, size_t *buffer_size, void *context);
 
 #endif // REST_UTILS_H
 
