@@ -315,12 +315,10 @@ static int device_entry_new_certificate(const char *device_name, uint8_t *buffer
     gnutls_x509_privkey_t ca_key = NULL;
     gnutls_datum_t ca_key_buffer = {NULL, 0};
     gnutls_datum_t ca_cert_buffer = {NULL, 0};
-    unsigned int bits;
     time_t activation_time;
     int ret = -1;
     uint8_t serial[20];
 
-    //TODO: add checks, maybe goto exit
     if (gnutls_x509_crt_init(&device_cert)
         || gnutls_x509_privkey_init(&device_key)
         || gnutls_x509_crt_init(&ca_cert)
@@ -341,8 +339,7 @@ static int device_entry_new_certificate(const char *device_name, uint8_t *buffer
         goto exit;
     }
 
-    bits = gnutls_sec_param_to_pk_bits(GNUTLS_PK_ECDSA, GNUTLS_SEC_PARAM_MEDIUM);
-    if (gnutls_x509_privkey_generate(device_key, GNUTLS_PK_ECDSA, bits, 0))
+    if (gnutls_x509_privkey_generate(device_key, GNUTLS_PK_ECDSA, GNUTLS_CURVE_TO_BITS(GNUTLS_ECC_CURVE_SECP256R1), 0))
     {
         goto exit;
     }
