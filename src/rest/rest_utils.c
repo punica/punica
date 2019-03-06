@@ -301,8 +301,17 @@ static void generate_serial(uint8_t *buffer, size_t length)
 
 static int device_entry_new_psk(const char *device_name, uint8_t *buffer, size_t *buffer_size, void *context)
 {
-    //TODO: implement
-    //TODO: rest_get_random
+    //TODO: store in device list
+    rest_context_t *rest = (rest_context_t *)context;
+    size_t ret;
+
+    ret = rest_get_random(buffer, 16);
+    if (ret == 0)
+    {
+        return -1;
+    }
+
+    *buffer_size = ret;
     return 0;
 }
 
