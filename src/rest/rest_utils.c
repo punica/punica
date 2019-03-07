@@ -23,11 +23,27 @@
 
 #include "../punica.h"
 
-#define DATABASE_UUID_KEY_BIT       0x1
-#define DATABASE_PSK_KEY_BIT        0x2
-#define DATABASE_PSK_ID_KEY_BIT     0x4
-#define DATABASE_ALL_NEW_KEYS_SET   0x6
-#define DATABASE_ALL_KEYS_SET       0x7
+#define DATABASE_MODE_KEY_BIT       0x1
+#define DATABASE_NAME_KEY_BIT       0x2
+#define DATABASE_ALL_KEYS_SET       0x3
+
+static int database_find_existing_entry(const char *name, linked_list_t *device_list)
+{
+    linked_list_entry_t *device_entry;
+    database_entry_t *device_data;
+
+    for (device_entry = list->head; device_entry != NULL; device_entry = device_entry->next)
+    {
+        device_data = (database_entry_t *)device_entry->data;
+
+        if (strcmp(name, device_data->name) == 0)
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
 
 int coap_to_http_status(int status)
 {
@@ -67,10 +83,10 @@ void database_free_entry(database_entry_t *device_entry)
     }
 }
 
-int database_validate_new_entry(json_t *j_new_device_object)
+int database_validate_new_entry(json_t *j_new_device_object, linked_list_t *device_list)
 {
     int key_check = 0;
-    const char *key;
+    const char *key, *value_string;
     json_t *j_value;
     uint8_t buffer[512];
     size_t buffer_len = sizeof(buffer);
@@ -87,27 +103,32 @@ int database_validate_new_entry(json_t *j_new_device_object)
             return -1;
         }
 
-        if (strcasecmp(key, "psk") == 0)
+        if (strcasecmp(key, "mode") == 0)
         {
-            if (base64_decode(json_string_value(j_value), buffer, &buffer_len))
+            value_string = json_string_value(j_value);
+
+            if (strcasecmp(value_string, "psk")
+                && strcasecmp(value_string, "cert"))
             {
                 return -1;
             }
 
-            key_check |= DATABASE_PSK_KEY_BIT;
+            key_check |= DATABASE_MODE_KEY_BIT;
         }
-        else if (strcasecmp(key, "psk_id") == 0)
+        else if (strcasecmp(key, "name") == 0)
         {
-            if (base64_decode(json_string_value(j_value), buffer, &buffer_len))
+            value_string = json_string_value(j_value);
+
+            if (database_find_existing_entry(value_string, device_list))
             {
                 return -1;
             }
 
-            key_check |= DATABASE_PSK_ID_KEY_BIT;
+            key_check |= DATABASE_NAME_KEY_BIT;
         }
     }
 
-    if (key_check != DATABASE_ALL_NEW_KEYS_SET)
+    if (key_check != DATABASE_ALL_KEYS_SET)
     {
         return -1;
     }
