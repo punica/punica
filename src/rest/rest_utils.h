@@ -25,15 +25,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-typedef struct
-{
-    char *uuid;
-    uint8_t *psk;
-    size_t psk_len;
-    uint8_t *psk_id;
-    size_t psk_id_len;
-} database_entry_t;
-
 //TODO: rename
 typedef enum
 {
@@ -41,19 +32,29 @@ typedef enum
     MODE_CERT,
 } credentials_mode_t;
 
+typedef struct
+{
+    char *uuid;
+    char *name;
+    uint8_t *public_key;
+    size_t public_key_len;
+    uint8_t *secret_key;
+    size_t secret_key_len;
+    credentials_mode_t mode;
+    uint8_t serial[20];
+} database_entry_t;
+
 int coap_to_http_status(int status);
 
 void database_free_entry(database_entry_t *device_entry);
 
-int database_validate_new_entry(json_t *j_new_device_object);
+int database_validate_new_entry(json_t *j_new_device_object, linked_list_t *device_list);
 int database_validate_entry(json_t *j_device_object);
 
 int database_populate_entry(json_t *j_device_object, database_entry_t *device_entry);
-int database_populate_new_entry(json_t *j_new_device_object, database_entry_t *device_entry);
+int database_populate_new_entry(json_t *j_new_device_object, database_entry_t *device_entry, void *context);
 
 int database_prepare_array(json_t *j_array, linked_list_t *device_list);
-
-int device_entry_new_credentials(credentials_mode_t mode, const char *device_name, uint8_t *buffer, size_t *buffer_size, void *context);
 
 #endif // REST_UTILS_H
 
