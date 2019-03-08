@@ -17,23 +17,23 @@
  *
  */
 
-#ifndef PLUGIN_MANAGER_CORE_HPP
-#define PLUGIN_MANAGER_CORE_HPP
+#ifndef PUNICA_CORE_HPP
+#define PUNICA_CORE_HPP
 
-#include "./rest_framework/rest_framework.hpp"
-#include "./lwm2m_framework/lwm2m_framework.hpp"
+#include "rest_core.hpp"
+#include "lwm2m_core.hpp"
 
-class PluginManagerCore
+class Core
 {
 public:
-    virtual ~PluginManagerCore() { }
+    virtual ~Core() { }
 
-    virtual RestFramework *getRestFramework() = 0;
-    virtual Lwm2mFramework *getLwm2mFramework() = 0;
+    virtual RestCore *getRestCore() = 0;
+    virtual Lwm2mCore *getLwm2mCore() = 0;
 
 protected:
-    RestFramework *restFramework;
-    Lwm2mFramework *lwm2mFramework;
+    RestCore *restCore;
+    Lwm2mCore *lwm2mCore;
 };
 
-#endif // PLUGIN_MANAGER_CORE_HPP
+#endif // PUNICA_CORE_HPP
