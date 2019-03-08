@@ -17,15 +17,15 @@
  *
  */
 
-#ifndef LWM2M_FRAMEWORK_HPP
-#define LWM2M_FRAMEWORK_HPP
+#ifndef LWM2M_CORE_HPP
+#define LWM2M_CORE_HPP
 
-class Lwm2mFramework
+class Lwm2mCore
 {
 public:
-    virtual ~Lwm2mFramework() { }
+    virtual ~Lwm2mCore() { }
 
     virtual void *getContext() = 0;
 };
 
-#endif // LWM2M_FRAMEWORK_HPP
+#endif // LWM2M_CORE_HPP
