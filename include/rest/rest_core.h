@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef REST_CORE_H
-#define REST_CORE_H
+#ifndef PUNICA_REST_REST_CORE_H
+#define PUNICA_REST_REST_CORE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,4 +43,4 @@ void RestCore_addHandler(CRestCore *c_rest_core,
 }
 #endif
 
-#endif // REST_CORE_H
+#endif // PUNICA_REST_REST_CORE_H

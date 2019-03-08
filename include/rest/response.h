@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef RESPONSE_H
-#define RESPONSE_H
+#ifndef PUNICA_REST_RESPONSE_H
+#define PUNICA_REST_RESPONSE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,4 +56,4 @@ void Response_setHeader(CResponse *c_response, const char *c_header, const char 
 }
 #endif
 
-#endif // RESPONSE_H
+#endif // PUNICA_REST_RESPONSE_H

@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef REQUEST_H
-#define REQUEST_H
+#ifndef PUNICA_REST_REQUEST_H
+#define PUNICA_REST_REQUEST_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,4 +39,4 @@ uint8_t *Request_getBody(CRequest *c_request);
 }
 #endif
 
-#endif // REQUEST_H
+#endif // PUNICA_REST_REQUEST_H

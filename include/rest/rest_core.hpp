@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef REST_CORE_HPP
-#define REST_CORE_HPP
+#ifndef PUNICA_REST_REST_CORE_HPP
+#define PUNICA_REST_REST_CORE_HPP
 
 #include <string>
 
@@ -37,4 +37,4 @@ public:
         unsigned int priority, callback_function_t handler_function, void *handler_context) = 0;
 };
 
-#endif // REST_CORE_HPP
+#endif // PUNICA_REST_REST_CORE_HPP

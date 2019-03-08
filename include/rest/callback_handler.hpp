@@ -17,10 +17,8 @@
  *
  */
 
-#ifndef CALLBACK_HANDLER_HPP
-#define CALLBACK_HANDLER_HPP
-
-typedef int (*ulfius_callback_function_t)(const struct _u_request *, struct _u_response *, void *);
+#ifndef PUNICA_REST_CALLBACK_HANDLER_HPP
+#define PUNICA_REST_CALLBACK_HANDLER_HPP
 
 class CallbackHandler
 {
@@ -32,4 +30,4 @@ public:
     void *context;
 };
 
-#endif // CALLBACK_HANDLER_HPP
+#endif // PUNICA_REST_CALLBACK_HANDLER_HPP

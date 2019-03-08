@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef REQUEST_HPP
-#define REQUEST_HPP
+#ifndef PUNICA_REST_REQUEST_HPP
+#define PUNICA_REST_REQUEST_HPP
 
 #include <map>
 #include <string>
@@ -37,4 +37,4 @@ public:
     virtual std::vector<uint8_t> getBody() = 0;
 };
 
-#endif // REQUEST_HPP
+#endif // PUNICA_REST_REQUEST_HPP

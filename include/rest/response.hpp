@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef RESPONSE_HPP
-#define RESPONSE_HPP
+#ifndef PUNICA_REST_RESPONSE_HPP
+#define PUNICA_REST_RESPONSE_HPP
 
 #include <map>
 #include <string>
@@ -54,4 +54,4 @@ public:
     virtual void setHeader(const std::string header, const std::string value) = 0;
 };
 
-#endif // RESPONSE_HPP
+#endif // PUNICA_REST_RESPONSE_HPP
