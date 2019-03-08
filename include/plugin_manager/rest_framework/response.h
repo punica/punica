@@ -26,7 +26,8 @@ extern "C" {
 
 #include <stdint.h>
 
-typedef enum {
+typedef enum
+{
     StatusCode_unknown = 0,
     StatusCode_information_continue = 100,
     StatusCode_success_ok = 200,

@@ -25,14 +25,14 @@
 
 #define PLUGIN_HANDLE_NAME "PLUGIN_API"
 
-typedef Plugin * (*plugin_create_t)(PluginManagerCore *core);
+typedef Plugin *(*plugin_create_t)(PluginManagerCore *core);
 typedef void (*plugin_destroy_t)(Plugin *plugin);
 
 typedef struct
 {
-    uint32_t major:8,
-             minor:8,
-             revision:16;
+    uint32_t major: 8,
+             minor: 8,
+             revision: 16;
 } plugin_version_t;
 
 typedef struct

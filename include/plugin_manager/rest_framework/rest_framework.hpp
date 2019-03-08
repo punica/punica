@@ -25,7 +25,7 @@
 #include "request.hpp"
 #include "response.hpp"
 
-typedef StatusCode (*callback_function_t)(Request *, Response *, void*);
+typedef StatusCode(*callback_function_t)(Request *, Response *, void *);
 
 class RestFramework
 {

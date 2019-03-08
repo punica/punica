@@ -29,6 +29,6 @@ void delete_UlfiusResponse(CUlfiusResponse *c_response);
 void UlfiusResponse_setBody(CUlfiusResponse *c_response, uint8_t *c_binary_data, size_t size);
 void UlfiusResponse_setCode(CUlfiusResponse *c_response, const CStatusCode c_code);
 void UlfiusResponse_setHeader(CUlfiusResponse *c_response,
-                                      const char *c_header, const char *c_value);
+                              const char *c_header, const char *c_value);
 
 #endif // ULFIUS_RESPONSE_H

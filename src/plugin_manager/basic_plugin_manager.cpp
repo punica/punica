@@ -33,7 +33,7 @@ CBasicPluginManager *new_BasicPluginManager(CBasicPluginManagerCore *c_manager_c
 {
     BasicPluginManagerCore *manager_core = reinterpret_cast<BasicPluginManagerCore *>(c_manager_core);
 
-    return reinterpret_cast<CBasicPluginManager *>(new BasicPluginManager(manager_core)); 
+    return reinterpret_cast<CBasicPluginManager *>(new BasicPluginManager(manager_core));
 }
 void delete_BasicPluginManager(CBasicPluginManager *c_manager)
 {
@@ -129,7 +129,8 @@ bool BasicPluginManager::loadPlugin(std::string path, std::string name)
 }
 bool BasicPluginManager::unloadPlugin(std::string name)
 {
-    std::map<std::string, std::pair<Plugin *, plugin_api_t *> >::iterator plugins_iterator = plugins.find(name);
+    std::map<std::string, std::pair<Plugin *, plugin_api_t *> >::iterator plugins_iterator =
+        plugins.find(name);
     Plugin *plugin;
     plugin_api_t *plugin_api;
 

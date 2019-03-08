@@ -31,7 +31,9 @@ typedef struct CBasicPluginManagerCore CBasicPluginManagerCore;
 CBasicPluginManagerCore *new_BasicPluginManagerCore(struct _u_instance *ulfius_instance,
                                                     void *lwm2m_context);
 void delete_BasicPluginManagerCore(CBasicPluginManagerCore *c_manager_core);
-CUlfiusRestFramework *BasicPluginManagerCore_getRestFramework(CBasicPluginManagerCore *c_manager_core);
-CBasicLwm2mFramework *BasicPluginManagerCore_getLwm2mFramework(CBasicPluginManagerCore *c_manager_core);
+CUlfiusRestFramework *BasicPluginManagerCore_getRestFramework(CBasicPluginManagerCore
+        *c_manager_core);
+CBasicLwm2mFramework *BasicPluginManagerCore_getLwm2mFramework(CBasicPluginManagerCore
+        *c_manager_core);
 
 #endif // BASIC_PLUGIN_MANAGER_CORE_H

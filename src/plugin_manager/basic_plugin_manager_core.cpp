@@ -30,20 +30,23 @@ extern "C" {
 CBasicPluginManagerCore *new_BasicPluginManagerCore(struct _u_instance *ulfius_instance,
                                                     void *lwm2m_context)
 {
-    return reinterpret_cast<CBasicPluginManagerCore *>(new BasicPluginManagerCore(ulfius_instance, lwm2m_context)); 
+    return reinterpret_cast<CBasicPluginManagerCore *>(new BasicPluginManagerCore(ulfius_instance,
+                                                       lwm2m_context));
 }
 void delete_BasicPluginManagerCore(CBasicPluginManagerCore *c_manager_core)
 {
     delete reinterpret_cast<BasicPluginManagerCore *>(c_manager_core);
 }
-CUlfiusRestFramework *BasicPluginManagerCore_getRestFramework(CBasicPluginManagerCore *c_manager_core)
+CUlfiusRestFramework *BasicPluginManagerCore_getRestFramework(CBasicPluginManagerCore
+        *c_manager_core)
 {
     BasicPluginManagerCore *manager_core = reinterpret_cast<BasicPluginManagerCore *>(c_manager_core);
     RestFramework *rest_framework = manager_core->getRestFramework();
 
     return reinterpret_cast<CUlfiusRestFramework *>(rest_framework);
 }
-CBasicLwm2mFramework *BasicPluginManagerCore_getLwm2mFramework(CBasicPluginManagerCore *c_manager_core)
+CBasicLwm2mFramework *BasicPluginManagerCore_getLwm2mFramework(CBasicPluginManagerCore
+        *c_manager_core)
 {
     BasicPluginManagerCore *manager_core = reinterpret_cast<BasicPluginManagerCore *>(c_manager_core);
     Lwm2mFramework *lwm2m_framework = manager_core->getLwm2mFramework();
@@ -55,7 +58,8 @@ CBasicLwm2mFramework *BasicPluginManagerCore_getLwm2mFramework(CBasicPluginManag
 } // extern "C"
 #endif
 
-BasicPluginManagerCore::BasicPluginManagerCore(struct _u_instance *ulfius_instance, void *rest_context)
+BasicPluginManagerCore::BasicPluginManagerCore(struct _u_instance *ulfius_instance,
+                                               void *rest_context)
 {
     restFramework = new UlfiusRestFramework(ulfius_instance);
     lwm2mFramework = new BasicLwm2mFramework(rest_context);

@@ -32,30 +32,31 @@ extern "C" {
 
 CUlfiusResponse *new_UlfiusResponse(struct _u_response *u_response)
 {
-    return reinterpret_cast<CUlfiusResponse*>(new UlfiusResponse(u_response));
+    return reinterpret_cast<CUlfiusResponse *>(new UlfiusResponse(u_response));
 }
 void delete_UlfiusResponse(CUlfiusResponse *c_response)
 {
-    delete reinterpret_cast<UlfiusResponse*>(c_response);
+    delete reinterpret_cast<UlfiusResponse *>(c_response);
 }
 void UlfiusResponse_setBody(CUlfiusResponse *c_response, uint8_t *c_binary_data, size_t size)
 {
-    UlfiusResponse *response = reinterpret_cast<UlfiusResponse*>(c_response);
+    UlfiusResponse *response = reinterpret_cast<UlfiusResponse *>(c_response);
     std::vector<uint8_t> binary_data(size);
 
     binary_data.insert(binary_data.end(), c_binary_data, c_binary_data + size);
     response->setBody(binary_data);
 }
 void UlfiusResponse_setCode(CUlfiusResponse *c_response,
-                                    const CStatusCode c_code)
+                            const CStatusCode c_code)
 {
-    UlfiusResponse *response = reinterpret_cast<UlfiusResponse*>(c_response);
+    UlfiusResponse *response = reinterpret_cast<UlfiusResponse *>(c_response);
     const StatusCode code = static_cast<StatusCode>(c_code);
     response->setCode(code);
 }
-void UlfiusResponse_setHeader(CUlfiusResponse *c_response, const char *c_header, const char *c_value)
+void UlfiusResponse_setHeader(CUlfiusResponse *c_response, const char *c_header,
+                              const char *c_value)
 {
-    UlfiusResponse *response = reinterpret_cast<UlfiusResponse*>(c_response);
+    UlfiusResponse *response = reinterpret_cast<UlfiusResponse *>(c_response);
     const std::string header(c_header);
     const std::string value(c_value);
 
@@ -75,7 +76,7 @@ void UlfiusResponse::setBody(std::vector<uint8_t> binary_data)
 {
     if (ulfius_response->binary_body != NULL)
     {
-         free(ulfius_response->binary_body);
+        free(ulfius_response->binary_body);
     }
 
     ulfius_response->binary_body = malloc(binary_data.size());

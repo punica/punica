@@ -27,7 +27,7 @@ extern "C" {
 #include "request.h"
 #include "response.h"
 
-typedef CStatusCode (*c_callback_function_t)(CRequest *, CResponse *, void*);
+typedef CStatusCode(*c_callback_function_t)(CRequest *, CResponse *, void *);
 
 struct CRestFramework;
 typedef struct CRestFramework CRestFramework;

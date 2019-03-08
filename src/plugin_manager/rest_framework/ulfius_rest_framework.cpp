@@ -33,20 +33,21 @@ extern "C" {
 
 CUlfiusRestFramework *new_UlfiusRestFramework(struct _u_instance *instance)
 {
-    return reinterpret_cast<CUlfiusRestFramework*>(new UlfiusRestFramework(instance));
+    return reinterpret_cast<CUlfiusRestFramework *>(new UlfiusRestFramework(instance));
 }
 void delete_UlfiusRestFramework(CUlfiusRestFramework *c_framework)
 {
-    delete reinterpret_cast<UlfiusRestFramework*>(c_framework);
+    delete reinterpret_cast<UlfiusRestFramework *>(c_framework);
 }
 void UlfiusRestFramework_startFramework(CUlfiusRestFramework *c_framework)
 {
-    UlfiusRestFramework *framework = reinterpret_cast<UlfiusRestFramework*>(c_framework);
+    UlfiusRestFramework *framework = reinterpret_cast<UlfiusRestFramework *>(c_framework);
     framework->startFramework();
 }
-void UlfiusRestFramework_startSecureFramework(CUlfiusRestFramework *c_framework, const char *c_private_key_file, const char *c_certificate_file)
+void UlfiusRestFramework_startSecureFramework(CUlfiusRestFramework *c_framework,
+                                              const char *c_private_key_file, const char *c_certificate_file)
 {
-    UlfiusRestFramework *framework = reinterpret_cast<UlfiusRestFramework*>(c_framework);
+    UlfiusRestFramework *framework = reinterpret_cast<UlfiusRestFramework *>(c_framework);
     const std::string private_key_file(c_private_key_file);
     const std::string certificate_file(c_certificate_file);
 
@@ -54,15 +55,15 @@ void UlfiusRestFramework_startSecureFramework(CUlfiusRestFramework *c_framework,
 }
 void UlfiusRestFramework_stopFramework(CUlfiusRestFramework *c_framework)
 {
-    UlfiusRestFramework *framework = reinterpret_cast<UlfiusRestFramework*>(c_framework);
+    UlfiusRestFramework *framework = reinterpret_cast<UlfiusRestFramework *>(c_framework);
 
     framework->stopFramework();
 }
 void UlfiusRestFramework_addHandler(CUlfiusRestFramework *c_framework,
-    const char *method, const char *url_prefix, unsigned int priority,
-    c_callback_function_t c_handler_function, void *handler_context)
+                                    const char *method, const char *url_prefix, unsigned int priority,
+                                    c_callback_function_t c_handler_function, void *handler_context)
 {
-    UlfiusRestFramework *framework = reinterpret_cast<UlfiusRestFramework*>(c_framework);
+    UlfiusRestFramework *framework = reinterpret_cast<UlfiusRestFramework *>(c_framework);
     callback_function_t handler_function = reinterpret_cast<callback_function_t>(c_handler_function);
 
     framework->addHandler(method, url_prefix, priority, handler_function, handler_context);
@@ -77,8 +78,8 @@ UlfiusRestFramework::UlfiusRestFramework(struct _u_instance *instance):
 { }
 UlfiusRestFramework::~UlfiusRestFramework()
 {
-    for(std::vector<CallbackHandler *>::size_type index = 0;
-        index < callbackHandlers.size(); ++index)
+    for (std::vector<CallbackHandler *>::size_type index = 0;
+         index < callbackHandlers.size(); ++index)
     {
         delete callbackHandlers[index];
     }

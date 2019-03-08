@@ -26,7 +26,8 @@
 
 #include <stdint.h>
 
-enum StatusCode {
+enum StatusCode
+{
     unknown = 0,
     information_continue = 100,
     success_ok = 200,

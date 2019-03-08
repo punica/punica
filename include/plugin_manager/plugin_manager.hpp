@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef PLUGIN_MANAGER_HPP 
-#define PLUGIN_MANAGER_HPP 
+#ifndef PLUGIN_MANAGER_HPP
+#define PLUGIN_MANAGER_HPP
 
 #include <list>
 #include <string>
