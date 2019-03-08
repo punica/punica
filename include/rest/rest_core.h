@@ -17,24 +17,30 @@
  *
  */
 
-#ifndef REST_FRAMEWORK_HPP
-#define REST_FRAMEWORK_HPP
+#ifndef REST_CORE_H
+#define REST_CORE_H
 
-#include <string>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include "request.hpp"
-#include "response.hpp"
+#include "request.h"
+#include "response.h"
 
-typedef StatusCode(*callback_function_t)(Request *, Response *, void *);
+typedef CStatusCode(*c_callback_function_t)(CRequest *, CResponse *, void *);
 
-class RestFramework
-{
-public:
-    virtual ~RestFramework() { }
+struct CRestCore;
+typedef struct CRestCore CRestCore;
 
-    virtual void addHandler(
-        const std::string method, const std::string url_prefix,
-        unsigned int priority, callback_function_t handler_function, void *handler_context) = 0;
-};
+void RestCore_addHandler(CRestCore *c_rest_core,
+                              const char *method,
+                              const char *url_prefix,
+                              const unsigned int priority,
+                              c_callback_function_t c_handler_function,
+                              void *handler_context);
 
-#endif // REST_FRAMEWORK_HPP
+#ifdef __cplusplus
+}
+#endif
+
+#endif // REST_CORE_H
