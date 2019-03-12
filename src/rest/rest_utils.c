@@ -32,17 +32,17 @@
 #define DATABASE_ALL_NEW_KEYS_SET   0x06
 #define DATABASE_ALL_KEYS_SET       0x3F
 
-json_t *database_entry_to_json(void *entry, const char *key, database_base64_status status, size_t entry_size)
+json_t *database_entry_to_json(void *entry, const char *key, database_base64_action action, size_t entry_size)
 {
-    //TODO: fix decrefs, one exit path?
-    json_t *j_object, *j_string;
+    json_t *j_object = NULL, *j_string = NULL;
     char base64_string[1024];
     size_t base64_length = sizeof(base64_string);
+    int status = -1;
 
     j_object = json_object();
     if (j_object == NULL)
     {
-        return NULL;
+        goto exit;
     }
 
     if (status == BASE64_DECODE_FALSE)
@@ -50,107 +50,112 @@ json_t *database_entry_to_json(void *entry, const char *key, database_base64_sta
         j_string = json_string((const char *)entry);
         if (j_string == NULL)
         {
-            json_decref(j_object);
-            return NULL;
+            goto exit;
         }
 
         if (json_object_set_new(j_object, key, j_string))
         {
-            json_decref(j_object);
-            json_decref(j_string);
-            return NULL;
+            goto exit;
         }
-
-        return j_object;
     }
     else if (status == BASE64_ENCODE_TRUE)
     {
         if (base64_encode(entry, entry_size, base64_string, &base64_length))
         {
-            json_decref(j_object);
-            return NULL;
+            goto exit;
         }
 
         j_string = json_string((const char *)base64_string);
         if (j_string == NULL)
         {
-            json_decref(j_object);
-            return NULL;
+            goto exit;
         }
 
         if (json_object_set_new(j_object, key, j_string))
         {
-            json_decref(j_object);
-            json_decref(j_string);
-            return NULL;
+            goto exit;
         }
-
-        return j_object;
     }
     else
+    {
+        goto exit;
+    }
+
+    status = 0;
+exit:
+    json_decref(j_string);
+    if (status)
     {
         json_decref(j_object);
         return NULL;
     }
+    return j_object;
 }
 
-void *database_json_to_entry(json_t *j_object, const char *key, database_base64_status status, size_t *entry_size)
+void *database_json_to_entry(json_t *j_object, const char *key, database_base64_action base64_action, size_t *entry_size)
 {
-    //TODO: goto exit, free
     json_t *j_value;
     const char *json_string;
     size_t binary_length;
-    void *entry;
+    void *entry = NULL;
+    int status = -1;
 
     j_value = json_object_get(j_object, key);
     if (j_value == NULL)
     {
-        return NULL;
+        goto exit;
     }
 
     json_string = json_string_value(j_value);
     if (json_string == NULL)
     {
-        return NULL;
+        goto exit;
     }
 
-    if (status == BASE64_DECODE_FALSE)
+    if (base64_action == BASE64_DECODE_FALSE)
     {
         entry = strdup(json_string);
         if (entry == NULL)
         {
-            return NULL;
+            goto exit;
         }
         if (entry_size)
         {
             *entry_size = strlen(entry) + 1;
         }
     }
-    else if (status == BASE64_DECODE_TRUE)
+    else if (base64_action == BASE64_DECODE_TRUE)
     {
         if (base64_decode(json_string, NULL, &binary_length))
         {
-            return NULL;
+            goto exit;
         }
 
         entry = malloc(binary_length);
         if (entry == NULL)
         {
-            return NULL;
+            goto exit;
         }
 
         if (base64_decode(json_string, entry, &binary_length))
         {
-            return NULL;
+            goto exit;
         }
 
         *entry_size = binary_length;
     }
     else
     {
-        return NULL;
+        goto exit;
     }
 
+    status = 0;
+exit:
+    if (status)
+    {
+        free(entry);
+        return NULL;
+    }
     return entry;
 }
 
@@ -523,7 +528,6 @@ database_entry_t *database_build_entry(json_t *j_device_object)
         goto exit;
     }
 
-    //TODO: database_json_to_entry should explicitly check for 'mode'
     j_value = json_object_get(j_device_object, "mode");
     if (j_value == NULL)
     {
@@ -569,17 +573,15 @@ exit:
     return device_entry;
 }
 
-database_entry_t *database_build_new_entry(json_t *j_new_device_object, void *context)
+database_entry_t *database_build_new_entry(json_t *j_device_object, void *context)
 {
     uuid_t b_uuid;
     char *uuid = NULL;
     const char *mode;
     int status = -1;
-    json_t *j_device_object, *j_value;
+    json_t *j_value;
     database_entry_t *device_entry = NULL;
 
-    //TODO: check if need to copy
-    j_device_object = json_deep_copy(j_new_device_object);
     if (j_device_object == NULL)
     {
         goto exit;
@@ -644,8 +646,6 @@ exit:
         device_entry = NULL;
     }
     free(uuid);
-    //TODO: decref wont be needed if not use copy
-    json_decref(j_device_object);
     return device_entry;
 }
 

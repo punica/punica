@@ -38,7 +38,7 @@ typedef enum
     BASE64_DECODE_FALSE=0,
     BASE64_DECODE_TRUE=1,
     BASE64_ENCODE_TRUE=2,
-}database_base64_status;
+}database_base64_action;
 
 
 typedef struct
@@ -66,8 +66,8 @@ database_entry_t *database_build_new_entry(json_t *j_new_device_object, void *co
 
 int database_prepare_array(json_t *j_array, linked_list_t *device_list);
 
-json_t *database_entry_to_json(void *entry, const char *key, database_base64_status status, size_t entry_size);
-void *database_json_to_entry(json_t *j_object, const char *key, database_base64_status status, size_t *entry_size);
+json_t *database_entry_to_json(void *entry, const char *key, database_base64_action action, size_t entry_size);
+void *database_json_to_entry(json_t *j_object, const char *key, database_base64_action action, size_t *entry_size);
 
 int utils_get_server_key(uint8_t *buffer, size_t *length, void *context);
 
