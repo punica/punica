@@ -337,14 +337,8 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         goto exit;
     }
 
-    device_entry = calloc(1, sizeof(database_entry_t));
+    device_entry = database_populate_new_entry(jdevice_list, context);
     if (device_entry == NULL)
-    {
-        ulfius_set_empty_body_response(resp, 500);
-        goto exit;
-    }
-
-    if (database_populate_new_entry(jdevice_list, device_entry, context))
     {
         ulfius_set_empty_body_response(resp, 500);
         goto exit;

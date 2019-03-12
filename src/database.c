@@ -80,13 +80,8 @@ int database_load_file(rest_context_t *rest)
             continue;
         }
 
-        curr = calloc(1, sizeof(database_entry_t));
+        curr = database_populate_entry(j_entry);
         if (curr == NULL)
-        {
-            goto exit;
-        }
-
-        if (database_populate_entry(j_entry, curr))
         {
             fprintf(stdout, "Internal server error while managing device entry\n");
             continue;

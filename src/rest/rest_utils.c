@@ -32,19 +32,6 @@
 #define DATABASE_ALL_NEW_KEYS_SET   0x06
 #define DATABASE_ALL_KEYS_SET       0x3F
 
-typedef struct
-{
-    uint8_t secret_key[1024];
-    size_t secret_key_len;
-    uint8_t public_key[1024];
-    size_t public_key_len;
-    uint8_t server_key[1024];
-    size_t server_key_len;
-    uint8_t serial[20];
-    size_t serial_len;
-    char name[128];
-} device_new_credentials_t;
-
 json_t *database_entry_to_json(void *entry, const char *key, database_base64_status status, size_t entry_size)
 {
     //TODO: fix decrefs, one exit path?
@@ -107,69 +94,64 @@ json_t *database_entry_to_json(void *entry, const char *key, database_base64_sta
     }
 }
 
-int database_json_to_entry(json_t *j_object, void **entry, const char *key, database_base64_status status, size_t *entry_size)
+void *database_json_to_entry(json_t *j_object, const char *key, database_base64_status status, size_t *entry_size)
 {
-    //TODO: should be identical to database_entry_to_json
+    //TODO: goto exit, free
     json_t *j_value;
     const char *json_string;
     size_t binary_length;
-
-    // pointer already allocated
-    if (*entry)
-    {
-        return 0;
-    }
+    void *entry;
 
     j_value = json_object_get(j_object, key);
     if (j_value == NULL)
     {
-        return -1;
+        return NULL;
     }
 
     json_string = json_string_value(j_value);
     if (json_string == NULL)
     {
-        return -1;
+        return NULL;
     }
 
     if (status == BASE64_DECODE_FALSE)
     {
-        *entry = strdup(json_string);
-        if (*entry == NULL)
+        entry = strdup(json_string);
+        if (entry == NULL)
         {
-            return -1;
+            return NULL;
         }
         if (entry_size)
         {
-            *entry_size = strlen(*entry) + 1;
+            *entry_size = strlen(entry) + 1;
         }
     }
     else if (status == BASE64_DECODE_TRUE)
     {
         if (base64_decode(json_string, NULL, &binary_length))
         {
-            return -1;
+            return NULL;
         }
 
-        *entry = malloc(binary_length);
-        if (*entry == NULL)
+        entry = malloc(binary_length);
+        if (entry == NULL)
         {
-            return -1;
+            return NULL;
         }
 
-        if (base64_decode(json_string, *entry, &binary_length))
+        if (base64_decode(json_string, entry, &binary_length))
         {
-            return -1;
+            return NULL;
         }
 
         *entry_size = binary_length;
     }
     else
     {
-        return -1;
+        return NULL;
     }
 
-    return 0;
+    return entry;
 }
 
 static int database_find_existing_entry(const char *name, linked_list_t *device_list)
@@ -232,8 +214,6 @@ static int device_new_psk(database_entry_t *device_entry)
 exit:
     if (ret <= 0)
     {
-        free(device_entry->public_key);
-        free(device_entry->secret_key);
         return -1;
     }
     return 0;
@@ -272,6 +252,12 @@ static int device_new_certificate(database_entry_t *device_entry, void *context)
     }
 
     if (gnutls_x509_privkey_generate(device_key, GNUTLS_PK_ECDSA, GNUTLS_CURVE_TO_BITS(GNUTLS_ECC_CURVE_SECP256R1), 0))
+    {
+        goto exit;
+    }
+
+    device_entry->serial = malloc(20);
+    if (device_entry->serial == NULL)
     {
         goto exit;
     }
@@ -319,11 +305,6 @@ static int device_new_certificate(database_entry_t *device_entry, void *context)
 
     ret = 0;
 exit:
-    if (ret)
-    {
-        free(device_entry->public_key);
-        free(device_entry->secret_key);
-    }
     gnutls_free(ca_cert_buffer.data);
     gnutls_free(ca_key_buffer.data);
     gnutls_x509_crt_deinit(device_cert);
@@ -379,18 +360,10 @@ void database_free_entry(database_entry_t *device_entry)
 
     if (device_entry)
     {
-        if (device_entry->uuid)
-        {
-            free(device_entry->uuid);
-        }
-        if (device_entry->public_key)
-        {
-            free(device_entry->public_key);
-        }
-        if (device_entry->secret_key)
-        {
-            free(device_entry->secret_key);
-        }
+        free(device_entry->uuid);
+        free(device_entry->name);
+        free(device_entry->public_key);
+        free(device_entry->secret_key);
 
         free(device_entry);
     }
@@ -532,84 +505,88 @@ int database_validate_entry(json_t *j_device_object, linked_list_t *device_list)
     return 0;
 }
 
-int database_populate_entry(json_t *j_device_object, database_entry_t *device_entry)
+database_entry_t *database_populate_entry(json_t *j_device_object)
 {
-    //TODO: allocation/deallocation should happen inside entry creation functions
     json_t *j_value;
     const char *json_string;
-    int ret = -1;
+    int status = -1;
+    database_entry_t *device_entry = NULL;
 
-    if (j_device_object == NULL || device_entry == NULL)
+    if (j_device_object == NULL)
     {
         goto exit;
     }
 
-    if (database_json_to_entry(j_device_object, (void **)&device_entry->uuid, "uuid", BASE64_DECODE_FALSE, NULL)
-        || database_json_to_entry(j_device_object, (void **)&device_entry->name, "name", BASE64_DECODE_FALSE, NULL)
-        || database_json_to_entry(j_device_object, (void **)&device_entry->public_key, "public_key", BASE64_DECODE_TRUE, &device_entry->public_key_len))
+    device_entry = calloc(1, sizeof(database_entry_t));
+    if (device_entry == NULL)
     {
         goto exit;
     }
 
-    if (device_entry->mode == 0)
+    //TODO: database_json_to_entry should explicitly check for 'mode'
+    j_value = json_object_get(j_device_object, "mode");
+    if (j_value == NULL)
     {
-        j_value = json_object_get(j_device_object, "mode");
-        if (j_value == NULL)
-        {
-            goto exit;
-        }
-        
-        json_string = json_string_value(j_value);
-
-        if (strcasecmp(json_string, "psk") == 0)
-        {
-            device_entry->mode = MODE_PSK;
-        }
-        else if (strcasecmp(json_string, "cert") == 0)
-        {
-            device_entry->mode = MODE_CERT;
-        }
-        else
-        {
-            goto exit;
-        }
+        goto exit;
     }
 
-    if (device_entry->mode == MODE_CERT)
+    json_string = json_string_value(j_value);
+
+    if (strcasecmp(json_string, "psk") == 0)
     {
-        if (database_json_to_entry(j_device_object, (void **)&device_entry->serial, "serial", BASE64_DECODE_TRUE, &device_entry->serial_len))
-        {
-            goto exit;
-        }
+        device_entry->mode = MODE_PSK;
+        device_entry->secret_key = database_json_to_entry(j_device_object, "secret_key", BASE64_DECODE_TRUE, &device_entry->secret_key_len);
     }
-    else if (device_entry->mode == MODE_PSK)
+    else if (strcasecmp(json_string, "cert") == 0)
     {
-        if (database_json_to_entry(j_device_object, (void **)&device_entry->secret_key, "secret_key", BASE64_DECODE_TRUE, &device_entry->secret_key_len))
-        {
-            goto exit;
-        }
+        device_entry->mode = MODE_CERT;
+        device_entry->serial = database_json_to_entry(j_device_object, "serial", BASE64_DECODE_TRUE, &device_entry->serial_len);
+    }
+    else
+    {
+        goto exit;
     }
 
-    ret = 0;
+    device_entry->uuid = database_json_to_entry(j_device_object, "uuid", BASE64_DECODE_FALSE, NULL);
+    device_entry->name = database_json_to_entry(j_device_object, "name", BASE64_DECODE_FALSE, NULL);
+    device_entry->public_key = database_json_to_entry(j_device_object, "public_key", BASE64_DECODE_TRUE, &device_entry->public_key_len);
+    if (device_entry->uuid == NULL
+        || device_entry->name == NULL
+        || device_entry->public_key == NULL
+        || (device_entry->secret_key == NULL
+        && device_entry->serial == NULL))
+    {
+        goto exit;
+    }
+
+    status = 0;
 exit:
-    if (ret)
+    if (status)
     {
-        //TODO: freeing in this manner is unsafe since device entry is allocated before
-        //database_free_entry(device_entry);
+        database_free_entry(device_entry);
+        device_entry = NULL;
     }
-    return ret;
+    return device_entry;
 }
 
-int database_populate_new_entry(json_t *j_new_device_object, database_entry_t *device_entry, void *context)
+database_entry_t *database_populate_new_entry(json_t *j_new_device_object, void *context)
 {
     uuid_t b_uuid;
     char *uuid = NULL;
     const char *name, *mode;
-    int return_code = -1;
+    int status = -1;
     json_t *j_device_object, *j_value;
+    database_entry_t *device_entry = NULL;
 
+    //TODO: check if need to copy
     j_device_object = json_deep_copy(j_new_device_object);
-    if (j_device_object == NULL || device_entry == NULL)
+    if (j_device_object == NULL)
+    {
+        goto exit;
+    }
+
+    device_entry = calloc(1, sizeof(database_entry_t));
+    if (device_entry == NULL)
     {
         goto exit;
     }
@@ -635,19 +612,8 @@ int database_populate_new_entry(json_t *j_new_device_object, database_entry_t *d
         goto exit;
     }
 
-    j_value = json_object_get(j_device_object, "name");
-    if (j_value == NULL)
-    {
-        goto exit;
-    }
-
-    name = json_string_value(j_value);
-
-    device_entry->name = strdup(name);
-    if (device_entry->name == NULL)
-    {
-        goto exit;
-    }
+    //TODO: check ret
+    device_entry->name = database_json_to_entry(j_device_object, "name", BASE64_DECODE_FALSE, NULL);
 
     uuid_generate_random(b_uuid);
 
@@ -670,21 +636,17 @@ int database_populate_new_entry(json_t *j_new_device_object, database_entry_t *d
         goto exit;
     }
 
-    if (database_populate_entry(j_device_object, device_entry))
-    {
-        goto exit;
-    }
-
-    return_code = 0;
+    status = 0;
 exit:
-    if (return_code)
+    if (status)
     {
-        free(device_entry->name);
-        free(device_entry->uuid);
+        database_free_entry(device_entry);
+        device_entry = NULL;
     }
     free(uuid);
+    //TODO: decref wont be needed if not use copy
     json_decref(j_device_object);
-    return return_code;
+    return device_entry;
 }
 
 int database_prepare_array(json_t *j_array, linked_list_t *device_list)
