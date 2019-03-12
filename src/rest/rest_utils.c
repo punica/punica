@@ -257,7 +257,7 @@ static int device_new_certificate(database_entry_t *device_entry, void *context)
         goto exit;
     }
 
-    if (gnutls_x509_privkey_generate(device_key, GNUTLS_PK_ECDSA, GNUTLS_CURVE_TO_BITS(GNUTLS_ECC_CURVE_SECP256R1), 0))
+    if (gnutls_x509_privkey_generate(device_key, GNUTLS_PK_EC, GNUTLS_CURVE_TO_BITS(GNUTLS_ECC_CURVE_SECP256R1), 0))
     {
         goto exit;
     }
