@@ -47,6 +47,7 @@ typedef struct
 
 json_t *database_entry_to_json(void *entry, const char *key, database_base64_status status, size_t entry_size)
 {
+    //TODO: fix decrefs, one exit path?
     json_t *j_object, *j_string;
     char base64_string[1024];
     size_t base64_length = sizeof(base64_string);
@@ -176,7 +177,7 @@ static int database_find_existing_entry(const char *name, linked_list_t *device_
 
         if (strcmp(name, device_data->name) == 0)
         {
-            return 1;
+            return -1;
         }
     }
 
@@ -326,55 +327,6 @@ exit:
 
     return ret;
 }
-
-//static int device_populate_credentials(json_t *j_device_object, device_new_credentials_t *device_credentials)
-//{
-//    json_t *j_credentials;
-//    char base64_secret_key[1024] = {0};
-//    char base64_public_key[1024] = {0};
-//    char base64_server_key[1024] = {0};
-//    char base64_serial[64] = {0};
-//    size_t base64_length;
-//
-//    base64_length = sizeof(base64_secret_key);
-//    if (base64_encode(device_credentials->secret_key, device_credentials->secret_key_len, base64_secret_key, &base64_length))
-//    {
-//        return -1;
-//    }
-//
-//    base64_length = sizeof(base64_public_key);
-//    if (base64_encode(device_credentials->public_key, device_credentials->public_key_len, base64_public_key, &base64_length))
-//    {
-//        return -1;
-//    }
-//
-//    base64_length = sizeof(base64_server_key);
-//    if (base64_encode(device_credentials->server_key, device_credentials->server_key_len, base64_server_key, &base64_length))
-//    {
-//        return -1;
-//    }
-//
-//    base64_length = sizeof(base64_serial);
-//    if (base64_encode(device_credentials->serial, device_credentials->serial_len, base64_serial, &base64_length))
-//    {
-//        return -1;
-//    }
-//
-//    j_credentials = json_pack("{s:s, s:s, s:s, s:s}", "secret_key", base64_secret_key, "public_key", base64_public_key, "server_key", base64_server_key, "serial", base64_serial);
-//    if (j_credentials == NULL)
-//    {
-//        return -1;
-//    }
-//
-//    if (json_object_update_missing(j_device_object, j_credentials))
-//    {
-//        json_decref(j_credentials);
-//        return -1;
-//    }
-//
-//    json_decref(j_credentials);
-//    return 0;
-//}
 
 static int device_new_credentials(database_entry_t *device_entry, void *context)
 {
@@ -630,7 +582,8 @@ int database_populate_entry(json_t *j_device_object, database_entry_t *device_en
 exit:
     if (ret)
     {
-        database_free_entry(device_entry);
+        //TODO: freeing in this manner is unsafe since device entry is allocated before
+        //database_free_entry(device_entry);
     }
     return ret;
 }
@@ -785,6 +738,7 @@ int database_prepare_array(json_t *j_array, linked_list_t *device_list)
 
         if (json_array_append_new(j_array, j_entry))
         {
+            json_decref(j_entry);
             return -1;
         }
     }
