@@ -139,6 +139,10 @@ int database_json_to_entry(json_t *j_object, void **entry, const char *key, data
         {
             return -1;
         }
+        if (entry_size)
+        {
+            *entry_size = strlen(*entry) + 1;
+        }
     }
     else if (status == BASE64_DECODE_TRUE)
     {
@@ -157,6 +161,8 @@ int database_json_to_entry(json_t *j_object, void **entry, const char *key, data
         {
             return -1;
         }
+
+        *entry_size = binary_length;
     }
     else
     {
@@ -540,8 +546,7 @@ int database_populate_entry(json_t *j_device_object, database_entry_t *device_en
 
     if (database_json_to_entry(j_device_object, (void **)&device_entry->uuid, "uuid", BASE64_DECODE_FALSE, NULL)
         || database_json_to_entry(j_device_object, (void **)&device_entry->name, "name", BASE64_DECODE_FALSE, NULL)
-        || database_json_to_entry(j_device_object, (void **)&device_entry->public_key, "public_key", BASE64_DECODE_TRUE, &device_entry->public_key_len)
-        || database_json_to_entry(j_device_object, (void **)&device_entry->secret_key, "secret_key", BASE64_DECODE_TRUE, &device_entry->secret_key_len))
+        || database_json_to_entry(j_device_object, (void **)&device_entry->public_key, "public_key", BASE64_DECODE_TRUE, &device_entry->public_key_len))
     {
         goto exit;
     }
@@ -573,6 +578,13 @@ int database_populate_entry(json_t *j_device_object, database_entry_t *device_en
     if (device_entry->mode == MODE_CERT)
     {
         if (database_json_to_entry(j_device_object, (void **)&device_entry->serial, "serial", BASE64_DECODE_TRUE, &device_entry->serial_len))
+        {
+            goto exit;
+        }
+    }
+    else if (device_entry->mode == MODE_PSK)
+    {
+        if (database_json_to_entry(j_device_object, (void **)&device_entry->secret_key, "secret_key", BASE64_DECODE_TRUE, &device_entry->secret_key_len))
         {
             goto exit;
         }
