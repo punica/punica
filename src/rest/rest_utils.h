@@ -28,8 +28,8 @@
 //TODO: rename
 typedef enum
 {
-    MODE_PSK = 1,
-    MODE_CERT = 2,
+    DEVICE_CREDENTIALS_PSK = 1,
+    DEVICE_CREDENTIALS_CERT = 2,
 } credentials_mode_t;
 
 typedef enum

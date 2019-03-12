@@ -257,7 +257,7 @@ int psk_find_callback(const char *name, void *data, uint8_t **psk_buffer, size_t
     {
         device_data = (database_entry_t *)device_entry->data;
 
-        if (device_data->mode == MODE_CERT)
+        if (device_data->mode == DEVICE_CREDENTIALS_CERT)
         {
             continue;
         }

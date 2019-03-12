@@ -115,11 +115,11 @@ static json_t *rest_devices_prepare_resp(database_entry_t *device_entry)
     char *mode_string;
     int ret = -1;
 
-    if (device_entry->mode == MODE_PSK)
+    if (device_entry->mode == DEVICE_CREDENTIALS_PSK)
     {
         mode_string = "psk";
     }
-    else if (device_entry->mode == MODE_CERT)
+    else if (device_entry->mode == DEVICE_CREDENTIALS_CERT)
     {
         mode_string = "cert";
     }
@@ -357,7 +357,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         goto exit;
     }
 
-    if (device_entry->mode == MODE_CERT)
+    if (device_entry->mode == DEVICE_CREDENTIALS_CERT)
     {
         free(device_entry->secret_key);
         device_entry->secret_key = NULL;

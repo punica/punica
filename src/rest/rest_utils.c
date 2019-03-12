@@ -323,14 +323,14 @@ exit:
 
 static int device_new_credentials(database_entry_t *device_entry, void *context)
 {
-    if (device_entry->mode == MODE_PSK)
+    if (device_entry->mode == DEVICE_CREDENTIALS_PSK)
     {
         if (device_new_psk(device_entry))
         {
             return -1;
         }
     }
-    else if (device_entry->mode == MODE_CERT)
+    else if (device_entry->mode == DEVICE_CREDENTIALS_CERT)
     {
         if (device_new_certificate(device_entry, context))
         {
@@ -513,7 +513,6 @@ int database_validate_entry(json_t *j_device_object, linked_list_t *device_list)
 
 database_entry_t *database_build_entry(json_t *j_device_object)
 {
-    json_t *j_value;
     const char *mode;
     int status = -1;
     database_entry_t *device_entry = NULL;
@@ -537,12 +536,12 @@ database_entry_t *database_build_entry(json_t *j_device_object)
 
     if (strcasecmp(mode, "psk") == 0)
     {
-        device_entry->mode = MODE_PSK;
+        device_entry->mode = DEVICE_CREDENTIALS_PSK;
         device_entry->secret_key = database_json_to_entry(j_device_object, "secret_key", BASE64_DECODE_TRUE, &device_entry->secret_key_len);
     }
     else if (strcasecmp(mode, "cert") == 0)
     {
-        device_entry->mode = MODE_CERT;
+        device_entry->mode = DEVICE_CREDENTIALS_CERT;
         device_entry->serial = database_json_to_entry(j_device_object, "serial", BASE64_DECODE_TRUE, &device_entry->serial_len);
     }
     else
@@ -576,9 +575,8 @@ database_entry_t *database_build_new_entry(json_t *j_device_object, void *contex
 {
     uuid_t b_uuid;
     char *uuid = NULL;
-    const char *mode;
+    char *mode;
     int status = -1;
-    json_t *j_value;
     database_entry_t *device_entry = NULL;
 
     if (j_device_object == NULL)
@@ -600,11 +598,11 @@ database_entry_t *database_build_new_entry(json_t *j_device_object, void *contex
 
     if (strcasecmp(mode, "psk") == 0)
     {
-        device_entry->mode = MODE_PSK;
+        device_entry->mode = DEVICE_CREDENTIALS_PSK;
     }
     else if (strcasecmp(mode, "cert") == 0)
     {
-        device_entry->mode = MODE_CERT;
+        device_entry->mode = DEVICE_CREDENTIALS_CERT;
     }
     else
     {
@@ -692,11 +690,11 @@ int database_prepare_array(json_t *j_array, linked_list_t *device_list)
             return -1;
         }
 
-        if (device_entry->mode == MODE_PSK)
+        if (device_entry->mode == DEVICE_CREDENTIALS_PSK)
         {
             mode_string = "psk";
         }
-        else if (device_entry->mode == MODE_CERT)
+        else if (device_entry->mode == DEVICE_CREDENTIALS_CERT)
         {
             mode_string = "cert";
         }
