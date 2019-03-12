@@ -67,6 +67,7 @@ int database_populate_new_entry(json_t *j_new_device_object, database_entry_t *d
 int database_prepare_array(json_t *j_array, linked_list_t *device_list);
 
 json_t *database_entry_to_json(void *entry, const char *key, database_base64_status status, size_t entry_size);
+int database_json_to_entry(json_t *j_object, void **entry, const char *key, database_base64_status status, size_t *entry_size);
 
 int utils_get_server_key(uint8_t *buffer, size_t *length, void *context);
 
