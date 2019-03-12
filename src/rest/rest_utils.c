@@ -505,7 +505,7 @@ int database_validate_entry(json_t *j_device_object, linked_list_t *device_list)
     return 0;
 }
 
-database_entry_t *database_populate_entry(json_t *j_device_object)
+database_entry_t *database_build_entry(json_t *j_device_object)
 {
     json_t *j_value;
     const char *json_string;
@@ -569,11 +569,11 @@ exit:
     return device_entry;
 }
 
-database_entry_t *database_populate_new_entry(json_t *j_new_device_object, void *context)
+database_entry_t *database_build_new_entry(json_t *j_new_device_object, void *context)
 {
     uuid_t b_uuid;
     char *uuid = NULL;
-    const char *name, *mode;
+    const char *mode;
     int status = -1;
     json_t *j_device_object, *j_value;
     database_entry_t *device_entry = NULL;

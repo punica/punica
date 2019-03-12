@@ -61,8 +61,8 @@ void database_free_entry(database_entry_t *device_entry);
 int database_validate_new_entry(json_t *j_new_device_object, linked_list_t *device_list);
 int database_validate_entry(json_t *j_device_object, linked_list_t *device_list);
 
-database_entry_t *database_populate_entry(json_t *j_device_object);
-database_entry_t *database_populate_new_entry(json_t *j_new_device_object, void *context);
+database_entry_t *database_build_entry(json_t *j_device_object);
+database_entry_t *database_build_new_entry(json_t *j_new_device_object, void *context);
 
 int database_prepare_array(json_t *j_array, linked_list_t *device_list);
 
