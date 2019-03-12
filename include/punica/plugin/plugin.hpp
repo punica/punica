@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef PLUGIN_HPP
-#define PLUGIN_HPP
+#ifndef PUNICA_PLUGIN_PLUGIN_HPP
+#define PUNICA_PLUGIN_PLUGIN_HPP
 
 #include <string>
 
@@ -28,4 +28,4 @@ public:
     virtual ~Plugin() { }
 };
 
-#endif // PLUGIN_HPP
+#endif // PUNICA_PLUGIN_PLUGIN_HPP

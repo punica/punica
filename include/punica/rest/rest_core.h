@@ -24,8 +24,8 @@
 extern "C" {
 #endif
 
-#include "request.h"
-#include "response.h"
+#include <punica/rest/request.h>
+#include <punica/rest/response.h>
 
 typedef CStatusCode(*c_callback_function_t)(CRequest *, CResponse *, void *);
 

@@ -22,8 +22,8 @@
 
 #include <string>
 
-#include "request.hpp"
-#include "response.hpp"
+#include <punica/rest/request.hpp>
+#include <punica/rest/response.hpp>
 
 typedef StatusCode(*callback_function_t)(Request *, Response *, void *);
 

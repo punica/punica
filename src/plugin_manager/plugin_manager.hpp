@@ -17,29 +17,27 @@
  *
  */
 
-#ifndef PLUGIN_API_HPP
-#define PLUGIN_API_HPP
+#ifndef PUNICA_PLUGIN_MANAGER_PLUGIN_MANAGER_HPP
+#define PUNICA_PLUGIN_MANAGER_PLUGIN_MANAGER_HPP
 
-#include "plugin.hpp"
-#include "plugin_manager_core.hpp"
+#include <list>
+#include <string>
 
-#define PLUGIN_HANDLE_NAME "PLUGIN_API"
+#include <punica/core.hpp>
+#include <punica/plugin_manager/plugin_api.hpp>
+#include <punica/plugin_manager/plugin.hpp>
 
-typedef Plugin *(*plugin_create_t)(PluginManagerCore *core);
-typedef void (*plugin_destroy_t)(Plugin *plugin);
-
-typedef struct
+class PluginManager
 {
-    uint32_t major: 8,
-             minor: 8,
-             revision: 16;
-} plugin_version_t;
+public:
+    virtual ~PluginManager() { }
 
-typedef struct
-{
-    plugin_version_t version;
-    plugin_create_t create;
-    plugin_destroy_t destroy;
-} plugin_api_t;
+    virtual bool loadPlugin(std::string name, std::string path) = 0;
+    virtual bool unloadPlugin(std::string name) = 0;
 
-#endif // PLUGIN_API_HPP
+protected:
+    PluginManagerCore *core;
+    std::map<std::string, std::pair<Plugin *, plugin_api_t *> > plugins;
+};
+
+#endif // PUNICA_PLUGIN_MANAGER_PLUGIN_MANAGER_HPP 

@@ -20,8 +20,8 @@
 #ifndef PUNICA_CORE_HPP
 #define PUNICA_CORE_HPP
 
-#include "rest_core.hpp"
-#include "lwm2m_core.hpp"
+#include <punica/rest/rest_core.hpp>
+#include <punica/lwm2m_core.hpp>
 
 class Core
 {
