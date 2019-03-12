@@ -45,7 +45,7 @@ json_t *database_entry_to_json(void *entry, const char *key, database_base64_act
         goto exit;
     }
 
-    if (status == BASE64_DECODE_FALSE)
+    if (action == BASE64_DECODE_FALSE)
     {
         j_string = json_string((const char *)entry);
         if (j_string == NULL)
@@ -55,10 +55,11 @@ json_t *database_entry_to_json(void *entry, const char *key, database_base64_act
 
         if (json_object_set_new(j_object, key, j_string))
         {
+            json_decref(j_string);
             goto exit;
         }
     }
-    else if (status == BASE64_ENCODE_TRUE)
+    else if (action == BASE64_ENCODE_TRUE)
     {
         if (base64_encode(entry, entry_size, base64_string, &base64_length))
         {
@@ -73,6 +74,7 @@ json_t *database_entry_to_json(void *entry, const char *key, database_base64_act
 
         if (json_object_set_new(j_object, key, j_string))
         {
+            json_decref(j_string);
             goto exit;
         }
     }
@@ -83,7 +85,6 @@ json_t *database_entry_to_json(void *entry, const char *key, database_base64_act
 
     status = 0;
 exit:
-    json_decref(j_string);
     if (status)
     {
         json_decref(j_object);
@@ -513,7 +514,7 @@ int database_validate_entry(json_t *j_device_object, linked_list_t *device_list)
 database_entry_t *database_build_entry(json_t *j_device_object)
 {
     json_t *j_value;
-    const char *json_string;
+    const char *mode;
     int status = -1;
     database_entry_t *device_entry = NULL;
 
@@ -528,20 +529,18 @@ database_entry_t *database_build_entry(json_t *j_device_object)
         goto exit;
     }
 
-    j_value = json_object_get(j_device_object, "mode");
-    if (j_value == NULL)
+    mode = database_json_to_entry(j_device_object, "mode", BASE64_DECODE_FALSE, NULL);
+    if (mode == NULL)
     {
         goto exit;
     }
 
-    json_string = json_string_value(j_value);
-
-    if (strcasecmp(json_string, "psk") == 0)
+    if (strcasecmp(mode, "psk") == 0)
     {
         device_entry->mode = MODE_PSK;
         device_entry->secret_key = database_json_to_entry(j_device_object, "secret_key", BASE64_DECODE_TRUE, &device_entry->secret_key_len);
     }
-    else if (strcasecmp(json_string, "cert") == 0)
+    else if (strcasecmp(mode, "cert") == 0)
     {
         device_entry->mode = MODE_CERT;
         device_entry->serial = database_json_to_entry(j_device_object, "serial", BASE64_DECODE_TRUE, &device_entry->serial_len);
@@ -593,13 +592,11 @@ database_entry_t *database_build_new_entry(json_t *j_device_object, void *contex
         goto exit;
     }
 
-    j_value = json_object_get(j_device_object, "mode");
-    if (j_value == NULL)
+    mode = database_json_to_entry(j_device_object, "mode", BASE64_DECODE_FALSE, NULL);
+    if (mode == NULL)
     {
         goto exit;
     }
-
-    mode = json_string_value(j_value);
 
     if (strcasecmp(mode, "psk") == 0)
     {
@@ -614,8 +611,11 @@ database_entry_t *database_build_new_entry(json_t *j_device_object, void *contex
         goto exit;
     }
 
-    //TODO: check ret
     device_entry->name = database_json_to_entry(j_device_object, "name", BASE64_DECODE_FALSE, NULL);
+    if (device_entry->name == NULL)
+    {
+        goto exit;
+    }
 
     uuid_generate_random(b_uuid);
 
@@ -646,6 +646,7 @@ exit:
         device_entry = NULL;
     }
     free(uuid);
+    free(mode);
     return device_entry;
 }
 
