@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-//TODO: rename
 typedef enum
 {
     DEVICE_CREDENTIALS_PSK = 1,
@@ -34,10 +33,9 @@ typedef enum
 
 typedef enum
 {
-//TODO: change
-    BASE64_DECODE_FALSE=0,
-    BASE64_DECODE_TRUE=1,
-    BASE64_ENCODE_TRUE=2,
+    BASE64_NO_ACTION=0,
+    BASE64_DECODE=1,
+    BASE64_ENCODE=2,
 }database_base64_action;
 
 

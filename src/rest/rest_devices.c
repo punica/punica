@@ -124,10 +124,10 @@ static json_t *rest_devices_prepare_resp(database_entry_t *device_entry)
         mode_string = "cert";
     }
 
-    uuid = database_entry_to_json(device_entry->uuid, "uuid", BASE64_DECODE_FALSE, 0);
-    name = database_entry_to_json(device_entry->name, "name", BASE64_DECODE_FALSE, 0);
-    mode = database_entry_to_json(mode_string, "mode", BASE64_DECODE_FALSE, 0);
-    public_key = database_entry_to_json(device_entry->public_key, "public_key", BASE64_ENCODE_TRUE, device_entry->public_key_len);
+    uuid = database_entry_to_json(device_entry->uuid, "uuid", BASE64_NO_ACTION, 0);
+    name = database_entry_to_json(device_entry->name, "name", BASE64_NO_ACTION, 0);
+    mode = database_entry_to_json(mode_string, "mode", BASE64_NO_ACTION, 0);
+    public_key = database_entry_to_json(device_entry->public_key, "public_key", BASE64_ENCODE, device_entry->public_key_len);
 
     if ((uuid == NULL)
         || (name == NULL)
