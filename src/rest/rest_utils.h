@@ -28,9 +28,18 @@
 //TODO: rename
 typedef enum
 {
-    MODE_PSK,
-    MODE_CERT,
+    MODE_PSK = 1,
+    MODE_CERT = 2,
 } credentials_mode_t;
+
+typedef enum
+{
+//TODO: change
+    BASE64_DECODE_FALSE=0,
+    BASE64_DECODE_TRUE=1,
+    BASE64_ENCODE_TRUE=2,
+}database_base64_status;
+
 
 typedef struct
 {
@@ -40,8 +49,9 @@ typedef struct
     size_t public_key_len;
     uint8_t *secret_key;
     size_t secret_key_len;
-    credentials_mode_t mode;
     uint8_t serial[20];
+    size_t serial_len;
+    credentials_mode_t mode;
 } database_entry_t;
 
 int coap_to_http_status(int status);
@@ -49,12 +59,16 @@ int coap_to_http_status(int status);
 void database_free_entry(database_entry_t *device_entry);
 
 int database_validate_new_entry(json_t *j_new_device_object, linked_list_t *device_list);
-int database_validate_entry(json_t *j_device_object);
+int database_validate_entry(json_t *j_device_object, linked_list_t *device_list);
 
 int database_populate_entry(json_t *j_device_object, database_entry_t *device_entry);
 int database_populate_new_entry(json_t *j_new_device_object, database_entry_t *device_entry, void *context);
 
 int database_prepare_array(json_t *j_array, linked_list_t *device_list);
+
+json_t *database_entry_to_json(void *entry, const char *key, database_base64_status status, size_t entry_size);
+
+int utils_get_server_key(uint8_t *buffer, size_t *length, void *context);
 
 #endif // REST_UTILS_H
 

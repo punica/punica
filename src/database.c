@@ -74,7 +74,7 @@ int database_load_file(rest_context_t *rest)
 
     json_array_foreach(j_database, index, j_entry)
     {
-        if (database_validate_entry(j_entry))
+        if (database_validate_entry(j_entry, device_list))
         {
             fprintf(stdout, "Found error(s) in device entry no. %ld\n", index);
             continue;
@@ -89,14 +89,10 @@ int database_load_file(rest_context_t *rest)
         if (database_populate_entry(j_entry, curr))
         {
             fprintf(stdout, "Internal server error while managing device entry\n");
-            goto free_device;
+            continue;
         }
 
         linked_list_add(device_list, (void *)curr);
-        continue;
-
-free_device:
-        database_free_entry(curr);
     }
     ret = 0;
 

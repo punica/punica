@@ -257,10 +257,15 @@ int psk_find_callback(const char *name, void *data, uint8_t **psk_buffer, size_t
     {
         device_data = (database_entry_t *)device_entry->data;
 
-        if (memcmp(name, device_data->psk_id, device_data->psk_id_len) == 0)
+        if (device_data->mode == MODE_CERT)
         {
-            *psk_buffer = device_data->psk;
-            *psk_len = device_data->psk_len;
+            continue;
+        }
+
+        if (memcmp(name, device_data->public_key, device_data->public_key_len) == 0)
+        {
+            *psk_buffer = device_data->secret_key;
+            *psk_len = device_data->secret_key_len;
             return 0;
         }
     }
@@ -412,8 +417,6 @@ int main(int argc, char *argv[])
     ulfius_add_endpoint_by_val(&instance, "GET", "/endpoints", ":name", 10,
                                &rest_endpoints_name_cb, &rest);
     // Devices
-    ulfius_add_endpoint_by_val(&instance, "GET", "/test", NULL, 10,
-                               &rest_devices_test_cb, &rest);
     ulfius_add_endpoint_by_val(&instance, "GET", "/devices", NULL, 10,
                                &rest_devices_get_cb, &rest);
     ulfius_add_endpoint_by_val(&instance, "GET", "/devices", ":id", 10,

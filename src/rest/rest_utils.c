@@ -23,11 +23,14 @@
 
 #include "../punica.h"
 
-#define DATABASE_UUID_KEY_BIT       0x1
-#define DATABASE_MODE_KEY_BIT       0x2
-#define DATABASE_NAME_KEY_BIT       0x4
-#define DATABASE_ALL_NEW_KEYS_SET   0x6
-#define DATABASE_ALL_KEYS_SET       0x7
+#define DATABASE_UUID_KEY_BIT       0x01
+#define DATABASE_MODE_KEY_BIT       0x02
+#define DATABASE_NAME_KEY_BIT       0x04
+#define DATABASE_PUBLIC_KEY_BIT     0x08
+#define DATABASE_SECRET_KEY_BIT     0x10
+#define DATABASE_SERIAL_KEY_BIT     0x20
+#define DATABASE_ALL_NEW_KEYS_SET   0x06
+#define DATABASE_ALL_KEYS_SET       0x3F
 
 typedef struct
 {
@@ -41,6 +44,126 @@ typedef struct
     size_t serial_len;
     char name[128];
 } device_new_credentials_t;
+
+json_t *database_entry_to_json(void *entry, const char *key, database_base64_status status, size_t entry_size)
+{
+    json_t *j_object, *j_string;
+    char base64_string[1024];
+    size_t base64_length = sizeof(base64_string);
+
+    j_object = json_object();
+    if (j_object == NULL)
+    {
+        return NULL;
+    }
+
+    if (status == BASE64_DECODE_FALSE)
+    {
+        j_string = json_string((const char *)entry);
+        if (j_string == NULL)
+        {
+            json_decref(j_object);
+            return NULL;
+        }
+
+        if (json_object_set_new(j_object, key, j_string))
+        {
+            json_decref(j_object);
+            json_decref(j_string);
+            return NULL;
+        }
+
+        return j_object;
+    }
+    else if (status == BASE64_ENCODE_TRUE)
+    {
+        if (base64_encode(entry, entry_size, base64_string, &base64_length))
+        {
+            json_decref(j_object);
+            return NULL;
+        }
+
+        j_string = json_string((const char *)base64_string);
+        if (j_string == NULL)
+        {
+            json_decref(j_object);
+            return NULL;
+        }
+
+        if (json_object_set_new(j_object, key, j_string))
+        {
+            json_decref(j_object);
+            json_decref(j_string);
+            return NULL;
+        }
+
+        return j_object;
+    }
+    else
+    {
+        json_decref(j_object);
+        return NULL;
+    }
+}
+
+int database_json_to_entry(json_t *j_object, void **entry, const char *key, database_base64_status status, size_t *entry_size)
+{
+    //TODO: should be identical to database_entry_to_json
+    json_t *j_value;
+    const char *json_string;
+    size_t binary_length;
+
+    // pointer already allocated
+    if (*entry)
+    {
+        return 0;
+    }
+
+    j_value = json_object_get(j_object, key);
+    if (j_value == NULL)
+    {
+        return -1;
+    }
+
+    json_string = json_string_value(j_value);
+    if (json_string == NULL)
+    {
+        return -1;
+    }
+
+    if (status == BASE64_DECODE_FALSE)
+    {
+        *entry = strdup(json_string);
+        if (*entry == NULL)
+        {
+            return -1;
+        }
+    }
+    else if (status == BASE64_DECODE_TRUE)
+    {
+        if (base64_decode(json_string, NULL, &binary_length))
+        {
+            return -1;
+        }
+
+        *entry = malloc(binary_length);
+        if (*entry == NULL)
+        {
+            return -1;
+        }
+
+        if (base64_decode(json_string, *entry, &binary_length))
+        {
+            return -1;
+        }
+    }
+    else
+    {
+        return -1;
+    }
+
+    return 0;
+}
 
 static int database_find_existing_entry(const char *name, linked_list_t *device_list)
 {
@@ -72,24 +195,44 @@ static void generate_serial(uint8_t *buffer, size_t *length)
     *length = ret;
 }
 
-static int device_new_psk(device_new_credentials_t *device_credentials)
+static int device_new_psk(database_entry_t *device_entry)
 {
-    size_t ret;
+    size_t ret = 0;
+    size_t name_len = strlen(device_entry->name);
 
-    memcpy(device_credentials->public_key, device_credentials->name, strlen(device_credentials->name) + 1);
-    device_credentials->public_key_len = strlen(device_credentials->name);
-
-    ret = rest_get_random(device_credentials->secret_key, 16);
-    if (ret == 0)
+    // PSK ID maximum length 128 according to specification
+    if (name_len > 127)
     {
-        return -1;
+        goto exit;
     }
 
-    device_credentials->secret_key_len = ret;
+    device_entry->public_key = malloc(name_len + 1);
+    if (device_entry->public_key == NULL)
+    {
+        goto exit;
+    }
+    memcpy(device_entry->public_key, device_entry->name, name_len + 1);
+    device_entry->public_key_len = name_len + 1;
+
+    device_entry->secret_key = malloc(16);
+    if (device_entry->secret_key == NULL)
+    {
+        goto exit;
+    }
+    ret = rest_get_random(device_entry->secret_key, 16);
+    device_entry->secret_key_len = ret;
+
+exit:
+    if (ret <= 0)
+    {
+        free(device_entry->public_key);
+        free(device_entry->secret_key);
+        return -1;
+    }
     return 0;
 }
 
-static int device_new_certificate(device_new_credentials_t *device_credentials, void *context)
+static int device_new_certificate(database_entry_t *device_entry, void *context)
 {
     rest_context_t *rest = (rest_context_t *)context;
     gnutls_x509_crt_t device_cert = NULL;
@@ -127,11 +270,11 @@ static int device_new_certificate(device_new_credentials_t *device_credentials, 
     }
 
     //TODO: check for existing serial
-    generate_serial(device_credentials->serial, &device_credentials->serial_len);
+    generate_serial(device_entry->serial, &device_entry->serial_len);
     activation_time = time(NULL);
 
     if (gnutls_x509_crt_set_version(device_cert, 3)
-        || gnutls_x509_crt_set_serial(device_cert, device_credentials->serial, device_credentials->serial_len)
+        || gnutls_x509_crt_set_serial(device_cert, device_entry->serial, device_entry->serial_len)
         || gnutls_x509_crt_set_activation_time(device_cert, activation_time)
         || gnutls_x509_crt_set_expiration_time(device_cert, activation_time + 60 * 60)
         || gnutls_x509_crt_set_key(device_cert, device_key))
@@ -139,7 +282,7 @@ static int device_new_certificate(device_new_credentials_t *device_credentials, 
         goto exit;
     }
 
-    if (gnutls_x509_crt_set_subject_alt_name(device_cert, GNUTLS_SAN_DNSNAME, device_credentials->name, strlen(device_credentials->name) + 1, GNUTLS_FSAN_SET))
+    if (gnutls_x509_crt_set_subject_alt_name(device_cert, GNUTLS_SAN_DNSNAME, device_entry->uuid, strlen(device_entry->uuid) + 1, GNUTLS_FSAN_SET))
     {
         goto exit;
     }
@@ -149,15 +292,31 @@ static int device_new_certificate(device_new_credentials_t *device_credentials, 
         goto exit;
     }
 
-    if (gnutls_x509_crt_export(device_cert, GNUTLS_X509_FMT_PEM, device_credentials->public_key, &device_credentials->public_key_len)
-        || gnutls_x509_crt_export(ca_cert, GNUTLS_X509_FMT_PEM, device_credentials->server_key, &device_credentials->server_key_len)
-        || gnutls_x509_privkey_export(device_key, GNUTLS_X509_FMT_PEM, device_credentials->secret_key, &device_credentials->secret_key_len))
+    gnutls_x509_crt_export(device_cert, GNUTLS_X509_FMT_PEM, NULL, &device_entry->public_key_len);
+    gnutls_x509_privkey_export(device_key, GNUTLS_X509_FMT_PEM, NULL, &device_entry->secret_key_len);
+
+    device_entry->public_key = malloc(device_entry->public_key_len);
+    device_entry->secret_key = malloc(device_entry->secret_key_len);
+
+    if (device_entry->public_key == NULL
+        || device_entry->secret_key == NULL)
+    {
+        goto exit;
+    }
+
+    if (gnutls_x509_crt_export(device_cert, GNUTLS_X509_FMT_PEM, device_entry->public_key, &device_entry->public_key_len)
+        || gnutls_x509_privkey_export(device_key, GNUTLS_X509_FMT_PEM, device_entry->secret_key, &device_entry->secret_key_len))
     {
         goto exit;
     }
 
     ret = 0;
 exit:
+    if (ret)
+    {
+        free(device_entry->public_key);
+        free(device_entry->secret_key);
+    }
     gnutls_free(ca_cert_buffer.data);
     gnutls_free(ca_key_buffer.data);
     gnutls_x509_crt_deinit(device_cert);
@@ -168,104 +327,72 @@ exit:
     return ret;
 }
 
-static int device_populate_credentials(json_t *j_device_object, device_new_credentials_t *device_credentials)
+//static int device_populate_credentials(json_t *j_device_object, device_new_credentials_t *device_credentials)
+//{
+//    json_t *j_credentials;
+//    char base64_secret_key[1024] = {0};
+//    char base64_public_key[1024] = {0};
+//    char base64_server_key[1024] = {0};
+//    char base64_serial[64] = {0};
+//    size_t base64_length;
+//
+//    base64_length = sizeof(base64_secret_key);
+//    if (base64_encode(device_credentials->secret_key, device_credentials->secret_key_len, base64_secret_key, &base64_length))
+//    {
+//        return -1;
+//    }
+//
+//    base64_length = sizeof(base64_public_key);
+//    if (base64_encode(device_credentials->public_key, device_credentials->public_key_len, base64_public_key, &base64_length))
+//    {
+//        return -1;
+//    }
+//
+//    base64_length = sizeof(base64_server_key);
+//    if (base64_encode(device_credentials->server_key, device_credentials->server_key_len, base64_server_key, &base64_length))
+//    {
+//        return -1;
+//    }
+//
+//    base64_length = sizeof(base64_serial);
+//    if (base64_encode(device_credentials->serial, device_credentials->serial_len, base64_serial, &base64_length))
+//    {
+//        return -1;
+//    }
+//
+//    j_credentials = json_pack("{s:s, s:s, s:s, s:s}", "secret_key", base64_secret_key, "public_key", base64_public_key, "server_key", base64_server_key, "serial", base64_serial);
+//    if (j_credentials == NULL)
+//    {
+//        return -1;
+//    }
+//
+//    if (json_object_update_missing(j_device_object, j_credentials))
+//    {
+//        json_decref(j_credentials);
+//        return -1;
+//    }
+//
+//    json_decref(j_credentials);
+//    return 0;
+//}
+
+static int device_new_credentials(database_entry_t *device_entry, void *context)
 {
-    json_t *j_credentials;
-    char base64_secret_key[1024] = {0};
-    char base64_public_key[1024] = {0};
-    char base64_server_key[1024] = {0};
-    char base64_serial[1024] = {0};
-    size_t base64_length;
-
-    base64_length = sizeof(base64_secret_key);
-    if (base64_encode(device_credentials->secret_key, device_credentials->secret_key_len, base64_secret_key, &base64_length))
+    if (device_entry->mode == MODE_PSK)
     {
-        return -1;
-    }
-
-    base64_length = sizeof(base64_public_key);
-    if (base64_encode(device_credentials->public_key, device_credentials->public_key_len, base64_public_key, &base64_length))
-    {
-        return -1;
-    }
-
-    base64_length = sizeof(base64_server_key);
-    if (base64_encode(device_credentials->server_key, device_credentials->server_key_len, base64_server_key, &base64_length))
-    {
-        return -1;
-    }
-
-    base64_length = sizeof(base64_serial);
-    if (base64_encode(device_credentials->serial, device_credentials->serial_len, base64_serial, &base64_length))
-    {
-        return -1;
-    }
-
-    j_credentials = json_pack("{s:s, s:s, s:s, s:s}", "secret_key", base64_secret_key, "public_key", base64_public_key, "server_key", base64_server_key, "serial", base64_serial);
-    if (j_credentials == NULL)
-    {
-        return -1;
-    }
-
-    if (json_object_update_missing(j_device_object, j_credentials))
-    {
-        json_decref(j_credentials);
-        return -1;
-    }
-
-    json_decref(j_credentials);
-    return 0;
-}
-
-static int device_new_credentials(json_t *j_device_object, void *context)
-{
-    //TODO: needs streamlining/to be moved into sepparate functions
-    json_t *j_value;
-    const char *j_string;
-    device_new_credentials_t device_credentials;
-
-    memset(&device_credentials, 0, sizeof(device_credentials));
-
-    j_value = json_object_get(j_device_object, "name");
-    if (j_value == NULL)
-    {
-        return -1;
-    }
-
-    j_string = json_string_value(j_value);
-    if (strlen(j_string) > 127) // won't fit into buffer
-    {
-        return -1;
-    }
-    memcpy(device_credentials.name, j_string, strlen(j_string) + 1);
-
-    j_value = json_object_get(j_device_object, "mode");
-    if (j_value == NULL)
-    {
-        return -1;
-    }
-    j_string = json_string_value(j_value);
-
-    if (strcasecmp(j_string, "psk") == 0)
-    {
-        if (device_new_psk(&device_credentials))
+        if (device_new_psk(device_entry))
         {
             return -1;
         }
     }
-    else if (strcasecmp(j_string, "cert") == 0)
+    else if (device_entry->mode == MODE_CERT)
     {
-        if (device_new_certificate(&device_credentials, context))
+        if (device_new_certificate(device_entry, context))
         {
             return -1;
         }
     }
     else
-    {
-        return -1;
-    }
-
-    if (device_populate_credentials(j_device_object, &device_credentials))
     {
         return -1;
     }
@@ -362,13 +489,14 @@ int database_validate_new_entry(json_t *j_new_device_object, linked_list_t *devi
     return 0;
 }
 
-int database_validate_entry(json_t *j_device_object)
+int database_validate_entry(json_t *j_device_object, linked_list_t *device_list)
 {
     int key_check = 0;
-    const char *key;
+    const char *key, *value_string;
     json_t *j_value;
     uint8_t buffer[512];
     size_t buffer_len = sizeof(buffer);
+    int ret;
 
     if (!json_is_object(j_device_object))
     {
@@ -377,7 +505,6 @@ int database_validate_entry(json_t *j_device_object)
 
     json_object_foreach(j_device_object, key, j_value)
     {
-        //TODO: alot more keys now
         if (!json_is_string(j_value))
         {
             return -1;
@@ -386,21 +513,55 @@ int database_validate_entry(json_t *j_device_object)
         {
             key_check |= DATABASE_UUID_KEY_BIT;
         }
-        else if (strcasecmp(key, "psk") == 0)
+        else if (strcasecmp(key, "name") == 0)
         {
-            if (base64_decode(json_string_value(j_value), buffer, &buffer_len))
+            value_string = json_string_value(j_value);
+
+            if (database_find_existing_entry(value_string, device_list))
             {
                 return -1;
             }
-            key_check |= DATABASE_PSK_KEY_BIT;
+
+            key_check |= DATABASE_NAME_KEY_BIT;
         }
-        else if (strcasecmp(key, "psk_id") == 0)
+        else if (strcasecmp(key, "mode") == 0)
         {
-            if (base64_decode(json_string_value(j_value), buffer, &buffer_len))
+            value_string = json_string_value(j_value);
+
+            if (strcasecmp(value_string, "psk")
+                && strcasecmp(value_string, "cert"))
             {
                 return -1;
             }
-            key_check |= DATABASE_PSK_ID_KEY_BIT;
+
+            key_check |= DATABASE_MODE_KEY_BIT;
+        }
+        else if (strcasecmp(key, "public_key") == 0)
+        {
+            ret = base64_decode(json_string_value(j_value), buffer, &buffer_len);
+            if (ret != BASE64_ERR_NONE)
+            {
+                return -1;
+            }
+            key_check |= DATABASE_PUBLIC_KEY_BIT;
+        }
+        else if (strcasecmp(key, "secret_key") == 0)
+        {
+            ret = base64_decode(json_string_value(j_value), buffer, &buffer_len);
+            if ((ret != BASE64_ERR_NONE) && (ret != BASE64_ERR_ARG)) // key might contain string with length of zero
+            {
+                return -1;
+            }
+            key_check |= DATABASE_SECRET_KEY_BIT;
+        }
+        else if (strcasecmp(key, "serial") == 0)
+        {
+            ret = base64_decode(json_string_value(j_value), buffer, &buffer_len);
+            if ((ret != BASE64_ERR_NONE) && (ret != BASE64_ERR_ARG))
+            {
+                return -1;
+            }
+            key_check |= DATABASE_SERIAL_KEY_BIT;
         }
     }
 
@@ -415,72 +576,112 @@ int database_validate_entry(json_t *j_device_object)
 
 int database_populate_entry(json_t *j_device_object, database_entry_t *device_entry)
 {
-    //TODO: goto exit
+    //TODO: allocation/deallocation should happen inside entry creation functions
     json_t *j_value;
     const char *json_string;
     int ret = -1;
 
     if (j_device_object == NULL || device_entry == NULL)
     {
-        return -1;
+        goto exit;
     }
 
-    j_value = json_object_get(j_device_object, "uuid");
-    json_string = json_string_value(j_value);
-
-    device_entry->uuid = strdup(json_string);
-    if (device_entry->uuid == NULL)
-    {
-        return -1;
-    }
-
-
-    j_value = json_object_get(j_device_object, "name");
-    json_string = json_string_value(j_value);
-
-    device_entry->name = (char *)calloc(1, strlen(json_string) + 1);
-    if (device_entry->name == NULL)
+    if (database_json_to_entry(j_device_object, (void **)&device_entry->uuid, "uuid", BASE64_DECODE_FALSE, NULL)
+        || database_json_to_entry(j_device_object, (void **)&device_entry->name, "name", BASE64_DECODE_FALSE, NULL)
+        || database_json_to_entry(j_device_object, (void **)&device_entry->public_key, "public_key", BASE64_DECODE_TRUE, &device_entry->public_key_len)
+        || database_json_to_entry(j_device_object, (void **)&device_entry->secret_key, "secret_key", BASE64_DECODE_TRUE, &device_entry->secret_key_len))
     {
         goto exit;
     }
-    memcpy(device_entry->name, json_string, strlen(json_string) + 1);
 
-
-    j_value = json_object_get(j_device_object, "mode");
-    json_string = json_string_value(j_value);
-
-    if (strcasecmp(json_string, "psk"))
+    if (device_entry->mode == 0)
     {
-        device_entry->mode = MODE_PSK;
-    }
-    else if (strcasecmp(json_string, "cert"))
-    {
-        device_entry->mode = MODE_CERT;
+        j_value = json_object_get(j_device_object, "mode");
+        if (j_value == NULL)
+        {
+            goto exit;
+        }
+        
+        json_string = json_string_value(j_value);
+
+        if (strcasecmp(json_string, "psk") == 0)
+        {
+            device_entry->mode = MODE_PSK;
+        }
+        else if (strcasecmp(json_string, "cert") == 0)
+        {
+            device_entry->mode = MODE_CERT;
+        }
+        else
+        {
+            goto exit;
+        }
     }
 
-    //TODO: fill remainder
-    j_value = json_object_get(j_device_object, "public_key");
-    json_string = json_string_value(j_value);
-    j_value = json_object_get(j_device_object, "secret_key");
-    json_string = json_string_value(j_value);
+    if (device_entry->mode == MODE_CERT)
+    {
+        if (database_json_to_entry(j_device_object, (void **)&device_entry->serial, "serial", BASE64_DECODE_TRUE, &device_entry->serial_len))
+        {
+            goto exit;
+        }
+    }
 
     ret = 0;
 exit:
     if (ret)
     {
+        database_free_entry(device_entry);
     }
     return ret;
 }
 
-int database_populate_new_entry(json_t *j_device_object, database_entry_t *device_entry, void *context)
+int database_populate_new_entry(json_t *j_new_device_object, database_entry_t *device_entry, void *context)
 {
     uuid_t b_uuid;
     char *uuid = NULL;
-    int return_code;
+    const char *name, *mode;
+    int return_code = -1;
+    json_t *j_device_object, *j_value;
 
+    j_device_object = json_deep_copy(j_new_device_object);
     if (j_device_object == NULL || device_entry == NULL)
     {
-        return -1;
+        goto exit;
+    }
+
+    j_value = json_object_get(j_device_object, "mode");
+    if (j_value == NULL)
+    {
+        goto exit;
+    }
+
+    mode = json_string_value(j_value);
+
+    if (strcasecmp(mode, "psk") == 0)
+    {
+        device_entry->mode = MODE_PSK;
+    }
+    else if (strcasecmp(mode, "cert") == 0)
+    {
+        device_entry->mode = MODE_CERT;
+    }
+    else
+    {
+        goto exit;
+    }
+
+    j_value = json_object_get(j_device_object, "name");
+    if (j_value == NULL)
+    {
+        goto exit;
+    }
+
+    name = json_string_value(j_value);
+
+    device_entry->name = strdup(name);
+    if (device_entry->name == NULL)
+    {
+        goto exit;
     }
 
     uuid_generate_random(b_uuid);
@@ -488,27 +689,34 @@ int database_populate_new_entry(json_t *j_device_object, database_entry_t *devic
     uuid = malloc(37);
     if (uuid == NULL)
     {
-        return -1;
+        goto exit;
     }
 
     uuid_unparse(b_uuid, uuid);
 
-    if (json_object_set_new(
-            j_device_object, "uuid", json_stringn(uuid, 37)) != 0)
+    device_entry->uuid = strdup(uuid);
+    if (device_entry->uuid == NULL)
     {
-        return_code = -1;
         goto exit;
     }
 
-    if (device_new_credentials(j_device_object, context))
+    if (device_new_credentials(device_entry, context))
     {
-        return_code = -1;
         goto exit;
     }
 
-    return_code = database_populate_entry(j_device_object, device_entry);
+    if (database_populate_entry(j_device_object, device_entry))
+    {
+        goto exit;
+    }
 
+    return_code = 0;
 exit:
+    if (return_code)
+    {
+        free(device_entry->name);
+        free(device_entry->uuid);
+    }
     free(uuid);
     json_decref(j_device_object);
     return return_code;
@@ -519,10 +727,11 @@ int database_prepare_array(json_t *j_array, linked_list_t *device_list)
     linked_list_entry_t *list_entry;
     database_entry_t *device_entry;
     json_t *j_entry;
-    char psk_string[256];
-    char psk_id_string[256];
-    size_t psk_string_len;
-    size_t psk_id_string_len;
+    char base64_secret_key[1024];
+    char base64_public_key[1024];
+    char base64_serial[64];
+    size_t base64_length;
+    const char *mode_string;
 
     if (device_list == NULL || !json_is_array(j_array))
     {
@@ -531,16 +740,44 @@ int database_prepare_array(json_t *j_array, linked_list_t *device_list)
 
     for (list_entry = device_list->head; list_entry != NULL; list_entry = list_entry->next)
     {
-        psk_string_len = sizeof(psk_string);
-        psk_id_string_len = sizeof(psk_id_string);
-
         device_entry = (database_entry_t *)list_entry->data;
 
-        base64_encode(device_entry->psk, device_entry->psk_len, psk_string, &psk_string_len);
-        base64_encode(device_entry->psk_id, device_entry->psk_id_len, psk_id_string, &psk_id_string_len);
+        memset(base64_secret_key, 0, sizeof(base64_secret_key));
+        memset(base64_public_key, 0, sizeof(base64_public_key));
+        memset(base64_serial, 0, sizeof(base64_serial));
 
-        j_entry = json_pack("{s:s, s:s, s:s}", "uuid", device_entry->uuid, "psk", psk_string, "psk_id",
-                            psk_id_string);
+        base64_length = sizeof(base64_secret_key);
+        if (base64_encode(device_entry->secret_key, device_entry->secret_key_len, base64_secret_key, &base64_length))
+        {
+            return -1;
+        }
+
+        base64_length = sizeof(base64_public_key);
+        if (base64_encode(device_entry->public_key, device_entry->public_key_len, base64_public_key, &base64_length))
+        {
+            return -1;
+        }
+
+        base64_length = sizeof(base64_serial);
+        if (base64_encode(device_entry->serial, device_entry->serial_len, base64_serial, &base64_length))
+        {
+            return -1;
+        }
+
+        if (device_entry->mode == MODE_PSK)
+        {
+            mode_string = "psk";
+        }
+        else if (device_entry->mode == MODE_CERT)
+        {
+            mode_string = "cert";
+        }
+        else
+        {
+            return -1;
+        }
+
+        j_entry = json_pack("{s:s, s:s, s:s, s:s, s:s, s:s}", "uuid", device_entry->uuid, "name", device_entry->name, "mode", mode_string, "secret_key", base64_secret_key, "public_key", base64_public_key, "serial", base64_serial);
         if (j_entry == NULL)
         {
             return -1;
@@ -553,4 +790,33 @@ int database_prepare_array(json_t *j_array, linked_list_t *device_list)
     }
 
     return 0;
+}
+
+int utils_get_server_key(uint8_t *buffer, size_t *length, void *context)
+{
+    rest_context_t *rest = (rest_context_t *)context;
+    gnutls_x509_crt_t cert = NULL;
+    gnutls_datum_t cert_buffer = {NULL, 0};
+    int ret = -1;
+
+    gnutls_x509_crt_init(&cert);
+
+    if (gnutls_load_file(rest->settings->coap.certificate_file, &cert_buffer))
+    {
+        goto exit;
+    }
+    if (gnutls_x509_crt_import(cert, &cert_buffer, GNUTLS_X509_FMT_PEM))
+    {
+        goto exit;
+    }
+    if (gnutls_x509_crt_export(cert, GNUTLS_X509_FMT_PEM, buffer, length))
+    {
+        goto exit;
+    }
+
+    ret = 0;
+exit:
+    gnutls_free(cert_buffer.data);
+    gnutls_x509_crt_deinit(cert);
+    return ret;
 }
