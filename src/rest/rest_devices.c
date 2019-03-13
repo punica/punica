@@ -23,71 +23,33 @@
 #include "../linked_list.h"
 #include "../settings.h"
 
-//static int rest_devices_update_list(linked_list_t *list, json_t *jdevice)
-//{
-//    const char *string;
-//    json_t *jstring;
-//    linked_list_entry_t *device_entry;
-//    database_entry_t *device_data;
-//    uint8_t *oldpsk, *oldid;
-//    uint8_t binary_buffer[512];
-//    size_t length;
-//
-//    jstring = json_object_get(jdevice, "uuid");
-//    string = json_string_value(jstring);
-//
-//    for (device_entry = list->head; device_entry != NULL; device_entry = device_entry->next)
-//    {
-//        device_data = (database_entry_t *)device_entry->data;
-//
-//        if (strcmp(device_data->uuid, string) == 0)
-//        {
-//            jstring = json_object_get(jdevice, "psk");
-//            string = json_string_value(jstring);
-//
-//            base64_decode(string, NULL, &length);
-//            if (base64_decode(string, binary_buffer, &length))
-//            {
-//                return -1;
-//            }
-//
-//            oldpsk = device_data->psk;
-//            device_data->psk = malloc(length);
-//            if (device_data->psk == NULL)
-//            {
-//                device_data->psk = oldpsk;
-//                return -1;
-//            }
-//            memcpy(device_data->psk, binary_buffer, length);
-//
-//            jstring = json_object_get(jdevice, "psk_id");
-//            string = json_string_value(jstring);
-//
-//            base64_decode(string, NULL, &length);
-//            if (base64_decode(string, binary_buffer, &length))
-//            {
-//                return -1;
-//            }
-//
-//            oldid = device_data->psk_id;
-//            device_data->psk_id = malloc(length);
-//            if (device_data->psk_id == NULL)
-//            {
-//                free(device_data->psk);
-//                device_data->psk = oldpsk;
-//                device_data->psk_id = oldid;
-//                return -1;
-//            }
-//            memcpy(device_data->psk_id, binary_buffer, length);
-//            free(oldpsk);
-//            free(oldid);
-//
-//            return 0;
-//        }
-//    }
-//
-//    return -1;
-//}
+static int rest_devices_update_list(linked_list_t *list, const char *name, const char *uuid)
+{
+    linked_list_entry_t *device_entry;
+    database_entry_t *device_data;
+    char *new_name;
+
+    for (device_entry = list->head; device_entry != NULL; device_entry = device_entry->next)
+    {
+        device_data = (database_entry_t *)device_entry->data;
+
+        if (strcmp(device_data->uuid, uuid) == 0)
+        {
+            new_name = strdup(name);
+            if (new_name == NULL)
+            {
+                return -1;
+            }
+
+            free(device_data->name);
+            device_data->name = new_name;
+
+            return 0;
+        }
+    }
+
+    return -1;
+}
 
 static int rest_devices_remove_list(linked_list_t *list, const char *uuid)
 {
@@ -399,77 +361,83 @@ exit:
 
 int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
-//    rest_context_t *rest = (rest_context_t *)context;
-//    json_t *jdevice = NULL, *jdatabase_list = NULL;
-//
-//    rest_lock(rest);
-//
-//    const char *ct;
-//    ct = u_map_get_case(req->map_header, "Content-Type");
-//    if (ct == NULL || strcmp(ct, "application/json") != 0)
-//    {
-//        ulfius_set_empty_body_response(resp, 415);
-//        goto exit;
-//    }
-//
-//    const char *id;
-//    id = u_map_get(req->map_url, "id");
-//    if (id == NULL)
-//    {
-//        ulfius_set_empty_body_response(resp, 400);
-//        goto exit;
-//    }
-//
-//    jdevice = json_loadb(req->binary_body, req->binary_body_length, 0, NULL);
-//    if (!json_is_object(jdevice))
-//    {
-//        ulfius_set_empty_body_response(resp, 400);
-//        goto exit;
-//    }
-//    if ((json_object_get(jdevice, "psk") == NULL) || (json_object_get(jdevice, "psk_id") == NULL))
-//    {
-//        ulfius_set_empty_body_response(resp, 400);
-//        goto exit;
-//    }
-//
-//    json_t *jstring = json_string(id);
-//    json_object_set_new(jdevice, "uuid", jstring);
-//
-//    // if later stages fail, global list will be updated, but database file not
-//    // consider updating list at the end
-//    if (rest_devices_update_list(rest->devicesList, jdevice))
-//    {
-//        ulfius_set_empty_body_response(resp, 400);
-//        goto exit;
-//    }
-//
-////  if database file does not exist then only save locally
-//    if (rest->settings->coap.database_file == NULL)
-//    {
-//        ulfius_set_empty_body_response(resp, 201);
-//        goto exit;
-//    }
-//
-//    jdatabase_list = json_array();
-//
-//    if (database_prepare_array(jdatabase_list, rest->devicesList))
-//    {
-//        ulfius_set_empty_body_response(resp, 500);
-//        goto exit;
-//    }
-//
-//    if (json_dump_file(jdatabase_list, rest->settings->coap.database_file, 0) != 0)
-//    {
-//        ulfius_set_empty_body_response(resp, 500);
-//        goto exit;
-//    }
-//
-//    ulfius_set_empty_body_response(resp, 201);
-//exit:
-//    json_decref(jdevice);
-//    json_decref(jdatabase_list);
-//    rest_unlock(rest);
-//
+    rest_context_t *rest = (rest_context_t *)context;
+    json_t *jdevice = NULL, *jdatabase_list = NULL, *j_string = NULL;
+    const char *name;
+
+    rest_lock(rest);
+
+    const char *ct;
+    ct = u_map_get_case(req->map_header, "Content-Type");
+    if (ct == NULL || strcmp(ct, "application/json") != 0)
+    {
+        ulfius_set_empty_body_response(resp, 415);
+        goto exit;
+    }
+
+    const char *uuid;
+    uuid = u_map_get(req->map_url, "uuid");
+    if (uuid == NULL)
+    {
+        ulfius_set_empty_body_response(resp, 400);
+        goto exit;
+    }
+
+    jdevice = json_loadb(req->binary_body, req->binary_body_length, 0, NULL);
+    if (!json_is_object(jdevice))
+    {
+        ulfius_set_empty_body_response(resp, 400);
+        goto exit;
+    }
+
+    j_string = json_object_get(jdevice, "name");
+    if (j_string == NULL)
+    {
+        ulfius_set_empty_body_response(resp, 400);
+        goto exit;
+    }
+
+    name = json_string_value(j_string);
+    if (name == NULL)
+    {
+        ulfius_set_empty_body_response(resp, 400);
+        goto exit;
+    }
+
+    if (rest_devices_update_list(rest->devicesList, name, uuid))
+    {
+        ulfius_set_empty_body_response(resp, 400);
+        goto exit;
+    }
+
+//  if database file does not exist then only save locally
+    if (rest->settings->coap.database_file == NULL)
+    {
+        ulfius_set_empty_body_response(resp, 201);
+        goto exit;
+    }
+
+    jdatabase_list = json_array();
+
+    if (database_prepare_array(jdatabase_list, rest->devicesList))
+    {
+        ulfius_set_empty_body_response(resp, 500);
+        goto exit;
+    }
+
+    if (json_dump_file(jdatabase_list, rest->settings->coap.database_file, 0) != 0)
+    {
+        ulfius_set_empty_body_response(resp, 500);
+        goto exit;
+    }
+
+    ulfius_set_empty_body_response(resp, 201);
+exit:
+    json_decref(jdevice);
+    json_decref(jdatabase_list);
+    json_decref(j_string);
+    rest_unlock(rest);
+
     return U_CALLBACK_COMPLETE;
 }
 
