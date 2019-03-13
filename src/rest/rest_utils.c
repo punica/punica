@@ -193,35 +193,43 @@ static void generate_serial(uint8_t *buffer, size_t *length)
 static int device_new_psk(database_entry_t *device_entry)
 {
     size_t ret = 0;
-    size_t name_len = strlen(device_entry->name);
+    uint8_t binary_buffer[6];
+    const char hex_table[16] = {"0123456789ABCDEF"};
+    uint8_t nibble;
 
-    // PSK ID maximum length 128 according to specification
-    if (name_len > 127)
-    {
-        goto exit;
-    }
-
-    device_entry->public_key = malloc(name_len + 1);
-    if (device_entry->public_key == NULL)
-    {
-        goto exit;
-    }
-    memcpy(device_entry->public_key, device_entry->name, name_len + 1);
-    device_entry->public_key_len = name_len + 1;
-
+    device_entry->public_key = malloc(12);
     device_entry->secret_key = malloc(16);
-    if (device_entry->secret_key == NULL)
-    {
-        goto exit;
-    }
-    ret = rest_get_random(device_entry->secret_key, 16);
-    device_entry->secret_key_len = ret;
 
-exit:
+    if (device_entry->public_key == NULL
+        || device_entry->secret_key == NULL)
+    {
+        return -1;
+    }
+
+    ret = rest_get_random(binary_buffer, 6);
     if (ret <= 0)
     {
         return -1;
     }
+
+    // PSK ID is a string of random hexadecimal characters
+    for (int i = 0; i < 6; i++)
+    {
+        nibble = (binary_buffer[i] >> 4) && 0x0F;
+        device_entry->public_key[i * 2] = hex_table[nibble];
+
+        nibble = (binary_buffer[i]) && 0x0F;
+        device_entry->public_key[(i * 2) + 1] = hex_table[nibble];
+    }
+    device_entry->public_key_len = 12;
+
+    ret = rest_get_random(device_entry->secret_key, 16);
+    if (ret <= 0)
+    {
+        return -1;
+    }
+    device_entry->secret_key_len = 16;
+
     return 0;
 }
 
