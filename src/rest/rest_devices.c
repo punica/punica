@@ -89,7 +89,7 @@
 //    return -1;
 //}
 
-static int rest_devices_remove_list(linked_list_t *list, const char *id)
+static int rest_devices_remove_list(linked_list_t *list, const char *uuid)
 {
     linked_list_entry_t *device_entry;
     database_entry_t *device_data;
@@ -98,9 +98,10 @@ static int rest_devices_remove_list(linked_list_t *list, const char *id)
     {
         device_data = (database_entry_t *)device_entry->data;
 
-        if (strcmp(id, device_data->uuid) == 0)
+        if (strcmp(uuid, device_data->uuid) == 0)
         {
             linked_list_remove(list, (void *)device_data);
+            database_free_entry(device_data);
             return 0;
         }
     }
@@ -479,15 +480,15 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
 
     rest_lock(rest);
 
-    const char *id;
-    id = u_map_get(req->map_url, "id");
-    if (id == NULL)
+    const char *uuid;
+    uuid = u_map_get(req->map_url, "uuid");
+    if (uuid == NULL)
     {
         ulfius_set_empty_body_response(resp, 400);
         goto exit;
     }
 
-    if (rest_devices_remove_list(rest->devicesList, id))
+    if (rest_devices_remove_list(rest->devicesList, uuid))
     {
         //  device not found
         ulfius_set_empty_body_response(resp, 404);
