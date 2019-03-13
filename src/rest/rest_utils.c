@@ -215,10 +215,10 @@ static int device_new_psk(database_entry_t *device_entry)
     // PSK ID is a string of random hexadecimal characters
     for (int i = 0; i < 6; i++)
     {
-        nibble = (binary_buffer[i] >> 4) && 0x0F;
+        nibble = (binary_buffer[i] >> 4) & 0x0F;
         device_entry->public_key[i * 2] = hex_table[nibble];
 
-        nibble = (binary_buffer[i]) && 0x0F;
+        nibble = (binary_buffer[i]) & 0x0F;
         device_entry->public_key[(i * 2) + 1] = hex_table[nibble];
     }
     device_entry->public_key_len = 12;
