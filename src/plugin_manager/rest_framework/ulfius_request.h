@@ -17,10 +17,10 @@
  *
  */
 
-#ifndef ULFIUS_REQUEST_H
-#define ULFIUS_REQUEST_H
+#ifndef PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REQUEST_H
+#define PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REQUEST_H
 
-#include "plugin_manager/rest_framework/request.h"
+#include <punica/rest/request.h>
 
 struct CUlfiusRequest;
 typedef struct CUlfiusRequest CUlfiusRequest;
@@ -31,4 +31,5 @@ char *UlfiusRequest_getMethod(CUlfiusRequest *c_request);
 char *UlfiusRequest_getHeader(CUlfiusRequest *c_request, const char *c_header);
 uint8_t *UlfiusRequest_getBody(CUlfiusRequest *c_request);
 
-#endif // ULFIUS_REQUEST_H
+#endif // PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REQUEST_H
+

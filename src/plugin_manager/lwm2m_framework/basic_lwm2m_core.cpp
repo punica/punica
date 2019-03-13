@@ -17,29 +17,32 @@
  *
  */
 
-#ifndef PUNICA_PLUGIN_PLUGIN_API_HPP
-#define PUNICA_PLUGIN_PLUGIN_API_HPP
+#include "basic_lwm2m_core.hpp"
 
-#include <punica/core.hpp>
-#include <punica/plugin/plugin.hpp>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#define PLUGIN_API_HANDLE_NAME "PLUGIN_API"
+#include "basic_lwm2m_core.h"
 
-typedef Plugin *(*plugin_create_t)(Core *core);
-typedef void (*plugin_destroy_t)(Plugin *plugin);
-
-typedef struct
+CBasicLwm2mCore *new_BasicLwm2mCore(void *lwm2m_context)
 {
-    uint32_t major: 8,
-             minor: 8,
-             revision: 16;
-} plugin_version_t;
-
-typedef struct
+    return reinterpret_cast<CBasicLwm2mCore *>(new BasicLwm2mCore(lwm2m_context));
+}
+void delete_BasicLwm2mCore(CBasicLwm2mCore *c_lwm2m_core)
 {
-    plugin_version_t version;
-    plugin_create_t create;
-    plugin_destroy_t destroy;
-} plugin_api_t;
+    delete reinterpret_cast<BasicLwm2mCore *>(c_lwm2m_core);
+}
 
-#endif // PUNICA_PLUGIN_PLUGIN_API_HPP
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+BasicLwm2mCore::BasicLwm2mCore(void *lwm2m_context):
+    context(lwm2m_context) { }
+BasicLwm2mCore::~BasicLwm2mCore()
+{ }
+void *BasicLwm2mCore::getContext()
+{
+    return context;
+}

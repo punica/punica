@@ -93,11 +93,11 @@ StatusCode stamp(Request *request, Response *response, void *context)
     return status_code;
 }
 
-static Plugin *NewTestPlugin(PluginManagerCore *core)
+static Plugin *NewTestPlugin(Core *core)
 {
     TestPlugin *plugin = new TestPlugin("Test Plugin Stamp");
-    RestFramework *rest_framework = core->getRestFramework();
-    rest_framework->addHandler("*", "/test_plugin/stamp", 10, stamp, reinterpret_cast<void *>(plugin));
+    RestCore *rest_core = core->getRestCore();
+    rest_core->addHandler("*", "/test_plugin/stamp", 10, stamp, reinterpret_cast<void *>(plugin));
 
     return plugin;
 }

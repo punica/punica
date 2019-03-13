@@ -19,7 +19,7 @@
 
 #include "plugin_without_destroy.hpp"
 
-static Plugin *NewPluginWithoutDestroy(PluginManagerCore *core)
+static Plugin *NewPluginWithoutDestroy(Core *core)
 {
     PluginWithoutDestroy *plugin = new PluginWithoutDestroy();
 

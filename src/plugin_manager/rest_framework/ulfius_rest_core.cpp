@@ -19,7 +19,7 @@
 
 #include <cstring>
 
-#include "ulfius_rest_framework.hpp"
+#include "ulfius_rest_core.hpp"
 #include "ulfius_request.hpp"
 #include "ulfius_response.hpp"
 
@@ -29,54 +29,54 @@ extern "C" {
 
 #include <ulfius.h>
 
-#include "ulfius_rest_framework.h"
+#include "ulfius_rest_core.h"
 
-CUlfiusRestFramework *new_UlfiusRestFramework(struct _u_instance *instance)
+CUlfiusRestCore *new_UlfiusRestCore(struct _u_instance *instance)
 {
-    return reinterpret_cast<CUlfiusRestFramework *>(new UlfiusRestFramework(instance));
+    return reinterpret_cast<CUlfiusRestCore *>(new UlfiusRestCore(instance));
 }
-void delete_UlfiusRestFramework(CUlfiusRestFramework *c_framework)
+void delete_UlfiusRestCore(CUlfiusRestCore *c_core)
 {
-    delete reinterpret_cast<UlfiusRestFramework *>(c_framework);
+    delete reinterpret_cast<UlfiusRestCore *>(c_core);
 }
-void UlfiusRestFramework_startFramework(CUlfiusRestFramework *c_framework)
+void UlfiusRestCore_startCore(CUlfiusRestCore *c_core)
 {
-    UlfiusRestFramework *framework = reinterpret_cast<UlfiusRestFramework *>(c_framework);
-    framework->startFramework();
+    UlfiusRestCore *core = reinterpret_cast<UlfiusRestCore *>(c_core);
+    core->startCore();
 }
-void UlfiusRestFramework_startSecureFramework(CUlfiusRestFramework *c_framework,
-                                              const char *c_private_key_file, const char *c_certificate_file)
+void UlfiusRestCore_startSecureCore(CUlfiusRestCore *c_core,
+                                    const char *c_private_key_file, const char *c_certificate_file)
 {
-    UlfiusRestFramework *framework = reinterpret_cast<UlfiusRestFramework *>(c_framework);
+    UlfiusRestCore *core = reinterpret_cast<UlfiusRestCore *>(c_core);
     const std::string private_key_file(c_private_key_file);
     const std::string certificate_file(c_certificate_file);
 
-    framework->startSecureFramework(private_key_file, certificate_file);
+    core->startSecureCore(private_key_file, certificate_file);
 }
-void UlfiusRestFramework_stopFramework(CUlfiusRestFramework *c_framework)
+void UlfiusRestCore_stopCore(CUlfiusRestCore *c_core)
 {
-    UlfiusRestFramework *framework = reinterpret_cast<UlfiusRestFramework *>(c_framework);
+    UlfiusRestCore *core = reinterpret_cast<UlfiusRestCore *>(c_core);
 
-    framework->stopFramework();
+    core->stopCore();
 }
-void UlfiusRestFramework_addHandler(CUlfiusRestFramework *c_framework,
-                                    const char *method, const char *url_prefix, unsigned int priority,
-                                    c_callback_function_t c_handler_function, void *handler_context)
+void UlfiusRestCore_addHandler(CUlfiusRestCore *c_core,
+                               const char *method, const char *url_prefix, unsigned int priority,
+                               c_callback_function_t c_handler_function, void *handler_context)
 {
-    UlfiusRestFramework *framework = reinterpret_cast<UlfiusRestFramework *>(c_framework);
+    UlfiusRestCore *core = reinterpret_cast<UlfiusRestCore *>(c_core);
     callback_function_t handler_function = reinterpret_cast<callback_function_t>(c_handler_function);
 
-    framework->addHandler(method, url_prefix, priority, handler_function, handler_context);
+    core->addHandler(method, url_prefix, priority, handler_function, handler_context);
 }
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
 
-UlfiusRestFramework::UlfiusRestFramework(struct _u_instance *instance):
+UlfiusRestCore::UlfiusRestCore(struct _u_instance *instance):
     ulfius_instance(instance)
 { }
-UlfiusRestFramework::~UlfiusRestFramework()
+UlfiusRestCore::~UlfiusRestCore()
 {
     for (std::vector<CallbackHandler *>::size_type index = 0;
          index < callbackHandlers.size(); ++index)
@@ -84,22 +84,22 @@ UlfiusRestFramework::~UlfiusRestFramework()
         delete callbackHandlers[index];
     }
 }
-void UlfiusRestFramework::startFramework()
+void UlfiusRestCore::startCore()
 {
     ulfius_start_framework(ulfius_instance);
 }
-void UlfiusRestFramework::startSecureFramework(const std::string private_key_file,
-                                               const std::string certificate_file)
+void UlfiusRestCore::startSecureCore(const std::string private_key_file,
+                                     const std::string certificate_file)
 {
     ulfius_start_secure_framework(ulfius_instance, private_key_file.c_str(),
                                   certificate_file.c_str());
 }
-void UlfiusRestFramework::stopFramework()
+void UlfiusRestCore::stopCore()
 {
     ulfius_stop_framework(ulfius_instance);
 }
-int UlfiusRestFramework::ulfiusCallback(const struct _u_request *u_request,
-                                        struct _u_response *u_response, void *context)
+int UlfiusRestCore::ulfiusCallback(const struct _u_request *u_request,
+                                   struct _u_response *u_response, void *context)
 {
     StatusCode callback_status_code;
 
@@ -138,7 +138,7 @@ int UlfiusRestFramework::ulfiusCallback(const struct _u_request *u_request,
     }
 }
 
-void UlfiusRestFramework::addHandler(
+void UlfiusRestCore::addHandler(
     const std::string method, const std::string url_prefix,
     unsigned int priority, callback_function_t handler_function, void *handler_context)
 {

@@ -17,32 +17,13 @@
  *
  */
 
-#include "basic_lwm2m_framework.hpp"
+#ifndef PUNICA_PLUGIN_MANAGER_LWM2M_BASIC_LWM2M_CORE_H
+#define PUNICA_PLUGIN_MANAGER_LWM2M_BASIC_LWM2M_CORE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+struct CBasicLwm2mCore;
+typedef struct CBasicLwm2mCore CBasicLwm2mCore;
 
-#include "basic_lwm2m_framework.h"
+CBasicLwm2mCore *new_BasicLwm2mCore(void *lwm2m_context);
+void delete_BasicLwm2mCore(CBasicLwm2mCore *c_lwm2m_core);
 
-CBasicLwm2mFramework *new_BasicLwm2mFramework(void *lwm2m_context)
-{
-    return reinterpret_cast<CBasicLwm2mFramework *>(new BasicLwm2mFramework(lwm2m_context));
-}
-void delete_BasicLwm2mFramework(CBasicLwm2mFramework *c_lwm2m_framework)
-{
-    delete reinterpret_cast<BasicLwm2mFramework *>(c_lwm2m_framework);
-}
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
-BasicLwm2mFramework::BasicLwm2mFramework(void *lwm2m_context):
-    context(lwm2m_context) { }
-BasicLwm2mFramework::~BasicLwm2mFramework()
-{ }
-void *BasicLwm2mFramework::getContext()
-{
-    return context;
-}
+#endif // PUNICA_PLUGIN_MANAGER_LWM2M_BASIC_LWM2M_CORE_H

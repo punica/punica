@@ -33,11 +33,11 @@ struct CRestCore;
 typedef struct CRestCore CRestCore;
 
 void RestCore_addHandler(CRestCore *c_rest_core,
-                              const char *method,
-                              const char *url_prefix,
-                              const unsigned int priority,
-                              c_callback_function_t c_handler_function,
-                              void *handler_context);
+                         const char *method,
+                         const char *url_prefix,
+                         const unsigned int priority,
+                         c_callback_function_t c_handler_function,
+                         void *handler_context);
 
 #ifdef __cplusplus
 }

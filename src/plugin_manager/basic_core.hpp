@@ -17,10 +17,10 @@
  *
  */
 
-#ifndef BASIC_PLUGIN_MANAGER_CORE_HPP
-#define BASIC_PLUGIN_MANAGER_CORE_HPP
+#ifndef PUNICA_PLUGIN_MANAGER_BASIC_CORE_HPP
+#define PUNICA_PLUGIN_MANAGER_BASIC_CORE_HPP
 
-#include "plugin_manager/plugin_manager_core.hpp"
+#include <punica/core.hpp>
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,17 +32,17 @@ extern "C" {
 } // extern "C"
 #endif
 
-class BasicPluginManagerCore: public PluginManagerCore
+class BasicCore: public Core
 {
 public:
-    BasicPluginManagerCore(struct _u_instance *ulfius_instance, void *rest_context);
-    ~BasicPluginManagerCore();
-    RestFramework *getRestFramework();
-    Lwm2mFramework *getLwm2mFramework();
+    BasicCore(struct _u_instance *ulfius_instance, void *rest_context);
+    ~BasicCore();
+    RestCore *getRestCore();
+    Lwm2mCore *getLwm2mCore();
 
 private:
-    RestFramework *restFramework;
-    Lwm2mFramework *lwm2mFramework;
+    RestCore *restCore;
+    Lwm2mCore *lwm2mCore;
 };
 
-#endif // BASIC_PLUGIN_MANAGER_CORE_HPP
+#endif // PUNICA_PLUGIN_MANAGER_BASIC_CORE_HPP

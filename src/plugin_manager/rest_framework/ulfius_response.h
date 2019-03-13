@@ -17,10 +17,10 @@
  *
  */
 
-#ifndef ULFIUS_RESPONSE_H
-#define ULFIUS_RESPONSE_H
+#ifndef PUNICA_PLUGIN_MANAGER_REST_ULFIUS_RESPONSE_H
+#define PUNICA_PLUGIN_MANAGER_REST_ULFIUS_RESPONSE_H
 
-#include "plugin_manager/rest_framework/response.h"
+#include <punica/rest/response.h>
 
 struct CUlfiusResponse;
 typedef struct CUlfiusResponse CUlfiusResponse;
@@ -31,4 +31,4 @@ void UlfiusResponse_setCode(CUlfiusResponse *c_response, const CStatusCode c_cod
 void UlfiusResponse_setHeader(CUlfiusResponse *c_response,
                               const char *c_header, const char *c_value);
 
-#endif // ULFIUS_RESPONSE_H
+#endif // PUNICA_PLUGIN_MANAGER_REST_ULFIUS_RESPONSE_H

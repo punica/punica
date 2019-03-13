@@ -17,13 +17,21 @@
  *
  */
 
-#ifndef BASIC_LWM2M_FRAMEWORK_H
-#define BASIC_LWM2M_FRAMEWORK_H
+#ifndef PUNICA_PLUGIN_MANAGER_LWM2M_BASIC_LWM2M_CORE_HPP
+#define PUNICA_PLUGIN_MANAGER_LWM2M_BASIC_LWM2M_CORE_HPP
 
-struct CBasicLwm2mFramework;
-typedef struct CBasicLwm2mFramework CBasicLwm2mFramework;
+#include <punica/lwm2m_core.hpp>
 
-CBasicLwm2mFramework *new_BasicLwm2mFramework(void *lwm2m_context);
-void delete_BasicLwm2mFramework(CBasicLwm2mFramework *c_lwm2m_framework);
+class BasicLwm2mCore: public Lwm2mCore
+{
+public:
+    BasicLwm2mCore(void *lwm2m_context);
+    ~BasicLwm2mCore();
 
-#endif // BASIC_LWM2M_FRAMEWORK_H
+    void *getContext();
+
+private:
+    void *context;
+};
+
+#endif // PUNICA_PLUGIN_MANAGER_LWM2M_BASIC_LWM2M_CORE_HPP

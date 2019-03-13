@@ -17,10 +17,10 @@
  *
  */
 
-#ifndef BASIC_PLUGIN_MANAGER_H
-#define BASIC_PLUGIN_MANAGER_H
+#ifndef PUNICA_PLUGIN_MANAGER_BASIC_PLUGIN_MANAGER_H
+#define PUNICA_PLUGIN_MANAGER_BASIC_PLUGIN_MANAGER_H
 
-#include "basic_plugin_manager_core.h"
+#include "basic_core.h"
 
 enum
 {
@@ -31,7 +31,7 @@ enum
 struct CBasicPluginManager;
 typedef struct CBasicPluginManager CBasicPluginManager;
 
-CBasicPluginManager *new_BasicPluginManager(CBasicPluginManagerCore *c_manager_core);
+CBasicPluginManager *new_BasicPluginManager(CBasicCore *c_manager_core);
 void delete_BasicPluginManager(CBasicPluginManager *c_manager);
 int BasicPluginManager_loadPlugin(CBasicPluginManager *c_manager,
                                   const char *c_path,
@@ -39,4 +39,4 @@ int BasicPluginManager_loadPlugin(CBasicPluginManager *c_manager,
 int BasicPluginManager_unloadPlugin(CBasicPluginManager *c_manager,
                                     const char *c_name);
 
-#endif // BASIC_PLUGIN_MANAGER_H
+#endif // PUNICA_PLUGIN_MANAGER_BASIC_PLUGIN_MANAGER_H

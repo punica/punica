@@ -17,10 +17,10 @@
  *
  */
 
-#ifndef ULFIUS_REQUEST_HPP
-#define ULFIUS_REQUEST_HPP
+#ifndef PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REQUEST_HPP
+#define PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REQUEST_HPP
 
-#include "plugin_manager/rest_framework/request.hpp"
+#include <punica/rest/request.hpp>
 
 class UlfiusRequest: public Request
 {
@@ -40,4 +40,4 @@ private:
     std::vector<uint8_t> body;
 };
 
-#endif // ULFIUS_REQUEST_HPP
+#endif // PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REQUEST_HPP

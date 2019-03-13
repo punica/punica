@@ -17,22 +17,22 @@
  *
  */
 
-#ifndef BASIC_PLUGIN_MANAGER_HPP
-#define BASIC_PLUGIN_MANAGER_HPP
+#ifndef PUNICA_PLUGIN_MANAGER_BASIC_PLUGIN_MANAGER_HPP
+#define PUNICA_PLUGIN_MANAGER_BASIC_PLUGIN_MANAGER_HPP
 
-#include "plugin_manager/plugin_manager.hpp"
+#include "plugin_manager.hpp"
 
 class BasicPluginManager: public PluginManager
 {
 public:
-    BasicPluginManager(PluginManagerCore *plugin_core);
+    BasicPluginManager(Core *plugin_core);
     ~BasicPluginManager();
     bool loadPlugin(std::string name, std::string path);
     bool unloadPlugin(std::string name);
 
 private:
-    PluginManagerCore *core;
+    Core *core;
     std::map<std::string, std::pair<Plugin *, plugin_api_t *> > plugins;
 };
 
-#endif // BASIC_PLUGIN_MANAGER_HPP 
+#endif // PUNICA_PLUGIN_MANAGER_BASIC_PLUGIN_MANAGER_HPP 

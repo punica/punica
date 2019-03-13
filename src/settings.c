@@ -571,7 +571,7 @@ error_t parse_opt(int key, char *arg, struct argp_state *state)
 
 static struct argp argp = { options, parse_opt, 0, doc };
 
-int settings_load(settings_t *settings, int argc, char *argv[])
+int settings_init(int argc, char *argv[], settings_t *settings)
 {
     return argp_parse(&argp, argc, argv, 0, 0, settings);
 }

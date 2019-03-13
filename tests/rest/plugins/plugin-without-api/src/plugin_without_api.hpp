@@ -19,7 +19,7 @@
 
 #include <string>
 
-#include "plugin_manager/plugin.hpp"
+#include <punica/plugin/plugin.hpp>
 
 class PluginWithoutApi: public Plugin
 {

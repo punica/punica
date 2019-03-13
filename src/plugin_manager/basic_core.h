@@ -17,21 +17,23 @@
  *
  */
 
-#ifndef BASIC_LWM2M_FRAMEWORK_HPP
-#define BASIC_LWM2M_FRAMEWORK_HPP
+#ifndef PUNICA_PLUGIN_MANAGER_BASIC_CORE_H
+#define PUNICA_PLUGIN_MANAGER_BASIC_CORE_H
 
-#include "plugin_manager/lwm2m_framework/lwm2m_framework.hpp"
+#include "ulfius.h"
 
-class BasicLwm2mFramework: public Lwm2mFramework
-{
-public:
-    BasicLwm2mFramework(void *lwm2m_context);
-    ~BasicLwm2mFramework();
+#include "rest_framework/ulfius_rest_core.h"
+#include "lwm2m_framework/basic_lwm2m_core.h"
 
-    void *getContext();
+struct CBasicCore;
+typedef struct CBasicCore CBasicCore;
 
-private:
-    void *context;
-};
+CBasicCore *new_BasicCore(struct _u_instance *ulfius_instance,
+                          void *lwm2m_context);
+void delete_BasicCore(CBasicCore *c_manager_core);
+CUlfiusRestCore *BasicCore_getRestCore(CBasicCore
+                                       *c_manager_core);
+CBasicLwm2mCore *BasicCore_getLwm2mCore(CBasicCore
+                                        *c_manager_core);
 
-#endif // BASIC_LWM2M_FRAMEWORK_HPP
+#endif // PUNICA_PLUGIN_MANAGER_BASIC_CORE_H

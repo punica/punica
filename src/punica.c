@@ -36,7 +36,7 @@
 #include "rest/rest_authentication.h"
 #include "linked_list.h"
 #include "plugin_manager/basic_plugin_manager.h"
-#include "plugin_manager/basic_plugin_manager_core.h"
+#include "plugin_manager/basic_core.h"
 
 static volatile int punica_quit;
 static void sigint_handler(int signo)
@@ -358,7 +358,7 @@ int main(int argc, char *argv[])
     connection_api_t *conn_api;
     uint8_t buffer[1500];
     void *connection;
-    CBasicPluginManagerCore *plugin_manager_core;
+    CBasicCore *punica_core;
     CBasicPluginManager *plugin_manager;
 
     static settings_t settings =
@@ -402,7 +402,7 @@ int main(int argc, char *argv[])
     rest_get_random(settings.http.security.jwt.secret_key,
                     settings.http.security.jwt.secret_key_length);
 
-    if (settings_load(&settings, argc, argv) != 0)
+    if (settings_init(argc, argv, &settings) != 0)
     {
         return -1;
     }
@@ -504,7 +504,7 @@ int main(int argc, char *argv[])
 
     if (settings.http.security.private_key != NULL || settings.http.security.certificate != NULL)
     {
-        if (settings_init(argc, argv, &settings) != 0)
+        if (security_load(&(settings.http.security)) != 0)
         {
             return -1;
         }
@@ -549,8 +549,8 @@ int main(int argc, char *argv[])
     }
 
     /* Plugin manager initialization and loading of plugins */
-    plugin_manager_core = new_BasicPluginManagerCore(&instance, rest.lwm2m);
-    plugin_manager = new_BasicPluginManager(plugin_manager_core);
+    punica_core = new_BasicCore(&instance, rest.lwm2m);
+    plugin_manager = new_BasicPluginManager(punica_core);
     plugins_load(plugin_manager, &settings.plugins);
 
     /* Main section */
@@ -591,7 +591,7 @@ int main(int argc, char *argv[])
     }
 
     delete_BasicPluginManager(plugin_manager);
-    delete_BasicPluginManagerCore(plugin_manager_core);
+    delete_BasicCore(punica_core);
     plugins_unload(&settings.plugins);
 
     ulfius_stop_framework(&instance);

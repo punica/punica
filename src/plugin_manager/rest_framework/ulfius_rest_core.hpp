@@ -17,23 +17,23 @@
  *
  */
 
-#ifndef ULFIUS_REST_FRAMEWORK_HPP
-#define ULFIUS_REST_FRAMEWORK_HPP
+#ifndef PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REST_CORE_HPP
+#define PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REST_CORE_HPP
 
-#include "plugin_manager/rest_framework/rest_framework.hpp"
-#include "plugin_manager/rest_framework/callback_handler.hpp"
+#include <punica/rest/rest_core.hpp>
+#include <punica/rest/callback_handler.hpp>
 
 std::map<std::string, std::string> ulfiusToStdMap(struct _u_map *ulfius_map);
 
-class UlfiusRestFramework: public RestFramework
+class UlfiusRestCore: public RestCore
 {
 public:
-    UlfiusRestFramework(struct _u_instance *instance);
-    ~UlfiusRestFramework();
+    UlfiusRestCore(struct _u_instance *instance);
+    ~UlfiusRestCore();
 
-    void startFramework();
-    void startSecureFramework(std::string private_key_file, std::string certificate_file);
-    void stopFramework();
+    void startCore();
+    void startSecureCore(std::string private_key_file, std::string certificate_file);
+    void stopCore();
 
     void addHandler(const std::string method,
                     const std::string url_prefix,
@@ -49,4 +49,4 @@ private:
     struct _u_instance *ulfius_instance;
 };
 
-#endif // ULFIUS_REST_FRAMEWORK_HPP
+#endif // PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REST_CORE_HPP

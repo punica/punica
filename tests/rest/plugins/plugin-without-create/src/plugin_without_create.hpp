@@ -19,9 +19,9 @@
 
 #include <string>
 
-#include "plugin_manager/plugin.hpp"
-#include "plugin_manager/plugin_api.hpp"
-#include "plugin_manager/plugin_manager_core.hpp"
+#include <punica/core.hpp>
+#include <punica/plugin/plugin.hpp>
+#include <punica/plugin/plugin_api.hpp>
 
 class PluginWithoutCreate: public Plugin
 {
@@ -30,7 +30,7 @@ public:
     ~PluginWithoutCreate() { }
 };
 
-static Plugin *NewPluginWithoutCreate(PluginManagerCore *core);
+static Plugin *NewPluginWithoutCreate(Core *core);
 static void DeletePluginWithoutCreate(Plugin *plugin);
 
 extern "C" const plugin_api_t PLUGIN_API =

@@ -20,7 +20,7 @@
 #include <dlfcn.h>
 #include <iostream>
 
-#include "basic_plugin_manager_core.hpp"
+#include "basic_core.hpp"
 #include "basic_plugin_manager.hpp"
 
 #ifdef __cplusplus
@@ -29,9 +29,9 @@ extern "C" {
 
 #include "basic_plugin_manager.h"
 
-CBasicPluginManager *new_BasicPluginManager(CBasicPluginManagerCore *c_manager_core)
+CBasicPluginManager *new_BasicPluginManager(CBasicCore *c_manager_core)
 {
-    BasicPluginManagerCore *manager_core = reinterpret_cast<BasicPluginManagerCore *>(c_manager_core);
+    BasicCore *manager_core = reinterpret_cast<BasicCore *>(c_manager_core);
 
     return reinterpret_cast<CBasicPluginManager *>(new BasicPluginManager(manager_core));
 }
@@ -62,7 +62,7 @@ int BasicPluginManager_unloadPlugin(CBasicPluginManager *c_manager,
 } // extern "C"
 #endif
 
-BasicPluginManager::BasicPluginManager(PluginManagerCore *plugin_core):
+BasicPluginManager::BasicPluginManager(Core *plugin_core):
     core(plugin_core),
     plugins()
 {
@@ -93,7 +93,7 @@ bool BasicPluginManager::loadPlugin(std::string path, std::string name)
         return false;
     }
 
-    plugin_api_t *plugin_api = static_cast<plugin_api_t *>(dlsym(dll, PLUGIN_HANDLE_NAME));
+    plugin_api_t *plugin_api = static_cast<plugin_api_t *>(dlsym(dll, PLUGIN_API_HANDLE_NAME));
 
     if (plugin_api == NULL)
     {

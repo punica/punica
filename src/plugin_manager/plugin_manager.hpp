@@ -24,8 +24,8 @@
 #include <string>
 
 #include <punica/core.hpp>
-#include <punica/plugin_manager/plugin_api.hpp>
-#include <punica/plugin_manager/plugin.hpp>
+#include <punica/plugin/plugin_api.hpp>
+#include <punica/plugin/plugin.hpp>
 
 class PluginManager
 {
@@ -36,7 +36,7 @@ public:
     virtual bool unloadPlugin(std::string name) = 0;
 
 protected:
-    PluginManagerCore *core;
+    Core *core;
     std::map<std::string, std::pair<Plugin *, plugin_api_t *> > plugins;
 };
 

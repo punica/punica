@@ -19,10 +19,10 @@
 
 #include <string>
 
-#include "plugin_manager/rest_framework/rest_framework.hpp"
-#include "plugin_manager/plugin.hpp"
-#include "plugin_manager/plugin_api.hpp"
-#include "plugin_manager/plugin_manager_core.hpp"
+#include <punica/core.hpp>
+#include <punica/plugin/plugin.hpp>
+#include <punica/plugin/plugin_api.hpp>
+#include <punica/rest/rest_core.hpp>
 
 class TestPlugin: public Plugin
 {
@@ -39,7 +39,7 @@ private:
 
 StatusCode stamp(Request *request, Response *response, void *context);
 
-static Plugin *NewTestPlugin(PluginManagerCore *core);
+static Plugin *NewTestPlugin(Core *core);
 static void DeleteTestPlugin(Plugin *plugin);
 
 extern "C" const plugin_api_t PLUGIN_API =

@@ -17,10 +17,10 @@
  *
  */
 
-#ifndef ULFIUS_RESPONSE_HPP
-#define ULFIUS_RESPONSE_HPP
+#ifndef PUNICA_PLUGIN_MANAGER_REST_ULFIUS_RESPONSE_HPP
+#define PUNICA_PLUGIN_MANAGER_REST_ULFIUS_RESPONSE_HPP
 
-#include "plugin_manager/rest_framework/response.hpp"
+#include <punica/rest/response.hpp>
 
 class UlfiusResponse: public Response
 {
@@ -36,4 +36,4 @@ private:
     struct _u_response *ulfius_response;
 };
 
-#endif // ULFIUS_RESPONSE_HPP
+#endif // PUNICA_PLUGIN_MANAGER_REST_ULFIUS_RESPONSE_HPP

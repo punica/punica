@@ -61,7 +61,7 @@ char *UlfiusRequest_getHeader(CUlfiusRequest *c_request, const char *c_header)
 }
 uint8_t *UlfiusRequest_getBody(CUlfiusRequest *c_request)
 {
-    // XXX: note that body should be freed after use!
+    // Note that body should be freed after use!
     UlfiusRequest *request = reinterpret_cast<UlfiusRequest *>(c_request);
     std::vector<uint8_t> body = request->getBody();
     uint8_t *c_body = static_cast<uint8_t *>(malloc(sizeof(uint8_t) * body.size()));
