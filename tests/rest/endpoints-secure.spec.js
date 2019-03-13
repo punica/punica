@@ -2,12 +2,26 @@ const chai = require('chai');
 const chai_http = require('chai-http');
 const should = chai.should();
 const https = require('https');
+const punica = require('punica');
 const fs = require('fs');
 var ClientInterface = require('./client-secure-if');
 
 chai.use(chai_http);
 
 describe('Secure endpoints interface', () => {
+
+  const service_options = {
+    host: 'https://localhost:8889',
+    ca: fs.readFileSync('../../certificate.pem'),
+    authentication: true,
+    username: 'admin',
+    password: 'not-same-as-name',
+    polling: true,
+    interval: 1234,
+    port: 1234,
+  };
+
+  const service = new punica.Service(service_options);
 
   const serverURI = '::1';
   const serverPort = 5556;
@@ -19,18 +33,9 @@ describe('Secure endpoints interface', () => {
     serverPort: serverPort,
     socketType: socketType,
     cipher: 'psk',
-    psk: 'psk1',
-    pskIdentity: 'pskid1',
-  };
-
-  const pskOptionsWrongId = {
-    clientName: 'test-client-psk',
-    serverURI: serverURI,
-    serverPort: serverPort,
-    socketType: socketType,
-    cipher: 'psk',
-    psk: 'psk1',
-    pskIdentity: 'non-existing',
+    psk: undefined,
+    pskIdentity: undefined,
+    uuid: undefined,
   };
 
   const certOptions = {
@@ -39,15 +44,73 @@ describe('Secure endpoints interface', () => {
     serverPort: serverPort,
     socketType: socketType,
     cipher: 'cert',
-    CAPath: '../../ecdsa.pem',
-    certificatePath: '../../ecdsa.pem',
-    keyPath: '../../ecdsa.key',
+    CA: undefined,
+    certificate: undefined,
+    key: undefined,
+    uuid: undefined,
   };
 
-  before(() => {
+  before((done) => {
+    service.authenticate().then((data) => {
+      service.authenticationToken = data.access_token;
+
+      const psk_request = {"name": pskOptions.clientName, "mode": pskOptions.cipher};
+      const cert_request = {"name": certOptions.clientName, "mode": certOptions.cipher};
+
+      let promise1 = service.post('/devices', psk_request, 'application/json').then((dataAndResponse) => {
+        let buf = undefined;
+
+        dataAndResponse.resp.statusCode.should.equal(201);
+
+        pskOptions.uuid = dataAndResponse.data.uuid;
+
+        buf = new Buffer(dataAndResponse.data.secret_key, 'base64');
+        pskOptions.psk = buf.toString('ascii');
+
+        buf = new Buffer(dataAndResponse.data.public_key, 'base64');
+        pskOptions.pskIdentity = buf.toString('ascii');
+      });
+      let promise2 = service.post('/devices', cert_request, 'application/json').then((dataAndResponse) => {
+        let buf = undefined;
+
+        dataAndResponse.resp.statusCode.should.equal(201);
+
+        certOptions.uuid = dataAndResponse.data.uuid;
+
+        buf = new Buffer(dataAndResponse.data.secret_key, 'base64');
+        certOptions.key = buf.toString('ascii');
+
+        buf = new Buffer(dataAndResponse.data.public_key, 'base64');
+        certOptions.certificate = buf.toString('ascii');
+
+        buf = new Buffer(dataAndResponse.data.server_key, 'base64');
+        certOptions.CA = buf.toString('ascii');
+      });
+
+      Promise.all([promise1, promise2]).then(() => {
+        done();
+      }).catch((err) => {
+        done(err);
+      });
+
+    }).catch((err) => {
+      console.error(`Failed to authenticate user: ${err}`);
+    });
   });
 
-  after(() => {
+  after((done) => {
+    let promise1 = service.delete('/devices/' + pskOptions.uuid).then((dataAndResponse) => {
+      dataAndResponse.resp.statusCode.should.equal(200);
+    });
+    let promise2 = service.delete('/devices/' + certOptions.uuid).then((dataAndResponse) => {
+      dataAndResponse.resp.statusCode.should.equal(200);
+    });
+
+    Promise.all([promise1, promise2]).then(() => {
+      done();
+    }).catch((err) => {
+      done(err);
+    });
   });
 
   it('should accept client with valid psk credentials', (done) => {
