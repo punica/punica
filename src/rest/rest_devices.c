@@ -373,7 +373,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     }
 
     const char *uuid;
-    uuid = u_map_get(req->map_url, "uuid");
+    uuid = u_map_get(req->map_url, "id");
     if (uuid == NULL)
     {
         ulfius_set_empty_body_response(resp, 400);
@@ -446,7 +446,7 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
     rest_lock(rest);
 
     const char *uuid;
-    uuid = u_map_get(req->map_url, "uuid");
+    uuid = u_map_get(req->map_url, "id");
     if (uuid == NULL)
     {
         ulfius_set_empty_body_response(resp, 400);
