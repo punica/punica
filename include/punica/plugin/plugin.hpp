@@ -22,10 +22,16 @@
 
 #include <string>
 
+namespace punica {
+namespace plugin {
+
 class Plugin
 {
 public:
     virtual ~Plugin() { }
 };
+
+}
+} /* namespace punica::rest */
 
 #endif // PUNICA_PLUGIN_PLUGIN_HPP

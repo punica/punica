@@ -36,8 +36,8 @@ public:
     virtual bool unloadPlugin(std::string name) = 0;
 
 protected:
-    Core *core;
-    std::map<std::string, std::pair<Plugin *, plugin_api_t *> > plugins;
+    punica::Core *core;
+    std::map<std::string, std::pair<punica::plugin::Plugin *, punica::plugin::plugin_api_t *> > plugins;
 };
 
 #endif // PUNICA_PLUGIN_MANAGER_PLUGIN_MANAGER_HPP 

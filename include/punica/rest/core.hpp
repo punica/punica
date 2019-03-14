@@ -17,15 +17,32 @@
  *
  */
 
-#ifndef LWM2M_CORE_HPP
-#define LWM2M_CORE_HPP
+#ifndef PUNICA_REST_CORE_HPP
+#define PUNICA_REST_CORE_HPP
 
-class Lwm2mCore
+#include <string>
+
+#include <punica/rest/request.hpp>
+#include <punica/rest/response.hpp>
+
+namespace punica {
+namespace rest {
+
+typedef StatusCode(*callback_function_t)(Request *, Response *, void *);
+
+class Core
 {
 public:
-    virtual ~Lwm2mCore() { }
+    virtual ~Core() { }
 
-    virtual void *getContext() = 0;
+    virtual void addHandler(const std::string method,
+                            const std::string url_prefix,
+                            unsigned int priority,
+                            callback_function_t handler_function,
+                            void *handler_context) = 0;
 };
 
-#endif // LWM2M_CORE_HPP
+}
+} /* namespace punica::rest */
+
+#endif // PUNICA_REST_CORE_HPP

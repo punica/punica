@@ -22,9 +22,9 @@
 #include <punica/core.hpp>
 #include <punica/plugin/plugin.hpp>
 #include <punica/plugin/plugin_api.hpp>
-#include <punica/rest/rest_core.hpp>
+#include <punica/rest/core.hpp>
 
-class TestPlugin: public Plugin
+class TestPlugin: public punica::plugin::Plugin
 {
 public:
     TestPlugin(std::string test_stamp): stamp(test_stamp) { }
@@ -37,12 +37,14 @@ private:
     std::string stamp;
 };
 
-StatusCode stamp(Request *request, Response *response, void *context);
+punica::rest::StatusCode stamp(punica::rest::Request *request,
+                               punica::rest::Response *response,
+                               void *context);
 
-static Plugin *NewTestPlugin(Core *core);
-static void DeleteTestPlugin(Plugin *plugin);
+static punica::plugin::Plugin *NewTestPlugin(punica::Core *core);
+static void DeleteTestPlugin(punica::plugin::Plugin *plugin);
 
-extern "C" const plugin_api_t PLUGIN_API =
+extern "C" const punica::plugin::plugin_api_t PLUGIN_API =
 {
     .version = { 0, 0, 0},
     .create = NewTestPlugin,

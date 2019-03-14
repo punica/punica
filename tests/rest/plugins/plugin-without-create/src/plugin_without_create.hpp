@@ -23,17 +23,17 @@
 #include <punica/plugin/plugin.hpp>
 #include <punica/plugin/plugin_api.hpp>
 
-class PluginWithoutCreate: public Plugin
+class PluginWithoutCreate: public punica::plugin::Plugin
 {
 public:
     PluginWithoutCreate() { }
     ~PluginWithoutCreate() { }
 };
 
-static Plugin *NewPluginWithoutCreate(Core *core);
-static void DeletePluginWithoutCreate(Plugin *plugin);
+static punica::plugin::Plugin *NewPluginWithoutCreate(punica::Core *core);
+static void DeletePluginWithoutCreate(punica::plugin::Plugin *plugin);
 
-extern "C" const plugin_api_t PLUGIN_API =
+extern "C" const punica::plugin::plugin_api_t PLUGIN_API =
 {
     .version = { 0, 0, 0},
     .create = NULL,

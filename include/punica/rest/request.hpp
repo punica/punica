@@ -26,6 +26,9 @@
 
 #include <stdint.h>
 
+namespace punica {
+namespace rest {
+
 class Request
 {
 public:
@@ -36,5 +39,8 @@ public:
     virtual std::string getHeader(const std::string header) = 0;
     virtual std::vector<uint8_t> getBody() = 0;
 };
+
+}
+} /* namespace punica::rest */
 
 #endif // PUNICA_REST_REQUEST_HPP

@@ -22,7 +22,7 @@
 
 #include <punica/rest/request.hpp>
 
-class UlfiusRequest: public Request
+class UlfiusRequest: public punica::rest::Request
 {
 public:
     UlfiusRequest(const struct _u_request *u_request);

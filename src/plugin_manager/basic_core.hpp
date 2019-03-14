@@ -32,17 +32,18 @@ extern "C" {
 } // extern "C"
 #endif
 
-class BasicCore: public Core
+class BasicCore: public punica::Core
 {
 public:
-    BasicCore(struct _u_instance *ulfius_instance, void *rest_context);
+    BasicCore(struct _u_instance *ulfius_instance,
+              void *rest_context);
     ~BasicCore();
-    RestCore *getRestCore();
-    Lwm2mCore *getLwm2mCore();
+    punica::rest::Core *getRestCore();
+    punica::lwm2m::Core *getLwm2mCore();
 
 private:
-    RestCore *restCore;
-    Lwm2mCore *lwm2mCore;
+    punica::rest::Core *restCore;
+    punica::lwm2m::Core *lwm2mCore;
 };
 
 #endif // PUNICA_PLUGIN_MANAGER_BASIC_CORE_HPP

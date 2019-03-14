@@ -19,14 +19,14 @@
 
 #include "plugin_without_destroy.hpp"
 
-static Plugin *NewPluginWithoutDestroy(Core *core)
+static punica::plugin::Plugin *NewPluginWithoutDestroy(punica::Core *core)
 {
     PluginWithoutDestroy *plugin = new PluginWithoutDestroy();
 
     return plugin;
 }
 
-static void DeletePluginWithoutDestroy(Plugin *plugin)
+static void DeletePluginWithoutDestroy(punica::plugin::Plugin *plugin)
 {
     delete static_cast<PluginWithoutDestroy *>(plugin);
 }

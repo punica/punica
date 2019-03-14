@@ -50,7 +50,7 @@ void UlfiusResponse_setCode(CUlfiusResponse *c_response,
                             const CStatusCode c_code)
 {
     UlfiusResponse *response = reinterpret_cast<UlfiusResponse *>(c_response);
-    const StatusCode code = static_cast<StatusCode>(c_code);
+    const punica::rest::StatusCode code = static_cast<punica::rest::StatusCode>(c_code);
     response->setCode(code);
 }
 void UlfiusResponse_setHeader(CUlfiusResponse *c_response, const char *c_header,
@@ -91,7 +91,7 @@ void UlfiusResponse::setBody(std::vector<uint8_t> binary_data)
     }
 }
 
-void UlfiusResponse::setCode(StatusCode code)
+void UlfiusResponse::setCode(punica::rest::StatusCode code)
 {
     ulfius_response->status = static_cast<int>(code);
 }

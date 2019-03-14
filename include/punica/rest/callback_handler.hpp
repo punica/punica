@@ -20,14 +20,21 @@
 #ifndef PUNICA_REST_CALLBACK_HANDLER_HPP
 #define PUNICA_REST_CALLBACK_HANDLER_HPP
 
+namespace punica {
+namespace rest {
+
 class CallbackHandler
 {
 public:
-    CallbackHandler(callback_function_t handler_function, void *handler_context)
+    CallbackHandler(callback_function_t handler_function,
+                    void *handler_context)
         : function(handler_function), context(handler_context)
     { }
     callback_function_t function;
     void *context;
 };
+
+}
+} /* namespace punica::rest */
 
 #endif // PUNICA_REST_CALLBACK_HANDLER_HPP

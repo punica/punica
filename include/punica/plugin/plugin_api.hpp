@@ -25,6 +25,9 @@
 
 #define PLUGIN_API_HANDLE_NAME "PLUGIN_API"
 
+namespace punica {
+namespace plugin {
+
 typedef Plugin *(*plugin_create_t)(Core *core);
 typedef void (*plugin_destroy_t)(Plugin *plugin);
 
@@ -41,5 +44,8 @@ typedef struct
     plugin_create_t create;
     plugin_destroy_t destroy;
 } plugin_api_t;
+
+}
+} /* namespace punica::rest */
 
 #endif // PUNICA_PLUGIN_PLUGIN_API_HPP

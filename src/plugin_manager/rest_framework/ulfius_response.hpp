@@ -22,14 +22,14 @@
 
 #include <punica/rest/response.hpp>
 
-class UlfiusResponse: public Response
+class UlfiusResponse: public punica::rest::Response
 {
 public:
     UlfiusResponse(struct _u_response *u_response);
     ~UlfiusResponse();
 
     void setBody(std::vector<uint8_t> binary_data);
-    void setCode(const StatusCode code);
+    void setCode(const punica::rest::StatusCode code);
     void setHeader(const std::string header, const std::string value);
 
 private:

@@ -20,7 +20,7 @@
 #ifndef PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REST_CORE_H
 #define PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REST_CORE_H
 
-#include <punica/rest/rest_core.h>
+#include <punica/rest/core.h>
 
 struct CUlfiusRestCore;
 typedef struct CUlfiusRestCore CUlfiusRestCore;

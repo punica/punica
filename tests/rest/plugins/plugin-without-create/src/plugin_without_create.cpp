@@ -19,14 +19,14 @@
 
 #include "plugin_without_create.hpp"
 
-static Plugin *NewPluginWithoutCreate(Core *core)
+static punica::plugin::Plugin *NewPluginWithoutCreate(punica::Core *core)
 {
     PluginWithoutCreate *plugin = new PluginWithoutCreate();
 
     return plugin;
 }
 
-static void DeletePluginWithoutCreate(Plugin *plugin)
+static void DeletePluginWithoutCreate(punica::plugin::Plugin *plugin)
 {
     delete static_cast<PluginWithoutCreate *>(plugin);
 }

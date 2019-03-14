@@ -41,7 +41,7 @@ CUlfiusRestCore *BasicCore_getRestCore(CBasicCore
                                        *c_manager_core)
 {
     BasicCore *manager_core = reinterpret_cast<BasicCore *>(c_manager_core);
-    RestCore *rest_core = manager_core->getRestCore();
+    punica::rest::Core *rest_core = manager_core->getRestCore();
 
     return reinterpret_cast<CUlfiusRestCore *>(rest_core);
 }
@@ -49,7 +49,7 @@ CBasicLwm2mCore *BasicCore_getLwm2mCore(CBasicCore
                                         *c_manager_core)
 {
     BasicCore *manager_core = reinterpret_cast<BasicCore *>(c_manager_core);
-    Lwm2mCore *lwm2m_core = manager_core->getLwm2mCore();
+    punica::lwm2m::Core *lwm2m_core = manager_core->getLwm2mCore();
 
     return reinterpret_cast<CBasicLwm2mCore *>(lwm2m_core);
 }
@@ -69,11 +69,11 @@ BasicCore::~BasicCore()
     delete restCore;
     delete lwm2mCore;
 }
-RestCore *BasicCore::getRestCore()
+punica::rest::Core *BasicCore::getRestCore()
 {
     return restCore;
 }
-Lwm2mCore *BasicCore::getLwm2mCore()
+punica::lwm2m::Core *BasicCore::getLwm2mCore()
 {
     return lwm2mCore;
 }

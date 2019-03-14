@@ -21,7 +21,7 @@
 
 #include <punica/plugin/plugin.hpp>
 
-class PluginWithoutApi: public Plugin
+class PluginWithoutApi: public punica::plugin::Plugin
 {
 public:
     PluginWithoutApi(std::string test_stamp): stamp(test_stamp) { }

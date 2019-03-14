@@ -20,20 +20,24 @@
 #ifndef PUNICA_CORE_HPP
 #define PUNICA_CORE_HPP
 
-#include <punica/rest/rest_core.hpp>
-#include <punica/lwm2m_core.hpp>
+#include <punica/rest/core.hpp>
+#include <punica/lwm2m/core.hpp>
+
+namespace punica {
 
 class Core
 {
 public:
     virtual ~Core() { }
 
-    virtual RestCore *getRestCore() = 0;
-    virtual Lwm2mCore *getLwm2mCore() = 0;
+    virtual punica::rest::Core *getRestCore() = 0;
+    virtual punica::lwm2m::Core *getLwm2mCore() = 0;
 
 protected:
-    RestCore *restCore;
-    Lwm2mCore *lwm2mCore;
+    punica::rest::Core *restCore;
+    punica::lwm2m::Core *lwm2mCore;
 };
+
+} /* namespace punica */
 
 #endif // PUNICA_CORE_HPP

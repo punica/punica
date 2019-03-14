@@ -62,14 +62,15 @@ int BasicPluginManager_unloadPlugin(CBasicPluginManager *c_manager,
 } // extern "C"
 #endif
 
-BasicPluginManager::BasicPluginManager(Core *plugin_core):
+BasicPluginManager::BasicPluginManager(punica::Core *plugin_core):
     core(plugin_core),
     plugins()
 {
 }
 BasicPluginManager::~BasicPluginManager()
 {
-    std::map<std::string, std::pair<Plugin *, plugin_api_t *> >::iterator plugins_iterator;
+    std::map<std::string, std::pair<punica::plugin::Plugin *, punica::plugin::plugin_api_t *> >::iterator
+    plugins_iterator;
 
     for (plugins_iterator = plugins.begin(); plugins_iterator != plugins.end(); ++plugins_iterator)
     {
@@ -93,7 +94,8 @@ bool BasicPluginManager::loadPlugin(std::string path, std::string name)
         return false;
     }
 
-    plugin_api_t *plugin_api = static_cast<plugin_api_t *>(dlsym(dll, PLUGIN_API_HANDLE_NAME));
+    punica::plugin::plugin_api_t *plugin_api = static_cast<punica::plugin::plugin_api_t *>(dlsym(dll,
+                                               PLUGIN_API_HANDLE_NAME));
 
     if (plugin_api == NULL)
     {
@@ -114,8 +116,8 @@ bool BasicPluginManager::loadPlugin(std::string path, std::string name)
         return false;
     }
 
-    plugin_version_t plugin_version = plugin_api->version;
-    Plugin *plugin = plugin_api->create(core);
+    punica::plugin::plugin_version_t plugin_version = plugin_api->version;
+    punica::plugin::Plugin *plugin = plugin_api->create(core);
 
     if (plugin == NULL)
     {
@@ -129,10 +131,11 @@ bool BasicPluginManager::loadPlugin(std::string path, std::string name)
 }
 bool BasicPluginManager::unloadPlugin(std::string name)
 {
-    std::map<std::string, std::pair<Plugin *, plugin_api_t *> >::iterator plugins_iterator =
+    std::map<std::string, std::pair<punica::plugin::Plugin *, punica::plugin::plugin_api_t *> >::iterator
+    plugins_iterator =
         plugins.find(name);
-    Plugin *plugin;
-    plugin_api_t *plugin_api;
+    punica::plugin::Plugin *plugin;
+    punica::plugin::plugin_api_t *plugin_api;
 
     if (plugins_iterator == plugins.end())
     {

@@ -32,7 +32,9 @@ void TestPlugin::setStamp(std::string new_stamp)
     stamp = new_stamp;
 }
 
-StatusCode stamp(Request *request, Response *response, void *context)
+punica::rest::StatusCode stamp(punica::rest::Request *request,
+                               punica::rest::Response *response,
+                               void *context)
 {
     TestPlugin* plugin = reinterpret_cast<TestPlugin *>(context);
     std::string stamp;
@@ -42,7 +44,7 @@ StatusCode stamp(Request *request, Response *response, void *context)
     std::string string_response_body;
     std::vector<uint8_t> request_body;
     std::vector<uint8_t> response_body;
-    StatusCode status_code = success_ok;
+    punica::rest::StatusCode status_code = punica::rest::success_ok;
     
     response->setHeader("Test-status", "success");
   
@@ -58,7 +60,7 @@ StatusCode stamp(Request *request, Response *response, void *context)
 
         plugin->setStamp(string_request_body);
 
-        status_code = success_no_content;
+        status_code = punica::rest::success_no_content;
     }
     else if (method == "POST")
     {
@@ -83,7 +85,7 @@ StatusCode stamp(Request *request, Response *response, void *context)
     {
         response->setHeader("Test-status", "fail");
 
-        status_code = client_error_method_not_allowed;
+        status_code = punica::rest::client_error_method_not_allowed;
     }
 
     response_body = std::vector<uint8_t>(string_response_body.begin(), string_response_body.end());
@@ -93,16 +95,16 @@ StatusCode stamp(Request *request, Response *response, void *context)
     return status_code;
 }
 
-static Plugin *NewTestPlugin(Core *core)
+static punica::plugin::Plugin *NewTestPlugin(punica::Core *core)
 {
     TestPlugin *plugin = new TestPlugin("Test Plugin Stamp");
-    RestCore *rest_core = core->getRestCore();
+    punica::rest::Core *rest_core = core->getRestCore();
     rest_core->addHandler("*", "/test_plugin/stamp", 10, stamp, reinterpret_cast<void *>(plugin));
 
     return plugin;
 }
 
-static void DeleteTestPlugin(Plugin *plugin)
+static void DeleteTestPlugin(punica::plugin::Plugin *plugin)
 {
     delete static_cast<TestPlugin *>(plugin);
 }

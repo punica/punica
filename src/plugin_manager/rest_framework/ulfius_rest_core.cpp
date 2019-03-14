@@ -64,7 +64,8 @@ void UlfiusRestCore_addHandler(CUlfiusRestCore *c_core,
                                c_callback_function_t c_handler_function, void *handler_context)
 {
     UlfiusRestCore *core = reinterpret_cast<UlfiusRestCore *>(c_core);
-    callback_function_t handler_function = reinterpret_cast<callback_function_t>(c_handler_function);
+    punica::rest::callback_function_t handler_function =
+        reinterpret_cast<punica::rest::callback_function_t>(c_handler_function);
 
     core->addHandler(method, url_prefix, priority, handler_function, handler_context);
 }
@@ -78,7 +79,7 @@ UlfiusRestCore::UlfiusRestCore(struct _u_instance *instance):
 { }
 UlfiusRestCore::~UlfiusRestCore()
 {
-    for (std::vector<CallbackHandler *>::size_type index = 0;
+    for (std::vector<punica::rest::CallbackHandler *>::size_type index = 0;
          index < callbackHandlers.size(); ++index)
     {
         delete callbackHandlers[index];
@@ -101,36 +102,36 @@ void UlfiusRestCore::stopCore()
 int UlfiusRestCore::ulfiusCallback(const struct _u_request *u_request,
                                    struct _u_response *u_response, void *context)
 {
-    StatusCode callback_status_code;
+    punica::rest::StatusCode callback_status_code;
 
     UlfiusRequest request(u_request);
     UlfiusResponse response(u_response);
 
-    CallbackHandler *handler = reinterpret_cast<CallbackHandler *>(context);
+    punica::rest::CallbackHandler *handler = reinterpret_cast<punica::rest::CallbackHandler *>(context);
     callback_status_code = handler->function(&request, &response, handler->context);
 
     switch (callback_status_code)
     {
-    case information_continue:
+    case punica::rest::information_continue:
         return U_CALLBACK_CONTINUE;
 
-    case success_ok:
-    case success_created:
-    case success_accepted:
-    case success_no_content:
-    case success_reset_content:
+    case punica::rest::success_ok:
+    case punica::rest::success_created:
+    case punica::rest::success_accepted:
+    case punica::rest::success_no_content:
+    case punica::rest::success_reset_content:
 
-    case client_error:
-    case client_error_forbidden:
-    case client_error_not_found:
-    case client_error_method_not_allowed:
-    case client_error_not_acceptable:
+    case punica::rest::client_error:
+    case punica::rest::client_error_forbidden:
+    case punica::rest::client_error_not_found:
+    case punica::rest::client_error_method_not_allowed:
+    case punica::rest::client_error_not_acceptable:
         return U_CALLBACK_COMPLETE;
 
-    case client_error_unauthorized:
+    case punica::rest::client_error_unauthorized:
         return U_CALLBACK_UNAUTHORIZED;
 
-    case server_error_internal_server_error:
+    case punica::rest::server_error_internal_server_error:
         return U_CALLBACK_ERROR;
 
     default:
@@ -140,9 +141,10 @@ int UlfiusRestCore::ulfiusCallback(const struct _u_request *u_request,
 
 void UlfiusRestCore::addHandler(
     const std::string method, const std::string url_prefix,
-    unsigned int priority, callback_function_t handler_function, void *handler_context)
+    unsigned int priority, punica::rest::callback_function_t handler_function, void *handler_context)
 {
-    CallbackHandler *handler = new CallbackHandler(handler_function, handler_context);
+    punica::rest::CallbackHandler *handler = new punica::rest::CallbackHandler(handler_function,
+            handler_context);
     callbackHandlers.push_back(handler);
     ulfius_add_endpoint_by_val(ulfius_instance, method.c_str(),
                                url_prefix.c_str(), NULL, priority, &ulfiusCallback,
