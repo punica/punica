@@ -291,7 +291,8 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
     rest_context_t *rest = (rest_context_t *)context;
     const char *ct;
     json_t *jdevice_list = NULL, *jdatabase_list = NULL, *j_post_resp = NULL;
-    database_entry_t *device_entry;
+    database_entry_t *device_entry = NULL;
+    int status = -1;
 
     rest_lock(rest);
 
@@ -315,7 +316,6 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         ulfius_set_empty_body_response(resp, 500);
         goto exit;
     }
-    linked_list_add(rest->devicesList, device_entry);
 
     j_post_resp = rest_devices_prepare_resp(device_entry, context);
     if (j_post_resp == NULL)
@@ -336,6 +336,9 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         device_entry->secret_key_len = 0;
     }
 
+    linked_list_add(rest->devicesList, device_entry);
+    status = 0;
+
 //  if database file not specified then only save locally
     if (rest->settings->coap.database_file)
     {
@@ -343,20 +346,23 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
 
         if (database_prepare_array(jdatabase_list, rest->devicesList))
         {
-            ulfius_set_empty_body_response(resp, 500);
+            ulfius_set_json_body_response(resp, 500, j_post_resp);
             goto exit;
         }
 
         if (json_dump_file(jdatabase_list, rest->settings->coap.database_file, 0) != 0)
         {
-            ulfius_set_empty_body_response(resp, 500);
+            ulfius_set_json_body_response(resp, 500, j_post_resp);
             goto exit;
         }
     }
 
     ulfius_set_json_body_response(resp, 201, j_post_resp);
 exit:
-    //TODO: if cb fails after device entry creation, device will be added to list but client will receive no response
+    if (status)
+    {
+        database_free_entry(device_entry);
+    }
     json_decref(jdevice_list);
     json_decref(jdatabase_list);
     json_decref(j_post_resp);

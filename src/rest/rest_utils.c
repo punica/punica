@@ -404,7 +404,6 @@ int coap_to_http_status(int status)
 
 void database_free_entry(database_entry_t *device_entry)
 {
-
     if (device_entry)
     {
         free(device_entry->uuid);
