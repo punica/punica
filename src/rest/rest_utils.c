@@ -35,7 +35,7 @@
 json_t *database_entry_to_json(void *entry, const char *key, database_base64_action action, size_t entry_size)
 {
     json_t *j_object = NULL, *j_string = NULL;
-    char base64_string[1024];
+    char base64_string[1024] = {0};
     size_t base64_length = sizeof(base64_string);
     int status = -1;
 
@@ -345,6 +345,10 @@ static int device_new_credentials(database_entry_t *device_entry, void *context)
             return -1;
         }
     }
+    else if (device_entry->mode == DEVICE_CREDENTIALS_NONE)
+    {
+        return 0;
+    }
     else
     {
         return -1;
@@ -406,7 +410,8 @@ int database_validate_new_entry(json_t *j_new_device_object, linked_list_t *devi
             value_string = json_string_value(j_value);
 
             if (strcasecmp(value_string, "psk")
-                && strcasecmp(value_string, "cert"))
+                && strcasecmp(value_string, "cert")
+                && strcasecmp(value_string, "none"))
             {
                 return -1;
             }
@@ -474,7 +479,8 @@ int database_validate_entry(json_t *j_device_object, linked_list_t *device_list)
             value_string = json_string_value(j_value);
 
             if (strcasecmp(value_string, "psk")
-                && strcasecmp(value_string, "cert"))
+                && strcasecmp(value_string, "cert")
+                && strcasecmp(value_string, "none"))
             {
                 return -1;
             }
@@ -484,7 +490,7 @@ int database_validate_entry(json_t *j_device_object, linked_list_t *device_list)
         else if (strcasecmp(key, "public_key") == 0)
         {
             ret = base64_decode(json_string_value(j_value), buffer, &buffer_len);
-            if (ret != BASE64_ERR_NONE)
+            if ((ret != BASE64_ERR_NONE) && (ret != BASE64_ERR_ARG)) // key might contain string with length of zero
             {
                 return -1;
             }
@@ -493,7 +499,7 @@ int database_validate_entry(json_t *j_device_object, linked_list_t *device_list)
         else if (strcasecmp(key, "secret_key") == 0)
         {
             ret = base64_decode(json_string_value(j_value), buffer, &buffer_len);
-            if ((ret != BASE64_ERR_NONE) && (ret != BASE64_ERR_ARG)) // key might contain string with length of zero
+            if ((ret != BASE64_ERR_NONE) && (ret != BASE64_ERR_ARG))
             {
                 return -1;
             }
@@ -545,12 +551,14 @@ database_entry_t *database_build_entry(json_t *j_device_object)
     if (strcasecmp(mode, "psk") == 0)
     {
         device_entry->mode = DEVICE_CREDENTIALS_PSK;
-        device_entry->secret_key = database_json_to_entry(j_device_object, "secret_key", BASE64_DECODE, &device_entry->secret_key_len);
     }
     else if (strcasecmp(mode, "cert") == 0)
     {
         device_entry->mode = DEVICE_CREDENTIALS_CERT;
-        device_entry->serial = database_json_to_entry(j_device_object, "serial", BASE64_DECODE, &device_entry->serial_len);
+    }
+    else if (strcasecmp(mode, "none") == 0)
+    {
+        device_entry->mode = DEVICE_CREDENTIALS_NONE;
     }
     else
     {
@@ -560,11 +568,16 @@ database_entry_t *database_build_entry(json_t *j_device_object)
     device_entry->uuid = database_json_to_entry(j_device_object, "uuid", BASE64_NO_ACTION, NULL);
     device_entry->name = database_json_to_entry(j_device_object, "name", BASE64_NO_ACTION, NULL);
     device_entry->public_key = database_json_to_entry(j_device_object, "public_key", BASE64_DECODE, &device_entry->public_key_len);
+    device_entry->secret_key = database_json_to_entry(j_device_object, "secret_key", BASE64_DECODE, &device_entry->secret_key_len);
+    device_entry->serial = database_json_to_entry(j_device_object, "serial", BASE64_DECODE, &device_entry->serial_len);
     if (device_entry->uuid == NULL
         || device_entry->name == NULL
-        || device_entry->public_key == NULL
-        || (device_entry->secret_key == NULL
-        && device_entry->serial == NULL))
+        || (device_entry->mode == DEVICE_CREDENTIALS_PSK // some entry types must contain keys that other don't
+        && (device_entry->secret_key == NULL
+        || device_entry->public_key == NULL))
+        || (device_entry->mode == DEVICE_CREDENTIALS_CERT
+        && (device_entry->serial == NULL
+        || device_entry->public_key == NULL)))
     {
         goto exit;
     }
@@ -611,6 +624,10 @@ database_entry_t *database_build_new_entry(json_t *j_device_object, void *contex
     else if (strcasecmp(mode, "cert") == 0)
     {
         device_entry->mode = DEVICE_CREDENTIALS_CERT;
+    }
+    else if (strcasecmp(mode, "none") == 0)
+    {
+        device_entry->mode = DEVICE_CREDENTIALS_NONE;
     }
     else
     {
@@ -705,6 +722,10 @@ int database_prepare_array(json_t *j_array, linked_list_t *device_list)
         else if (device_entry->mode == DEVICE_CREDENTIALS_CERT)
         {
             mode_string = "cert";
+        }
+        else if (device_entry->mode == DEVICE_CREDENTIALS_NONE)
+        {
+            mode_string = "none";
         }
         else
         {

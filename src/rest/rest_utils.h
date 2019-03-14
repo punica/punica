@@ -29,6 +29,7 @@ typedef enum
 {
     DEVICE_CREDENTIALS_PSK = 1,
     DEVICE_CREDENTIALS_CERT = 2,
+    DEVICE_CREDENTIALS_NONE = 3,
 } credentials_mode_t;
 
 typedef enum

@@ -137,6 +137,10 @@ static json_t *rest_devices_prepare_resp(database_entry_t *device_entry, void *c
             goto exit;
         }
     }
+    else if (device_entry->mode == DEVICE_CREDENTIALS_NONE)
+    {
+        mode_string = "none";
+    }
 
     uuid = database_entry_to_json(device_entry->uuid, "uuid", BASE64_NO_ACTION, 0);
     name = database_entry_to_json(device_entry->name, "name", BASE64_NO_ACTION, 0);
