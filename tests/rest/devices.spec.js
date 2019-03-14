@@ -82,6 +82,33 @@ describe('Devices interface', () => {
         });
     });
 
+    it('should return 201 for device with no security credentials', (done) => {
+      const id_regex = /^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
+      chai.request(server)
+        .post('/devices')
+        .set('Content-Type', 'application/json')
+        .send('{"name":"client-none-1","mode":"none"}')
+        .end( (err, res) => {
+          should.not.exist(err);
+          res.should.have.status(201);
+
+          res.body.should.be.a('object');
+          res.body.should.have.a.property('uuid');
+          res.body.should.have.a.property('name');
+          res.body.should.have.a.property('mode');
+          res.body.should.have.a.property('public_key');
+          res.body.should.have.a.property('secret_key');
+
+          res.body['uuid'].should.match(id_regex);
+          res.body['name'].should.be.equal('client-none-1');
+          res.body['mode'].should.be.equal('none');
+          res.body['public_key'].should.be.equal('');
+          res.body['secret_key'].should.be.equal('');
+
+          done();
+        });
+    });
+
     it('should return 400 if payload is empty', (done) => {
       chai.request(server)
         .post('/devices')
@@ -178,7 +205,7 @@ describe('Devices interface', () => {
           res.should.have.header('content-type', 'application/json');
 
           res.body.should.be.a('array');
-          res.body.length.should.equal(3);
+          res.body.length.should.equal(4);
 
           for (i = 0; i < res.body.length; i++) {
               res.body[i].should.be.a('object');
