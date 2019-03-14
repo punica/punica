@@ -42,7 +42,7 @@ public:
                             void *handler_context) = 0;
 };
 
-}
-} /* namespace punica::rest */
+} /* namespace rest */
+} /* namespace punica */
 
 #endif // PUNICA_REST_CORE_HPP

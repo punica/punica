@@ -31,7 +31,7 @@ public:
     virtual void *getContext() = 0;
 };
 
-}
-} /* namespace punica::lwm2m */
+} /* namespace lwm2m */
+} /* namespace punica */
 
 #endif // PUNICA_LWM2M_CORE_HPP

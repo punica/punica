@@ -40,7 +40,7 @@ public:
     virtual std::vector<uint8_t> getBody() = 0;
 };
 
-}
-} /* namespace punica::rest */
+} /* namespace rest */
+} /* namespace punica */
 
 #endif // PUNICA_REST_REQUEST_HPP

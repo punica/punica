@@ -34,7 +34,7 @@ public:
     void *context;
 };
 
-}
-} /* namespace punica::rest */
+} /* namespace rest */
+} /* namespace punica */
 
 #endif // PUNICA_REST_CALLBACK_HANDLER_HPP

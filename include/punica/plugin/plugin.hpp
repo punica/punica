@@ -31,7 +31,7 @@ public:
     virtual ~Plugin() { }
 };
 
-}
-} /* namespace punica::rest */
+} /* namespace plugin */
+} /* namespace punica */
 
 #endif // PUNICA_PLUGIN_PLUGIN_HPP

@@ -58,7 +58,7 @@ public:
                            const std::string value) = 0;
 };
 
-}
-} /* namespace punica::rest */
+} /* namespace rest */
+} /* namespace punica */
 
 #endif // PUNICA_REST_RESPONSE_HPP

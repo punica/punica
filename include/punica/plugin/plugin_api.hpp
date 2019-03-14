@@ -45,7 +45,7 @@ typedef struct
     plugin_destroy_t destroy;
 } plugin_api_t;
 
-}
-} /* namespace punica::rest */
+} /* namespace plugin */
+} /* namespace punica */
 
 #endif // PUNICA_PLUGIN_PLUGIN_API_HPP
