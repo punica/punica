@@ -64,11 +64,9 @@ describe('Secure endpoints interface', () => {
 
         pskOptions.uuid = dataAndResponse.data.uuid;
 
-        buf = new Buffer(dataAndResponse.data.secret_key, 'base64');
-        pskOptions.psk = buf.toString('ascii');
+        pskOptions.psk = new Buffer(dataAndResponse.data.secret_key, 'base64');
 
-        buf = new Buffer(dataAndResponse.data.public_key, 'base64');
-        pskOptions.pskIdentity = buf.toString('ascii');
+        pskOptions.pskIdentity = new Buffer(dataAndResponse.data.public_key, 'base64');
       });
       let promise2 = service.post('/devices', cert_request, 'application/json').then((dataAndResponse) => {
         let buf = undefined;
@@ -77,14 +75,9 @@ describe('Secure endpoints interface', () => {
 
         certOptions.uuid = dataAndResponse.data.uuid;
 
-        buf = new Buffer(dataAndResponse.data.secret_key, 'base64');
-        certOptions.key = buf.toString('ascii');
-
-        buf = new Buffer(dataAndResponse.data.public_key, 'base64');
-        certOptions.certificate = buf.toString('ascii');
-
-        buf = new Buffer(dataAndResponse.data.server_key, 'base64');
-        certOptions.CA = buf.toString('ascii');
+        certOptions.key = new Buffer(dataAndResponse.data.secret_key, 'base64');
+        certOptions.certificate = new Buffer(dataAndResponse.data.public_key, 'base64');
+        certOptions.CA = new Buffer(dataAndResponse.data.server_key, 'base64');
       });
 
       Promise.all([promise1, promise2]).then(() => {
