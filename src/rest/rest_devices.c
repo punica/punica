@@ -324,8 +324,13 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
     {
         goto exit;
     }
-    free(device_entry->secret_key);
-    device_entry->secret_key = NULL;
+
+    if (device_entry->mode == DEVICE_CREDENTIALS_CERT)
+    {
+        free(device_entry->secret_key);
+        device_entry->secret_key = NULL;
+        device_entry->secret_key_len = 0;
+    }
 
 //  if database file not specified then only save locally
     if (rest->settings->coap.database_file)
