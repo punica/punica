@@ -1,85 +1,121 @@
 const chai = require('chai');
 const chai_http = require('chai-http');
 const should = chai.should();
+const punica = require('punica');
+const fs = require('fs');
 var server = require('./server-if');
 
 chai.use(chai_http);
 
 describe('Devices interface', () => {
   let test_uuid = undefined;
+  let test_uuid_2 = undefined;
   let test_psk_id = undefined;
   let test_name = undefined;
   let test_mode = undefined;
 
-  before(() => {
+  const service_options = {
+    host: 'https://localhost:8889',
+    ca: fs.readFileSync('../../certificate.pem'),
+    authentication: true,
+    username: 'admin',
+    password: 'not-same-as-name',
+    polling: true,
+    interval: 1234,
+    port: 1234,
+  };
+
+  const service = new punica.Service(service_options);
+
+  before((done) => {
     server.start();
+
+    service.authenticate().then((data) => {
+      service.authenticationToken = data.access_token;
+      done();
+    }).catch((err) => {
+      console.error(`Failed to authenticate user: ${err}`);
+      done(err);
+    });
   });
 
-  after(() => {
+  after((done) => {
+    service.delete('/devices/' + test_uuid_2).then((dataAndResponse) => {
+      dataAndResponse.resp.statusCode.should.equal(200);
+      done();
+    }).catch((err) => {
+      done(err);
+    });
   });
 
   describe('POST /devices', function() {
-    it('should return 201 for psk device', (done) => {
-      const id_regex = /^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
-      const base64_regex = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$/;
-      test_name = 'client-psk-1';
-      test_mode = 'psk';
-      chai.request(server)
-        .post('/devices')
-        .set('Content-Type', 'application/json')
-        .send('{"name":"' + test_name + '","mode":"' + test_mode + '"}')
-        .end( (err, res) => {
-          should.not.exist(err);
-          res.should.have.status(201);
-
-          res.body.should.be.a('object');
-          res.body.should.have.a.property('uuid');
-          res.body.should.have.a.property('name');
-          res.body.should.have.a.property('mode');
-          res.body.should.have.a.property('public_key');
-          res.body.should.have.a.property('secret_key');
-
-          res.body['uuid'].should.match(id_regex);
-          res.body['name'].should.be.equal(test_name);
-          res.body['mode'].should.be.equal(test_mode);
-          res.body['public_key'].should.match(base64_regex);
-          res.body['secret_key'].should.match(base64_regex);
-
-          test_uuid = res.body['uuid'];
-          test_psk_id = res.body['public_key'];
-
-          done();
-        });
-    });
-
     it('should return 201 for certificate device', (done) => {
       const id_regex = /^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
       const base64_regex = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$/;
-      chai.request(server)
-        .post('/devices')
-        .set('Content-Type', 'application/json')
-        .send('{"name":"client-cert-1","mode":"cert"}')
-        .end( (err, res) => {
-          should.not.exist(err);
-          res.should.have.status(201);
+      test_name = 'client-cert-1';
+      test_mode = 'cert';
+      const request = {"name": test_name, "mode": test_mode};
 
-          res.body.should.be.a('object');
-          res.body.should.have.a.property('uuid');
-          res.body.should.have.a.property('name');
-          res.body.should.have.a.property('mode');
-          res.body.should.have.a.property('public_key');
-          res.body.should.have.a.property('secret_key');
-          res.body.should.have.a.property('server_key');
+      service.post('/devices', request, 'application/json').then((dataAndResponse) => {
+        let data = dataAndResponse.data;
+        let resp = dataAndResponse.resp;
 
-          res.body['uuid'].should.match(id_regex);
-          res.body['name'].should.be.equal('client-cert-1');
-          res.body['mode'].should.be.equal('cert');
-          res.body['public_key'].should.match(base64_regex);
-          res.body['secret_key'].should.match(base64_regex);
-          res.body['server_key'].should.match(base64_regex);
+        resp.statusCode.should.equal(201);
 
-          done();
-        });
+        data.should.be.a('object');
+        data.should.have.a.property('uuid');
+        data.should.have.a.property('name');
+        data.should.have.a.property('mode');
+        data.should.have.a.property('public_key');
+        data.should.have.a.property('secret_key');
+        data.should.have.a.property('server_key');
+
+        data['uuid'].should.match(id_regex);
+        data['name'].should.be.equal(test_name);
+        data['mode'].should.be.equal(test_mode);
+        data['public_key'].should.match(base64_regex);
+        data['secret_key'].should.match(base64_regex);
+        data['server_key'].should.match(base64_regex);
+
+        test_uuid = data['uuid'];
+        test_psk_id = data['public_key'];
+
+        done();
+      }).catch((err) => {
+        done(err);
+      });
+    });
+
+    it('should return 201 for psk device', (done) => {
+      const id_regex = /^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
+      const base64_regex = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$/;
+      const request = {"name": "client-psk-1", "mode": "psk"};
+
+      service.post('/devices', request, 'application/json').then((dataAndResponse) => {
+        let data = dataAndResponse.data;
+        let resp = dataAndResponse.resp;
+
+        resp.statusCode.should.equal(201);
+
+        data.should.be.a('object');
+        data.should.have.a.property('uuid');
+        data.should.have.a.property('name');
+        data.should.have.a.property('mode');
+        data.should.have.a.property('public_key');
+        data.should.have.a.property('secret_key');
+
+        data['uuid'].should.match(id_regex);
+        data['name'].should.be.equal('client-psk-1');
+        data['mode'].should.be.equal('psk');
+        data['public_key'].should.match(base64_regex);
+        data['secret_key'].should.match(base64_regex);
+
+        test_uuid_2 = data['uuid'];
+
+        done();
+      }).catch((err) => {
+        done(err);
+      });
     });
 
     it('should return 201 for device with no security credentials', (done) => {
@@ -89,7 +125,6 @@ describe('Devices interface', () => {
         .set('Content-Type', 'application/json')
         .send('{"name":"client-none-1","mode":"none"}')
         .end( (err, res) => {
-          should.not.exist(err);
           res.should.have.status(201);
 
           res.body.should.be.a('object');
@@ -166,13 +201,11 @@ describe('Devices interface', () => {
 
     it('should return 201 if additional invalid key in payload', (done) => {
       const id_regex = /^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
-      const base64_regex = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$/;
       chai.request(server)
         .post('/devices')
         .set('Content-Type', 'application/json')
-        .send('{"name":"client-psk-2","mode":"psk","invalid-key":"invalid-value"}')
+        .send('{"name":"client-none-2","mode":"none","invalid-key":"invalid-value"}')
         .end( (err, res) => {
-          should.not.exist(err);
           res.should.have.status(201);
 
           res.body.should.be.a('object');
@@ -184,10 +217,10 @@ describe('Devices interface', () => {
           res.body.should.not.have.property('invalid-key');
 
           res.body['uuid'].should.match(id_regex);
-          res.body['name'].should.be.equal('client-psk-2');
-          res.body['mode'].should.be.equal('psk');
-          res.body['public_key'].should.match(base64_regex);
-          res.body['secret_key'].should.match(base64_regex);
+          res.body['name'].should.be.equal('client-none-2');
+          res.body['mode'].should.be.equal('none');
+          res.body['public_key'].should.equal('');
+          res.body['secret_key'].should.equal('');
 
           done();
         });
@@ -195,17 +228,16 @@ describe('Devices interface', () => {
   });
 
   describe('GET /devices', function() {
-    it('should return json array of device entries with a length of three', (done) => {
+    it('should return json array of device entries with a length of two', (done) => {
       const id_regex = /^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
       chai.request(server)
         .get('/devices')
         .end((err, res) => {
-          should.not.exist(err);
           res.should.have.status(200);
           res.should.have.header('content-type', 'application/json');
 
           res.body.should.be.a('array');
-          res.body.length.should.equal(4);
+          res.body.length.should.equal(2);
 
           for (i = 0; i < res.body.length; i++) {
               res.body[i].should.be.a('object');
@@ -213,11 +245,6 @@ describe('Devices interface', () => {
               res.body[i].should.have.property('name');
               res.body[i].should.have.property('mode');
               res.body[i].should.have.property('public_key');
-
-              let mode = res.body[i]['mode'];
-              if (mode == 'cert') {
-                res.body[i].should.have.property('server_key');
-              }
 
               res.body[i]['uuid'].should.match(id_regex);
           }
@@ -229,26 +256,29 @@ describe('Devices interface', () => {
 
   describe('GET /devices:uuid', function() {
     it('should return a single object', (done) => {
-      chai.request(server)
-        .get('/devices/' + test_uuid)
-        .end((err, res) => {
-          should.not.exist(err);
-          res.should.have.status(200);
-          res.should.have.header('content-type', 'application/json');
+      service.get('/devices/' + test_uuid).then((dataAndResponse) => {
+        let data = dataAndResponse.data;
+        let resp = dataAndResponse.resp;
 
-          res.body.should.be.a('object');
-          res.body.should.have.property('uuid');
-          res.body.should.have.property('name');
-          res.body.should.have.property('mode');
-          res.body.should.have.property('public_key');
+        resp.statusCode.should.equal(200);
+        resp.should.have.header('content-type', 'application/json');
 
-          res.body['uuid'].should.be.eql(test_uuid);
-          res.body['name'].should.be.eql(test_name);
-          res.body['mode'].should.be.eql(test_mode);
-          res.body['public_key'].should.be.eql(test_psk_id);
+        data.should.be.a('object');
+        data.should.have.property('uuid');
+        data.should.have.property('name');
+        data.should.have.property('mode');
+        data.should.have.property('public_key');
+        data.should.have.property('server_key');
 
-          done();
-        });
+        data['uuid'].should.be.eql(test_uuid);
+        data['name'].should.be.eql(test_name);
+        data['mode'].should.be.eql(test_mode);
+        data['public_key'].should.be.eql(test_psk_id);
+
+        done();
+      }).catch((err) => {
+        done(err);
+      });
     });
 
     it('should return 404 if \'uuid\' is non-existing', (done) => {
@@ -264,25 +294,26 @@ describe('Devices interface', () => {
   describe('PUT /devices:uuid', function() {
     it('should return 201', (done) => {
       let new_test_name = 'client-psk-new';
-      chai.request(server)
-        .put('/devices/' + test_uuid)
-        .set('Content-Type', 'application/json')
-        .send('{"name":"' + new_test_name + '"}')
-        .end((err, res) => {
-          should.not.exist(err);
-          res.should.have.status(201);
+      const request = {"name": new_test_name};
 
-          chai.request(server)
-            .get('/devices/' + test_uuid)
-            .end((error, response) => {
-                should.not.exist(error);
-                response.should.have.status(200);
+      service.put('/devices/' + test_uuid, request, 'application/json').then((dataAndResponse) => {
+        let resp = dataAndResponse.resp;
 
-                response.body.name.should.be.eql(new_test_name);
+        resp.statusCode.should.equal(201);
 
-                done();
-            });
+        service.get('/devices/' + test_uuid).then((dAR) => {
+          resp = dAR.resp;
+          let data = dAR.data;
+
+          resp.statusCode.should.equal(200);
+          data['name'].should.equal(new_test_name);
+          done();
+        }).catch((err) => {
+          done(err);
         });
+      }).catch((err) => {
+        done(err);
+      });
     });
 
     it('should return 400 if \'uuid\' is non-existing', (done) => {
@@ -299,19 +330,22 @@ describe('Devices interface', () => {
 
   describe('DELETE /devices:uuid', function() {
     it('should return 200', (done) => {
-      chai.request(server)
-        .delete('/devices/' + test_uuid)
-        .end((err, res) => {
-          should.not.exist(err);
-          res.should.have.status(200);
+      service.delete('/devices/' + test_uuid).then((dataAndResponse) => {
+        let resp = dataAndResponse.resp;
 
-          chai.request(server)
-            .get('/devices/' + test_uuid)
-            .end((error, response) => {
-                response.should.have.status(404);
-                done();
-            });
+        resp.statusCode.should.equal(200);
+
+        service.get('/devices/' + test_uuid).then((dAR) => {
+          resp = dAR.resp;
+
+          resp.statusCode.should.equal(404);
+          done();
+        }).catch((err) => {
+          done(err);
         });
+      }).catch((err) => {
+        done(err);
+      });
     });
 
     it('should return 404 for previously deleted device entry', (done) => {
