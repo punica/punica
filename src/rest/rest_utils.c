@@ -178,6 +178,32 @@ static int database_find_existing_entry(const char *name, linked_list_t *device_
     return 0;
 }
 
+static int find_existing_serial(uint8_t *serial, size_t length, void *context)
+{
+    rest_context_t *rest = (rest_context_t *)context;
+    linked_list_t *list = rest->devicesList;
+    linked_list_entry_t *device_entry;
+    database_entry_t *device_data;
+
+    for (device_entry = list->head; device_entry != NULL; device_entry = device_entry->next)
+    {
+        device_data = (database_entry_t *)device_entry->data;
+
+        if (device_data)
+        {
+            if (device_data->serial_len == length)
+            {
+                if (memcmp(device_data->serial, serial, length) == 0)
+                {
+                    return -1;
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
 static void generate_serial(uint8_t *buffer, size_t *length)
 {
     int ret;
@@ -276,8 +302,11 @@ static int device_new_certificate(database_entry_t *device_entry, void *context)
         goto exit;
     }
 
-    //TODO: check for existing serial
-    generate_serial(device_entry->serial, &device_entry->serial_len);
+    do
+    {
+        generate_serial(device_entry->serial, &device_entry->serial_len);
+    } while (find_existing_serial(device_entry->serial, device_entry->serial_len, context));
+
     activation_time = time(NULL);
 
     if (gnutls_x509_crt_set_version(device_cert, 3)
