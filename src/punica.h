@@ -122,7 +122,7 @@ typedef int (*f_stop_t)(void *context);
  * Notes:
  *      This functions is an exception in connection API that doesn't use the context pointer
 */
-typedef int (*f_validate_t)(char *name, void *connection);
+typedef bool (*f_validate_t)(const char *name, void *connection);
 
 typedef struct connection_api_t
 {

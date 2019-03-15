@@ -61,7 +61,7 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
 static int dtls_connection_send(void *context_p, void *connection, uint8_t *buffer, size_t length);
 static int dtls_connection_close(void *context_p, void *connection);
 static int dtls_connection_stop(void *context_p);
-static int dtls_connection_validate(char *name, void *connection);
+static bool dtls_connection_validate(const char *name, void *connection);
 
 static ssize_t dtls_connection_net_send(gnutls_transport_ptr_t context, const void *data,
                                         size_t size)
@@ -76,10 +76,6 @@ static int dtls_connection_new_socket(secure_connection_context_t *context)
     int sock, enable;
     struct addrinfo hints, *addr_list, *cur;
     char port_str[16];
-//    struct timeval tv;
-//
-//    tv.tv_sec = 40;
-//    tv.tv_usec = 0;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = context->address_family;
@@ -108,13 +104,6 @@ static int dtls_connection_new_socket(secure_connection_context_t *context)
             sock = -1;
             continue;
         }
-
-//        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)))
-//        {
-//            close(sock);
-//            sock = -1;
-//            continue;
-//        }
 
         if (bind(sock, cur->ai_addr, cur->ai_addrlen))
         {
@@ -533,8 +522,8 @@ static int dtls_connection_stop(void *context_p)
     return 0;
 }
 
-static int dtls_connection_validate_psk(char *name, device_connection_t *conn,
-                                        linked_list_t *device_list)
+static bool dtls_connection_validate_psk(const char *name, device_connection_t *conn,
+                                         linked_list_t *device_list)
 {
     database_entry_t *device_data;
     linked_list_entry_t *device_entry;
@@ -550,20 +539,20 @@ static int dtls_connection_validate_psk(char *name, device_connection_t *conn,
         {
             if (memcmp(psk_id, device_data->public_key, device_data->public_key_len) == 0)
             {
-                return 0;
+                return true;
             }
             else
             {
-                return -1;
+                return false;
             }
         }
     }
 
-    return -1;
+    return false;
 }
 
-static int dtls_connection_validate_cert(char *name, device_connection_t *conn,
-                                         linked_list_t *device_list)
+static bool dtls_connection_validate_cert(const char *name, device_connection_t *conn,
+                                          linked_list_t *device_list)
 {
     gnutls_x509_crt_t cert;
     const gnutls_datum_t *cert_list;
@@ -575,21 +564,21 @@ static int dtls_connection_validate_cert(char *name, device_connection_t *conn,
     cert_list = gnutls_certificate_get_peers(conn->session, NULL);
     if (cert_list == NULL)
     {
-        return -1;
+        return false;
     }
     if (gnutls_x509_crt_init(&cert) != GNUTLS_E_SUCCESS)
     {
-        return -1;
+        return false;
     }
     if (gnutls_x509_crt_import(cert, &cert_list[0], GNUTLS_X509_FMT_DER))
     {
-        return -1;
+        return false;
     }
 
     size = sizeof(uuid);
     if (gnutls_x509_crt_get_subject_alt_name(cert, 0, uuid, &size, NULL) != GNUTLS_SAN_DNSNAME)
     {
-        return -1;
+        return false;
     }
 
     for (device_entry = device_list->head; device_entry != NULL; device_entry = device_entry->next)
@@ -600,19 +589,19 @@ static int dtls_connection_validate_cert(char *name, device_connection_t *conn,
         {
             if (strcmp(name, device_data->name) == 0)
             {
-                return 0;
+                return true;
             }
             else
             {
-                return -1;
+                return false;
             }
         }
     }
 
-    return -1;
+    return false;
 }
 
-static int dtls_connection_validate(char *name, void *connection)
+static bool dtls_connection_validate(const char *name, void *connection)
 {
     device_connection_t *conn = (device_connection_t *)connection;
     gnutls_cipher_algorithm_t cipher;
@@ -640,6 +629,6 @@ static int dtls_connection_validate(char *name, void *connection)
     }
     else
     {
-        return -1;
+        return false;
     }
 }

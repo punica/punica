@@ -297,13 +297,13 @@ bool lwm2m_session_is_equal(void *session1, void *session2, void *userData)
     return (session1 == session2);
 }
 
-int lwm2m_client_validate(char *name, void *session, void *user_data)
+bool lwm2m_name_is_valid(const char *name, void *session, void *user_data)
 {
     connection_api_t *api = (connection_api_t *)user_data;
 
     if (api->f_validate == NULL)
     {
-        return 0;
+        return true;
     }
 
     return api->f_validate(name, session);
