@@ -526,29 +526,24 @@ static bool dtls_connection_validate_psk(const char *name, device_connection_t *
                                          linked_list_t *device_list)
 {
     database_entry_t *device_data;
-    linked_list_entry_t *device_entry;
     const char *psk_id;
 
     psk_id = gnutls_psk_server_get_username(conn->session);
 
-    for (device_entry = device_list->head; device_entry != NULL; device_entry = device_entry->next)
+    device_data = database_get_entry_by_name(name, device_list);
+    if (device_data == NULL)
     {
-        device_data = (database_entry_t *)device_entry->data;
-
-        if (strcmp(name, device_data->name) == 0)
-        {
-            if (memcmp(psk_id, device_data->public_key, device_data->public_key_len) == 0)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
+        return false;
     }
 
-    return false;
+    if (memcmp(psk_id, device_data->public_key, device_data->public_key_len) == 0)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 static bool dtls_connection_validate_cert(const char *name, device_connection_t *conn,
@@ -559,7 +554,6 @@ static bool dtls_connection_validate_cert(const char *name, device_connection_t 
     char uuid[256];
     size_t size;
     database_entry_t *device_data;
-    linked_list_entry_t *device_entry;
 
     cert_list = gnutls_certificate_get_peers(conn->session, NULL);
     if (cert_list == NULL)
@@ -581,24 +575,20 @@ static bool dtls_connection_validate_cert(const char *name, device_connection_t 
         return false;
     }
 
-    for (device_entry = device_list->head; device_entry != NULL; device_entry = device_entry->next)
+    device_data = database_get_entry_by_name(name, device_list);
+    if (device_data == NULL)
     {
-        device_data = (database_entry_t *)device_entry->data;
-
-        if (strcmp(uuid, device_data->uuid) == 0)
-        {
-            if (strcmp(name, device_data->name) == 0)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
+        return false;
     }
 
-    return false;
+    if (strcmp(uuid, device_data->uuid) == 0)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 static bool dtls_connection_validate(const char *name, void *connection)
