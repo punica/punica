@@ -602,6 +602,7 @@ database_entry_t *database_build_entry(json_t *j_device_object)
     device_entry->public_key = database_json_to_entry(j_device_object, "public_key", BASE64_DECODE, &device_entry->public_key_len);
     device_entry->secret_key = database_json_to_entry(j_device_object, "secret_key", BASE64_DECODE, &device_entry->secret_key_len);
     device_entry->serial = database_json_to_entry(j_device_object, "serial", BASE64_DECODE, &device_entry->serial_len);
+
     if (device_entry->uuid == NULL
         || device_entry->name == NULL
         || (device_entry->mode == DEVICE_CREDENTIALS_PSK // some entry types must contain keys that other don't
