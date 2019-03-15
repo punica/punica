@@ -533,24 +533,44 @@ static int dtls_connection_stop(void *context_p)
     return 0;
 }
 
-static int dtls_connection_validate(char *name, void *connection)
+static int dtls_connection_validate_psk(char *name, device_connection_t *conn,
+                                        linked_list_t *device_list)
 {
-    device_connection_t *conn = (device_connection_t *)connection;
+    database_entry_t *device_data;
+    linked_list_entry_t *device_entry;
+    const char *psk_id;
+
+    psk_id = gnutls_psk_server_get_username(conn->session);
+
+    for (device_entry = device_list->head; device_entry != NULL; device_entry = device_entry->next)
+    {
+        device_data = (database_entry_t *)device_entry->data;
+
+        if (strcmp(name, device_data->name) == 0)
+        {
+            if (memcmp(psk_id, device_data->public_key, device_data->public_key_len) == 0)
+            {
+                return 0;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+    }
+
+    return -1;
+}
+
+static int dtls_connection_validate_cert(char *name, device_connection_t *conn,
+                                         linked_list_t *device_list)
+{
     gnutls_x509_crt_t cert;
     const gnutls_datum_t *cert_list;
-    char common_name[256];
+    char uuid[256];
     size_t size;
-    gnutls_cipher_algorithm_t cipher;
-    gnutls_kx_algorithm_t key_ex;
-
-    cipher = gnutls_cipher_get(conn->session);
-    key_ex = gnutls_kx_get(conn->session);
-
-    if (!(key_ex == GNUTLS_KX_ECDHE_ECDSA && (cipher == GNUTLS_CIPHER_AES_128_CCM_8 ||
-                                              cipher == GNUTLS_CIPHER_AES_128_CBC)))
-    {
-        return 0;
-    }
+    database_entry_t *device_data;
+    linked_list_entry_t *device_entry;
 
     cert_list = gnutls_certificate_get_peers(conn->session, NULL);
     if (cert_list == NULL)
@@ -566,16 +586,60 @@ static int dtls_connection_validate(char *name, void *connection)
         return -1;
     }
 
-    size = sizeof(common_name);
-    if (gnutls_x509_crt_get_dn_by_oid(cert, GNUTLS_OID_X520_COMMON_NAME, 0, 0, common_name, &size))
+    size = sizeof(uuid);
+    if (gnutls_x509_crt_get_subject_alt_name(cert, 0, uuid, &size, NULL) != GNUTLS_SAN_DNSNAME)
     {
         return -1;
     }
 
-    if (strcmp(name, common_name) == 0)
+    for (device_entry = device_list->head; device_entry != NULL; device_entry = device_entry->next)
     {
-        return 0;
+        device_data = (database_entry_t *)device_entry->data;
+
+        if (strcmp(uuid, device_data->uuid) == 0)
+        {
+            if (strcmp(name, device_data->name) == 0)
+            {
+                return 0;
+            }
+            else
+            {
+                return -1;
+            }
+        }
     }
 
     return -1;
+}
+
+static int dtls_connection_validate(char *name, void *connection)
+{
+    device_connection_t *conn = (device_connection_t *)connection;
+    gnutls_cipher_algorithm_t cipher;
+    gnutls_kx_algorithm_t key_ex;
+    linked_list_t *device_list;
+    secure_connection_context_t *context;
+
+    context = gnutls_session_get_ptr(conn->session);
+    device_list = context->data;
+
+    cipher = gnutls_cipher_get(conn->session);
+    key_ex = gnutls_kx_get(conn->session);
+
+    if (key_ex == GNUTLS_KX_ECDHE_ECDSA
+        && (cipher == GNUTLS_CIPHER_AES_128_CCM_8
+            || cipher == GNUTLS_CIPHER_AES_128_CBC))
+    {
+        return dtls_connection_validate_cert(name, conn, device_list);
+    }
+    else if (key_ex == GNUTLS_KX_PSK
+             && (cipher == GNUTLS_CIPHER_AES_128_CCM_8
+                 || cipher == GNUTLS_CIPHER_AES_128_CBC))
+    {
+        return dtls_connection_validate_psk(name, conn, device_list);
+    }
+    else
+    {
+        return -1;
+    }
 }
