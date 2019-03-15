@@ -29,19 +29,21 @@ extern "C" {
 
 #include "basic_plugin_manager.h"
 
-CBasicPluginManager *new_BasicPluginManager(CBasicCore *c_manager_core)
+basic_plugin_manager_t *basic_plugin_manager_new(basic_punica_core_t *c_manager_core)
 {
     BasicCore *manager_core = reinterpret_cast<BasicCore *>(c_manager_core);
 
-    return reinterpret_cast<CBasicPluginManager *>(new BasicPluginManager(manager_core));
+    return reinterpret_cast<basic_plugin_manager_t *>(new BasicPluginManager(manager_core));
 }
-void delete_BasicPluginManager(CBasicPluginManager *c_manager)
+
+void basic_plugin_manager_delete(basic_plugin_manager_t *c_manager)
 {
     delete reinterpret_cast<BasicPluginManager *>(c_manager);
 }
-int BasicPluginManager_loadPlugin(CBasicPluginManager *c_manager,
-                                  const char *c_path,
-                                  const char *c_name)
+
+int basic_plugin_manager_load_plugin(basic_plugin_manager_t *c_manager,
+                                     const char *c_path,
+                                     const char *c_name)
 {
     BasicPluginManager *manager = reinterpret_cast<BasicPluginManager *>(c_manager);
     const std::string path(c_path);
@@ -49,8 +51,9 @@ int BasicPluginManager_loadPlugin(CBasicPluginManager *c_manager,
 
     return static_cast<int>(manager->loadPlugin(path, name));
 }
-int BasicPluginManager_unloadPlugin(CBasicPluginManager *c_manager,
-                                    const char *c_name)
+
+int basic_plugin_manager_unload_plugin(basic_plugin_manager_t *c_manager,
+                                       const char *c_name)
 {
     BasicPluginManager *manager = reinterpret_cast<BasicPluginManager *>(c_manager);
     const std::string name(c_name);
@@ -65,8 +68,8 @@ int BasicPluginManager_unloadPlugin(CBasicPluginManager *c_manager,
 BasicPluginManager::BasicPluginManager(punica::Core *plugin_core):
     core(plugin_core),
     plugins()
-{
-}
+{ }
+
 BasicPluginManager::~BasicPluginManager()
 {
     std::map<std::string, std::pair<punica::plugin::Plugin *, punica::plugin::plugin_api_t *> >::iterator
@@ -77,6 +80,7 @@ BasicPluginManager::~BasicPluginManager()
         unloadPlugin(plugins_iterator->first);
     }
 }
+
 bool BasicPluginManager::loadPlugin(std::string path, std::string name)
 {
     if (plugins.find(name) != plugins.end())
@@ -129,6 +133,7 @@ bool BasicPluginManager::loadPlugin(std::string path, std::string name)
 
     return true;
 }
+
 bool BasicPluginManager::unloadPlugin(std::string name)
 {
     std::map<std::string, std::pair<punica::plugin::Plugin *, punica::plugin::plugin_api_t *> >::iterator

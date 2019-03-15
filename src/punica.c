@@ -91,7 +91,7 @@ static void init_signals(void)
     }
 }
 
-static int plugins_load(CBasicPluginManager *plugin_manager,
+static int plugins_load(basic_plugin_manager_t *plugin_manager,
                         plugins_settings_t *plugins_settings)
 {
     linked_list_entry_t *entry;
@@ -102,9 +102,9 @@ static int plugins_load(CBasicPluginManager *plugin_manager,
          entry != NULL; entry = entry->next)
     {
         plugin = entry->data;
-        load_is_successful = BasicPluginManager_loadPlugin(plugin_manager,
-                                                           plugin->path,
-                                                           plugin->name);
+        load_is_successful = basic_plugin_manager_load_plugin(plugin_manager,
+                                                              plugin->path,
+                                                              plugin->name);
 
         if (load_is_successful)
         {
@@ -358,8 +358,8 @@ int main(int argc, char *argv[])
     connection_api_t *conn_api;
     uint8_t buffer[1500];
     void *connection;
-    CBasicCore *punica_core;
-    CBasicPluginManager *plugin_manager;
+    basic_punica_core_t *punica_core;
+    basic_plugin_manager_t *plugin_manager;
 
     static settings_t settings =
     {
@@ -549,8 +549,8 @@ int main(int argc, char *argv[])
     }
 
     /* Plugin manager initialization and loading of plugins */
-    punica_core = new_BasicCore(&instance, rest.lwm2m);
-    plugin_manager = new_BasicPluginManager(punica_core);
+    punica_core = basic_punica_core_new(&instance, rest.lwm2m);
+    plugin_manager = basic_plugin_manager_new(punica_core);
     plugins_load(plugin_manager, &settings.plugins);
 
     /* Main section */
@@ -590,8 +590,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    delete_BasicPluginManager(plugin_manager);
-    delete_BasicCore(punica_core);
+    basic_plugin_manager_delete(plugin_manager);
+    basic_punica_core_delete(punica_core);
     plugins_unload(&settings.plugins);
 
     ulfius_stop_framework(&instance);

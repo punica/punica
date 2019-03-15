@@ -29,18 +29,6 @@ extern "C" {
 
 #include <ulfius.h>
 
-#include "ulfius_rest_core.h"
-
-CUlfiusRestCore *new_UlfiusRestCore(struct _u_instance *instance)
-{
-    return reinterpret_cast<CUlfiusRestCore *>(new UlfiusRestCore(instance));
-}
-
-void delete_UlfiusRestCore(CUlfiusRestCore *c_core)
-{
-    delete reinterpret_cast<UlfiusRestCore *>(c_core);
-}
-
 #ifdef __cplusplus
 } // extern "C"
 #endif

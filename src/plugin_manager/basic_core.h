@@ -22,18 +22,11 @@
 
 #include "ulfius.h"
 
-#include "rest_framework/ulfius_rest_core.h"
-#include "lwm2m_framework/basic_lwm2m_core.h"
+struct basic_punica_core_t;
+typedef struct basic_punica_core_t basic_punica_core_t;
 
-struct CBasicCore;
-typedef struct CBasicCore CBasicCore;
-
-CBasicCore *new_BasicCore(struct _u_instance *ulfius_instance,
-                          void *lwm2m_context);
-void delete_BasicCore(CBasicCore *c_manager_core);
-CUlfiusRestCore *BasicCore_getRestCore(CBasicCore
-                                       *c_manager_core);
-CBasicLwm2mCore *BasicCore_getLwm2mCore(CBasicCore
-                                        *c_manager_core);
+basic_punica_core_t *basic_punica_core_new(struct _u_instance *ulfius_instance,
+                                           void *lwm2m_context);
+void basic_punica_core_delete(basic_punica_core_t *core);
 
 #endif // PUNICA_PLUGIN_MANAGER_BASIC_CORE_H

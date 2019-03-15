@@ -27,31 +27,16 @@ extern "C" {
 
 #include "basic_core.h"
 
-CBasicCore *new_BasicCore(struct _u_instance *ulfius_instance,
-                          void *lwm2m_context)
+basic_punica_core_t *basic_punica_core_new(struct _u_instance *ulfius_instance,
+                                           void *lwm2m_context)
 {
-    return reinterpret_cast<CBasicCore *>(new BasicCore(ulfius_instance,
-                                                        lwm2m_context));
+    return reinterpret_cast<basic_punica_core_t *>(
+               new BasicCore(ulfius_instance, lwm2m_context));
 }
-void delete_BasicCore(CBasicCore *c_manager_core)
-{
-    delete reinterpret_cast<BasicCore *>(c_manager_core);
-}
-CUlfiusRestCore *BasicCore_getRestCore(CBasicCore
-                                       *c_manager_core)
-{
-    BasicCore *manager_core = reinterpret_cast<BasicCore *>(c_manager_core);
-    punica::rest::Core *rest_core = manager_core->getRestCore();
 
-    return reinterpret_cast<CUlfiusRestCore *>(rest_core);
-}
-CBasicLwm2mCore *BasicCore_getLwm2mCore(CBasicCore
-                                        *c_manager_core)
+void basic_punica_core_delete(basic_punica_core_t *core)
 {
-    BasicCore *manager_core = reinterpret_cast<BasicCore *>(c_manager_core);
-    punica::lwm2m::Core *lwm2m_core = manager_core->getLwm2mCore();
-
-    return reinterpret_cast<CBasicLwm2mCore *>(lwm2m_core);
+    delete reinterpret_cast<BasicCore *>(core);
 }
 
 #ifdef __cplusplus

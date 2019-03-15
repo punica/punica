@@ -19,25 +19,6 @@
 
 #include "basic_lwm2m_core.hpp"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "basic_lwm2m_core.h"
-
-CBasicLwm2mCore *new_BasicLwm2mCore(void *lwm2m_context)
-{
-    return reinterpret_cast<CBasicLwm2mCore *>(new BasicLwm2mCore(lwm2m_context));
-}
-void delete_BasicLwm2mCore(CBasicLwm2mCore *c_lwm2m_core)
-{
-    delete reinterpret_cast<BasicLwm2mCore *>(c_lwm2m_core);
-}
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
 BasicLwm2mCore::BasicLwm2mCore(void *lwm2m_context):
     context(lwm2m_context) { }
 BasicLwm2mCore::~BasicLwm2mCore()

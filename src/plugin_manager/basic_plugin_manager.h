@@ -28,15 +28,16 @@ enum
     J_MAX_LENGTH_PLUGIN_PATH = 1024,
 };
 
-struct CBasicPluginManager;
-typedef struct CBasicPluginManager CBasicPluginManager;
+struct basic_plugin_manager_t;
+typedef struct basic_plugin_manager_t basic_plugin_manager_t;
 
-CBasicPluginManager *new_BasicPluginManager(CBasicCore *c_manager_core);
-void delete_BasicPluginManager(CBasicPluginManager *c_manager);
-int BasicPluginManager_loadPlugin(CBasicPluginManager *c_manager,
-                                  const char *c_path,
-                                  const char *c_name);
-int BasicPluginManager_unloadPlugin(CBasicPluginManager *c_manager,
-                                    const char *c_name);
+basic_plugin_manager_t *basic_plugin_manager_new(basic_punica_core_t *c_manager_core);
+void basic_plugin_manager_delete(basic_plugin_manager_t *c_manager);
+
+int basic_plugin_manager_load_plugin(basic_plugin_manager_t *c_manager,
+                                     const char *c_path,
+                                     const char *c_name);
+int basic_plugin_manager_unload_plugin(basic_plugin_manager_t *c_manager,
+                                       const char *c_name);
 
 #endif // PUNICA_PLUGIN_MANAGER_BASIC_PLUGIN_MANAGER_H
