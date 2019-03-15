@@ -29,11 +29,11 @@ extern "C" {
 
 #include "basic_plugin_manager.h"
 
-basic_plugin_manager_t *basic_plugin_manager_new(basic_punica_core_t *c_manager_core)
+basic_plugin_manager_t *basic_plugin_manager_new(basic_punica_core_t *c_core)
 {
-    BasicCore *manager_core = reinterpret_cast<BasicCore *>(c_manager_core);
+    BasicCore *core = reinterpret_cast<BasicCore *>(c_core);
 
-    return reinterpret_cast<basic_plugin_manager_t *>(new BasicPluginManager(manager_core));
+    return reinterpret_cast<basic_plugin_manager_t *>(new BasicPluginManager(core));
 }
 
 void basic_plugin_manager_delete(basic_plugin_manager_t *c_manager)

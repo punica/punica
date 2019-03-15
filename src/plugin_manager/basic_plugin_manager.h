@@ -31,7 +31,7 @@ enum
 struct basic_plugin_manager_t;
 typedef struct basic_plugin_manager_t basic_plugin_manager_t;
 
-basic_plugin_manager_t *basic_plugin_manager_new(basic_punica_core_t *c_manager_core);
+basic_plugin_manager_t *basic_plugin_manager_new(basic_punica_core_t *c_core);
 void basic_plugin_manager_delete(basic_plugin_manager_t *c_manager);
 
 int basic_plugin_manager_load_plugin(basic_plugin_manager_t *c_manager,
