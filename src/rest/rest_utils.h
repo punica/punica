@@ -34,9 +34,9 @@ typedef enum
 
 typedef enum
 {
-    BASE64_NO_ACTION=0,
-    BASE64_DECODE=1,
-    BASE64_ENCODE=2,
+    BASE64_NO_ACTION = 0,
+    BASE64_DECODE = 1,
+    BASE64_ENCODE = 2,
 }database_base64_action;
 
 
