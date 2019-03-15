@@ -70,5 +70,7 @@ void *database_json_to_entry(json_t *j_object, const char *key, database_base64_
 
 int utils_get_server_key(uint8_t *buffer, size_t *length, void *context);
 
+database_entry_t *database_get_entry_by_name(const char *name, linked_list_t *device_list);
+
 #endif // REST_UTILS_H
 

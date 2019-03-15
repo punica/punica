@@ -160,24 +160,6 @@ exit:
     return entry;
 }
 
-static int database_find_existing_entry(const char *name, linked_list_t *device_list)
-{
-    linked_list_entry_t *device_entry;
-    database_entry_t *device_data;
-
-    for (device_entry = device_list->head; device_entry != NULL; device_entry = device_entry->next)
-    {
-        device_data = (database_entry_t *)device_entry->data;
-
-        if (strcmp(name, device_data->name) == 0)
-        {
-            return -1;
-        }
-    }
-
-    return 0;
-}
-
 static int find_existing_serial(uint8_t *serial, size_t length, void *context)
 {
     rest_context_t *rest = (rest_context_t *)context;
@@ -386,6 +368,24 @@ static int device_new_credentials(database_entry_t *device_entry, void *context)
     return 0;
 }
 
+database_entry_t *database_get_entry_by_name(const char *name, linked_list_t *device_list)
+{
+    linked_list_entry_t *device_entry;
+    database_entry_t *device_data;
+
+    for (device_entry = device_list->head; device_entry != NULL; device_entry = device_entry->next)
+    {
+        device_data = (database_entry_t *)device_entry->data;
+
+        if (strcmp(name, device_data->name) == 0)
+        {
+            return device_data;
+        }
+    }
+
+    return NULL;
+}
+
 int coap_to_http_status(int status)
 {
     switch (status)
@@ -420,6 +420,7 @@ int database_validate_new_entry(json_t *j_new_device_object, linked_list_t *devi
     int key_check = 0;
     const char *key, *value_string;
     json_t *j_value;
+    database_entry_t *device_entry;
 
     if (!json_is_object(j_new_device_object))
     {
@@ -450,7 +451,8 @@ int database_validate_new_entry(json_t *j_new_device_object, linked_list_t *devi
         {
             value_string = json_string_value(j_value);
 
-            if (database_find_existing_entry(value_string, device_list))
+            device_entry = database_get_entry_by_name(value_string, device_list);
+            if (device_entry != NULL)
             {
                 return -1;
             }
@@ -475,6 +477,7 @@ int database_validate_entry(json_t *j_device_object, linked_list_t *device_list)
     uint8_t buffer[512];
     size_t buffer_len = sizeof(buffer);
     int ret;
+    database_entry_t *device_entry;
 
     if (!json_is_object(j_device_object))
     {
@@ -495,7 +498,8 @@ int database_validate_entry(json_t *j_device_object, linked_list_t *device_list)
         {
             value_string = json_string_value(j_value);
 
-            if (database_find_existing_entry(value_string, device_list))
+            device_entry = database_get_entry_by_name(value_string, device_list);
+            if (device_entry != NULL)
             {
                 return -1;
             }
