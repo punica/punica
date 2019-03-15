@@ -35,39 +35,10 @@ CUlfiusRestCore *new_UlfiusRestCore(struct _u_instance *instance)
 {
     return reinterpret_cast<CUlfiusRestCore *>(new UlfiusRestCore(instance));
 }
+
 void delete_UlfiusRestCore(CUlfiusRestCore *c_core)
 {
     delete reinterpret_cast<UlfiusRestCore *>(c_core);
-}
-void UlfiusRestCore_startCore(CUlfiusRestCore *c_core)
-{
-    UlfiusRestCore *core = reinterpret_cast<UlfiusRestCore *>(c_core);
-    core->startCore();
-}
-void UlfiusRestCore_startSecureCore(CUlfiusRestCore *c_core,
-                                    const char *c_private_key_file, const char *c_certificate_file)
-{
-    UlfiusRestCore *core = reinterpret_cast<UlfiusRestCore *>(c_core);
-    const std::string private_key_file(c_private_key_file);
-    const std::string certificate_file(c_certificate_file);
-
-    core->startSecureCore(private_key_file, certificate_file);
-}
-void UlfiusRestCore_stopCore(CUlfiusRestCore *c_core)
-{
-    UlfiusRestCore *core = reinterpret_cast<UlfiusRestCore *>(c_core);
-
-    core->stopCore();
-}
-void UlfiusRestCore_addHandler(CUlfiusRestCore *c_core,
-                               const char *method, const char *url_prefix, unsigned int priority,
-                               c_callback_function_t c_handler_function, void *handler_context)
-{
-    UlfiusRestCore *core = reinterpret_cast<UlfiusRestCore *>(c_core);
-    punica::rest::callback_function_t handler_function =
-        reinterpret_cast<punica::rest::callback_function_t>(c_handler_function);
-
-    core->addHandler(method, url_prefix, priority, handler_function, handler_context);
 }
 
 #ifdef __cplusplus
@@ -77,6 +48,7 @@ void UlfiusRestCore_addHandler(CUlfiusRestCore *c_core,
 UlfiusRestCore::UlfiusRestCore(struct _u_instance *instance):
     ulfius_instance(instance)
 { }
+
 UlfiusRestCore::~UlfiusRestCore()
 {
     for (std::vector<punica::rest::CallbackHandler *>::size_type index = 0;
@@ -85,30 +57,21 @@ UlfiusRestCore::~UlfiusRestCore()
         delete callbackHandlers[index];
     }
 }
-void UlfiusRestCore::startCore()
-{
-    ulfius_start_framework(ulfius_instance);
-}
-void UlfiusRestCore::startSecureCore(const std::string private_key_file,
-                                     const std::string certificate_file)
-{
-    ulfius_start_secure_framework(ulfius_instance, private_key_file.c_str(),
-                                  certificate_file.c_str());
-}
-void UlfiusRestCore::stopCore()
-{
-    ulfius_stop_framework(ulfius_instance);
-}
+
 int UlfiusRestCore::ulfiusCallback(const struct _u_request *u_request,
-                                   struct _u_response *u_response, void *context)
+                                   struct _u_response *u_response,
+                                   void *context)
 {
     punica::rest::StatusCode callback_status_code;
 
     UlfiusRequest request(u_request);
     UlfiusResponse response(u_response);
 
-    punica::rest::CallbackHandler *handler = reinterpret_cast<punica::rest::CallbackHandler *>(context);
-    callback_status_code = handler->function(&request, &response, handler->context);
+    punica::rest::CallbackHandler *handler =
+        reinterpret_cast<punica::rest::CallbackHandler *>(context);
+    callback_status_code = handler->function(&request,
+                                             &response,
+                                             handler->context);
 
     switch (callback_status_code)
     {
@@ -139,14 +102,19 @@ int UlfiusRestCore::ulfiusCallback(const struct _u_request *u_request,
     }
 }
 
-void UlfiusRestCore::addHandler(
-    const std::string method, const std::string url_prefix,
-    unsigned int priority, punica::rest::callback_function_t handler_function, void *handler_context)
+void UlfiusRestCore::addHandler(const std::string method,
+                                const std::string url_prefix,
+                                unsigned int priority,
+                                punica::rest::callback_function_t handler_function,
+                                void *handler_context)
 {
-    punica::rest::CallbackHandler *handler = new punica::rest::CallbackHandler(handler_function,
-            handler_context);
+    punica::rest::CallbackHandler *handler =
+        new punica::rest::CallbackHandler(handler_function, handler_context);
+
     callbackHandlers.push_back(handler);
+
     ulfius_add_endpoint_by_val(ulfius_instance, method.c_str(),
-                               url_prefix.c_str(), NULL, priority, &ulfiusCallback,
+                               url_prefix.c_str(), NULL, priority,
+                               &ulfiusCallback,
                                reinterpret_cast<void *>(handler));
 }

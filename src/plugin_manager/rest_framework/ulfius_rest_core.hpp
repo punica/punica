@@ -31,11 +31,6 @@ public:
     UlfiusRestCore(struct _u_instance *instance);
     ~UlfiusRestCore();
 
-    void startCore();
-    void startSecureCore(std::string private_key_file,
-                         std::string certificate_file);
-    void stopCore();
-
     void addHandler(const std::string method,
                     const std::string url_prefix,
                     unsigned int priority,

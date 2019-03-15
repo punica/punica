@@ -27,50 +27,6 @@ extern "C" {
 
 #include <ulfius.h>
 
-#include "ulfius_request.h"
-
-CUlfiusRequest *new_UlfiusRequest(const struct _u_request *u_request)
-{
-    return reinterpret_cast<CUlfiusRequest *>(new UlfiusRequest(u_request));
-}
-void delete_UlfiusRequest(CUlfiusRequest *c_request)
-{
-    delete reinterpret_cast<UlfiusRequest *>(c_request);
-}
-char *UlfiusRequest_getPath(CUlfiusRequest *c_request)
-{
-    UlfiusRequest *request = reinterpret_cast<UlfiusRequest *>(c_request);
-    std::string path = request->getPath();
-
-    return const_cast<char *>(path.c_str());
-}
-char *UlfiusRequest_getMethod(CUlfiusRequest *c_request)
-{
-    UlfiusRequest *request = reinterpret_cast<UlfiusRequest *>(c_request);
-    std::string method = request->getMethod();
-
-    return const_cast<char *>(method.c_str());
-}
-char *UlfiusRequest_getHeader(CUlfiusRequest *c_request, const char *c_header)
-{
-    UlfiusRequest *request = reinterpret_cast<UlfiusRequest *>(c_request);
-    const std::string header(c_header);
-    std::string header_value = request->getHeader(header);
-
-    return const_cast<char *>(header_value.c_str());
-}
-uint8_t *UlfiusRequest_getBody(CUlfiusRequest *c_request)
-{
-    // Note that body should be freed after use!
-    UlfiusRequest *request = reinterpret_cast<UlfiusRequest *>(c_request);
-    std::vector<uint8_t> body = request->getBody();
-    uint8_t *c_body = static_cast<uint8_t *>(malloc(sizeof(uint8_t) * body.size()));
-
-    std::copy(body.begin(), body.end(), c_body);
-
-    return c_body;
-}
-
 #ifdef __cplusplus
 } // extern "C"
 #endif

@@ -20,20 +20,10 @@
 #ifndef PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REST_CORE_H
 #define PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REST_CORE_H
 
-#include <punica/rest/core.h>
-
 struct CUlfiusRestCore;
 typedef struct CUlfiusRestCore CUlfiusRestCore;
+
 CUlfiusRestCore *new_UlfiusRestCore(struct _u_instance *instance);
 void delete_UlfiusRestCore(CUlfiusRestCore *c_core);
-void UlfiusRestCore_startCore(CUlfiusRestCore *c_core);
-void UlfiusRestCore_startSecureCore(
-    CUlfiusRestCore *c_core, const char *c_private_key_file,
-    const char *c_certificate_file);
-void UlfiusRestCore_stopCore(CUlfiusRestCore *c_core);
-void UlfiusRestCore_addHandler(
-    CUlfiusRestCore *c_core,
-    const char *method, const char *url_prefix,
-    unsigned int priority, c_callback_function_t handler_function, void *handler_context);
 
 #endif // PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REST_CORE_H
