@@ -63,6 +63,7 @@ class ClientSecureInterface {
       });
 
       this.sens.on('error', (error) => {
+        callback(error);
       });
 
       this.client.on('error', (error) => {
