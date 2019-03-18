@@ -40,7 +40,7 @@ else
 fi
 
 BUILD_TOOLS_APT="git-core cmake build-essential automake libtool gnutls-bin"
-DEPENTANT_LIBRARIES_APT="libssl-dev libgnutls28-dev libmicrohttpd-dev"
+DEPENTANT_LIBRARIES_APT="libssl-dev libgnutls28-dev libmicrohttpd-dev uuid-dev"
 
 JANSSON_DIR="${THIRD_PARTY_DIR}/jansson"
 LIBJWT_DIR="${THIRD_PARTY_DIR}/libjwt"
