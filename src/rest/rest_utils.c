@@ -363,7 +363,7 @@ static int device_new_credentials(database_entry_t *device_entry, void *context)
     }
 }
 
-database_entry_t *database_get_entry_by_name(const char *name, linked_list_t *device_list)
+database_entry_t *database_get_entry_by_name(linked_list_t *device_list, const char *name)
 {
     linked_list_entry_t *device_entry;
     database_entry_t *device_data;
@@ -446,7 +446,7 @@ int database_validate_new_entry(json_t *j_new_device_object, linked_list_t *devi
         {
             value_string = json_string_value(j_value);
 
-            device_entry = database_get_entry_by_name(value_string, device_list);
+            device_entry = database_get_entry_by_name(device_list, value_string);
             if (device_entry != NULL)
             {
                 return -1;
@@ -493,7 +493,7 @@ int database_validate_entry(json_t *j_device_object, linked_list_t *device_list)
         {
             value_string = json_string_value(j_value);
 
-            device_entry = database_get_entry_by_name(value_string, device_list);
+            device_entry = database_get_entry_by_name(device_list, value_string);
             if (device_entry != NULL)
             {
                 return -1;
@@ -552,7 +552,7 @@ int database_validate_entry(json_t *j_device_object, linked_list_t *device_list)
     return 0;
 }
 
-database_entry_t *database_build_entry(json_t *j_device_object)
+database_entry_t *database_create_entry(json_t *j_device_object)
 {
     const char *mode;
     int status = -1;
@@ -620,7 +620,7 @@ exit:
     return device_entry;
 }
 
-database_entry_t *database_build_new_entry(json_t *j_device_object, void *context)
+database_entry_t *database_create_new_entry(json_t *j_device_object, void *context)
 {
     uuid_t b_uuid;
     char *uuid = NULL;
@@ -701,7 +701,7 @@ exit:
     return device_entry;
 }
 
-int database_prepare_array(json_t *j_array, linked_list_t *device_list)
+int database_list_to_json_array(linked_list_t *device_list, json_t *j_array)
 {
     linked_list_entry_t *list_entry;
     database_entry_t *device_entry;

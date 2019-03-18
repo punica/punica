@@ -80,7 +80,7 @@ int database_load_file(rest_context_t *rest)
             continue;
         }
 
-        curr = database_build_entry(j_entry);
+        curr = database_create_entry(j_entry);
         if (curr == NULL)
         {
             fprintf(stdout, "Internal server error while managing device entry\n");

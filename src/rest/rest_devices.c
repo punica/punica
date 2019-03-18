@@ -111,7 +111,7 @@ static int append_server_key(json_t *j_object, const char *certificate_file)
     return 0;
 }
 
-static json_t *rest_devices_prepare_resp(database_entry_t *device_entry, void *context)
+static json_t *rest_devices_entry_to_resp(database_entry_t *device_entry, void *context)
 {
     rest_context_t *rest = (rest_context_t *)context;
     json_t *j_resp_obj = NULL;
@@ -226,7 +226,7 @@ int rest_devices_get_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     {
         device_data = (database_entry_t *)device_entry->data;
 
-        j_entry_object = rest_devices_prepare_resp(device_data, context);
+        j_entry_object = rest_devices_entry_to_resp(device_data, context);
         if (j_entry_object == NULL)
         {
             ulfius_set_empty_body_response(resp, 500);
@@ -267,7 +267,7 @@ int rest_devices_get_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void 
         device_data = (database_entry_t *)device_entry->data;
         if (strcmp(id, device_data->uuid) == 0)
         {
-            j_entry_object = rest_devices_prepare_resp(device_data, context);
+            j_entry_object = rest_devices_entry_to_resp(device_data, context);
             if (j_entry_object == NULL)
             {
                 ulfius_set_empty_body_response(resp, 500);
@@ -311,14 +311,14 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         goto exit;
     }
 
-    device_entry = database_build_new_entry(jdevice_list, context);
+    device_entry = database_create_new_entry(jdevice_list, context);
     if (device_entry == NULL)
     {
         ulfius_set_empty_body_response(resp, 500);
         goto exit;
     }
 
-    j_post_resp = rest_devices_prepare_resp(device_entry, context);
+    j_post_resp = rest_devices_entry_to_resp(device_entry, context);
     if (j_post_resp == NULL)
     {
         ulfius_set_empty_body_response(resp, 500);
@@ -346,7 +346,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
     {
         jdatabase_list = json_array();
 
-        if (database_prepare_array(jdatabase_list, rest->devicesList))
+        if (database_list_to_json_array(rest->devicesList, jdatabase_list))
         {
             log_message(LOG_LEVEL_ERROR, "[DEVICES POST] Failed to prepare JSON array for database file.\n");
             goto exit;
@@ -433,7 +433,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
 
     jdatabase_list = json_array();
 
-    if (database_prepare_array(jdatabase_list, rest->devicesList))
+    if (database_list_to_json_array(rest->devicesList, jdatabase_list))
     {
         log_message(LOG_LEVEL_ERROR, "[DEVICES PUT] Failed to prepare JSON array for database file.\n");
         goto exit;
@@ -486,7 +486,7 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
 
     jdatabase_list = json_array();
 
-    if (database_prepare_array(jdatabase_list, rest->devicesList))
+    if (database_list_to_json_array(rest->devicesList, jdatabase_list))
     {
         log_message(LOG_LEVEL_ERROR, "[DEVICES DELETE] Failed to prepare JSON array for database file.\n");
         goto exit;

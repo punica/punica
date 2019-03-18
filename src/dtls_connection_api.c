@@ -530,7 +530,7 @@ static bool dtls_connection_validate_psk(const char *name, device_connection_t *
 
     psk_id = gnutls_psk_server_get_username(conn->session);
 
-    device_data = database_get_entry_by_name(name, device_list);
+    device_data = database_get_entry_by_name(device_list, name);
     if (device_data == NULL)
     {
         return false;
@@ -575,7 +575,7 @@ static bool dtls_connection_validate_cert(const char *name, device_connection_t 
         return false;
     }
 
-    device_data = database_get_entry_by_name(name, device_list);
+    device_data = database_get_entry_by_name(device_list, name);
     if (device_data == NULL)
     {
         return false;

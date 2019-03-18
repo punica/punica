@@ -60,17 +60,17 @@ void database_free_entry(database_entry_t *device_entry);
 int database_validate_new_entry(json_t *j_new_device_object, linked_list_t *device_list);
 int database_validate_entry(json_t *j_device_object, linked_list_t *device_list);
 
-database_entry_t *database_build_entry(json_t *j_device_object);
-database_entry_t *database_build_new_entry(json_t *j_new_device_object, void *context);
+database_entry_t *database_create_entry(json_t *j_device_object);
+database_entry_t *database_create_new_entry(json_t *j_new_device_object, void *context);
 
-int database_prepare_array(json_t *j_array, linked_list_t *device_list);
+int database_list_to_json_array(linked_list_t *device_list, json_t *j_array);
 
 json_t *database_entry_to_json(void *entry, const char *key, database_base64_action action, size_t entry_size);
 void *database_json_to_entry(json_t *j_object, const char *key, database_base64_action action, size_t *entry_size);
 
 int utils_get_server_key(uint8_t *buffer, size_t *length, const char *cert_file);
 
-database_entry_t *database_get_entry_by_name(const char *name, linked_list_t *device_list);
+database_entry_t *database_get_entry_by_name(linked_list_t *device_list, const char *name);
 
 #endif // REST_UTILS_H
 
