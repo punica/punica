@@ -347,17 +347,11 @@ static int device_new_credentials(database_entry_t *device_entry, void *context)
 {
     if (device_entry->mode == DEVICE_CREDENTIALS_PSK)
     {
-        if (device_new_psk(device_entry))
-        {
-            return -1;
-        }
+        return device_new_psk(device_entry);
     }
     else if (device_entry->mode == DEVICE_CREDENTIALS_CERT)
     {
-        if (device_new_certificate(device_entry, context))
-        {
-            return -1;
-        }
+        return device_new_certificate(device_entry, context);
     }
     else if (device_entry->mode == DEVICE_CREDENTIALS_NONE)
     {
@@ -367,8 +361,6 @@ static int device_new_credentials(database_entry_t *device_entry, void *context)
     {
         return -1;
     }
-
-    return 0;
 }
 
 database_entry_t *database_get_entry_by_name(const char *name, linked_list_t *device_list)
