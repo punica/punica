@@ -262,14 +262,10 @@ describe('Secure endpoints interface', () => {
 
     let clientPsk1 = new ClientInterface(pskOptions1);
     let clientCert1 = new ClientInterface(certOptions1);
-    let clientPsk2 = new ClientInterface(pskOptions2);
-    let clientCert2 = new ClientInterface(certOptions2);
     let promise1 = connectionPromise(clientPsk1);
     let promise2 = connectionPromise(clientCert1);
-    let promise3 = connectionPromise(clientPsk2);
-    let promise4 = connectionPromise(clientCert2);
 
-    return Promise.all([promise1, promise2, promise3, promise4]).catch((err) => {
+    return Promise.all([promise1, promise2]).catch((err) => {
       should.not.exist(err);
     });
   });
