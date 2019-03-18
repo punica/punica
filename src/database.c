@@ -646,5 +646,3 @@ int database_list_to_json_array(linked_list_t *device_list, json_t *j_array)
 
     return 0;
 }
-
-
