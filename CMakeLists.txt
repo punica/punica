@@ -2,6 +2,8 @@ cmake_minimum_required (VERSION 3.5)
 
 project (punica)
 
+set(CMAKE_CXX_STANDARD 11)
+
 option(CODE_COVERAGE "Enable code coverage" OFF)
 
 if(DTLS)
