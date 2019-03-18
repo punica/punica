@@ -760,7 +760,13 @@ int database_prepare_array(json_t *j_array, linked_list_t *device_list)
             return -1;
         }
 
-        j_entry = json_pack("{s:s, s:s, s:s, s:s, s:s, s:s}", "uuid", device_entry->uuid, "name", device_entry->name, "mode", mode_string, "secret_key", base64_secret_key, "public_key", base64_public_key, "serial", base64_serial);
+        j_entry = json_pack("{s:s, s:s, s:s, s:s, s:s, s:s}",
+                            "uuid", device_entry->uuid,
+                            "name", device_entry->name,
+                            "mode", mode_string,
+                            "secret_key", base64_secret_key,
+                            "public_key", base64_public_key,
+                            "serial", base64_serial);
         if (j_entry == NULL)
         {
             return -1;
