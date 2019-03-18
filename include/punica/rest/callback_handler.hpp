@@ -33,7 +33,6 @@ typedef StatusCode(*CallbackFunction)(Request::ptr, Response::ptr, void *);
 class CallbackHandler
 {
 public:
-    // typedef CallbackHandler *ptr;
     typedef std::unique_ptr<CallbackHandler> ptr;
     typedef std::vector<CallbackHandler::ptr> vector;
 
