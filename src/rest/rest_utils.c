@@ -32,6 +32,9 @@
 #define DATABASE_ALL_NEW_KEYS_SET   0x06
 #define DATABASE_ALL_KEYS_SET       0x3F
 
+#define DATABASE_PSK_ID_LENGTH      12
+#define DATABASE_PSK_LENGTH         16
+
 json_t *database_entry_to_json(void *entry, const char *key, database_base64_action action, size_t entry_size)
 {
     json_t *j_object = NULL, *j_string = NULL;
@@ -201,12 +204,12 @@ static void generate_serial(uint8_t *buffer, size_t *length)
 static int device_new_psk(database_entry_t *device_entry)
 {
     size_t ret = 0;
-    uint8_t binary_buffer[6];
+    uint8_t binary_buffer[DATABASE_PSK_ID_LENGTH / 2];
     const char hex_table[16] = {"0123456789ABCDEF"};
     uint8_t nibble;
 
-    device_entry->public_key = malloc(12);
-    device_entry->secret_key = malloc(16);
+    device_entry->public_key = malloc(DATABASE_PSK_ID_LENGTH);
+    device_entry->secret_key = malloc(DATABASE_PSK_LENGTH);
 
     if (device_entry->public_key == NULL
         || device_entry->secret_key == NULL)
@@ -214,14 +217,14 @@ static int device_new_psk(database_entry_t *device_entry)
         return -1;
     }
 
-    ret = rest_get_random(binary_buffer, 6);
+    ret = rest_get_random(binary_buffer, sizeof(binary_buffer));
     if (ret <= 0)
     {
         return -1;
     }
 
     // PSK ID is a string of random hexadecimal characters
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < sizeof(binary_buffer); i++)
     {
         nibble = (binary_buffer[i] >> 4) & 0x0F;
         device_entry->public_key[i * 2] = hex_table[nibble];
@@ -229,14 +232,14 @@ static int device_new_psk(database_entry_t *device_entry)
         nibble = (binary_buffer[i]) & 0x0F;
         device_entry->public_key[(i * 2) + 1] = hex_table[nibble];
     }
-    device_entry->public_key_len = 12;
+    device_entry->public_key_len = DATABASE_PSK_ID_LENGTH;
 
-    ret = rest_get_random(device_entry->secret_key, 16);
+    ret = rest_get_random(device_entry->secret_key, DATABASE_PSK_LENGTH);
     if (ret <= 0)
     {
         return -1;
     }
-    device_entry->secret_key_len = 16;
+    device_entry->secret_key_len = DATABASE_PSK_LENGTH;
 
     return 0;
 }
