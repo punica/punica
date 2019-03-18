@@ -32,8 +32,8 @@ void TestPlugin::setStamp(std::string newStamp)
     mStamp = newStamp;
 }
 
-punica::rest::StatusCode stampCallback(punica::rest::Request *request,
-                                       punica::rest::Response *response,
+punica::rest::StatusCode stampCallback(punica::rest::Request::ptr request,
+                                       punica::rest::Response::ptr response,
                                        void *context)
 {
     TestPlugin* plugin = reinterpret_cast<TestPlugin *>(context);

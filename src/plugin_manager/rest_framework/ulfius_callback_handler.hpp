@@ -50,8 +50,8 @@ private:
     punica::rest::CallbackFunction mFunction;
     void *mContext;
 
-    static int ulfiusCallback(const struct _u_request *u_request,
-                              struct _u_response *u_response,
+    static int ulfiusCallback(const struct _u_request *uRequest,
+                              struct _u_response *uResponse,
                               void *handlerContext);
 };
 

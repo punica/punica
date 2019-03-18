@@ -49,18 +49,18 @@ UlfiusCallbackHandler::~UlfiusCallbackHandler()
                                   mUrlPrefix.c_str(), mUrlFormat.c_str());
 }
 
-int UlfiusCallbackHandler::ulfiusCallback(const struct _u_request *u_request,
-                                          struct _u_response *u_response,
+int UlfiusCallbackHandler::ulfiusCallback(const struct _u_request *uRequest,
+                                          struct _u_response *uResponse,
                                           void *handlerContext)
 {
     UlfiusCallbackHandler *handler =
         static_cast<UlfiusCallbackHandler *>(handlerContext);
     punica::rest::StatusCode statusCode;
 
-    UlfiusRequest request(u_request);
-    UlfiusResponse response(u_response);
+    punica::rest::Request::ptr request(new UlfiusRequest(uRequest));
+    punica::rest::Response::ptr response(new UlfiusResponse(uResponse));
 
-    statusCode = handler->mFunction(&request, &response, handler->mContext);
+    statusCode = handler->mFunction(request, response, handler->mContext);
 
     switch (statusCode)
     {

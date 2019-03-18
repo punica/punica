@@ -31,69 +31,69 @@ extern "C" {
 } // extern "C"
 #endif
 
-std::map<std::string, std::string> ulfiusToStdMap(struct _u_map *ulfius_map)
+std::map<std::string, std::string> ulfiusToStdMap(struct _u_map *ulfiusMap)
 {
     int header_iterator;
-    std::map<std::string, std::string> std_map;
+    std::map<std::string, std::string> stdMap;
     std::string key, value;
 
-    if (ulfius_map == NULL)
+    if (ulfiusMap == NULL)
     {
-        return std_map;
+        return stdMap;
     }
 
-    for (header_iterator = 0; ulfius_map->keys[header_iterator] != NULL; header_iterator++)
+    for (header_iterator = 0; ulfiusMap->keys[header_iterator] != NULL; header_iterator++)
     {
-        key = ulfius_map->keys[header_iterator];
-        if (ulfius_map->lengths[header_iterator] > 0)
+        key = ulfiusMap->keys[header_iterator];
+        if (ulfiusMap->lengths[header_iterator] > 0)
         {
-            value = ulfius_map->values[header_iterator];
+            value = ulfiusMap->values[header_iterator];
         }
         else
         {
             value = "";
         }
-        std_map.insert(std::make_pair(key, value));
+        stdMap.insert(std::make_pair(key, value));
     }
 
-    return std_map;
+    return stdMap;
 }
 
-UlfiusRequest::UlfiusRequest(const struct _u_request *u_request)
+UlfiusRequest::UlfiusRequest(const struct _u_request *uRequest)
 {
-    uint8_t *uint_body = (uint8_t *)u_request->binary_body;
-    std::vector<uint8_t> vector_body(uint_body, uint_body + u_request->binary_body_length);
-    std::string tmp_path(u_request->http_url);
-    std::string tmp_method(u_request->http_verb);
+    uint8_t *uint_body = (uint8_t *)uRequest->binary_body;
+    std::vector<uint8_t> vector_body(uint_body, uint_body + uRequest->binary_body_length);
+    std::string tmpPath(uRequest->http_url);
+    std::string tmpMethod(uRequest->http_verb);
 
-    path = tmp_path;
-    method = tmp_method;
-    headers = ulfiusToStdMap(u_request->map_header);
-    body = vector_body;
+    mPath = tmpPath;
+    mMethod = tmpMethod;
+    mHeaders = ulfiusToStdMap(uRequest->map_header);
+    mBody = vector_body;
 }
 UlfiusRequest::~UlfiusRequest() { }
 std::string UlfiusRequest::getPath()
 {
-    return path;
+    return mPath;
 }
 std::string UlfiusRequest::getMethod()
 {
-    return method;
+    return mMethod;
 }
 std::string UlfiusRequest::getHeader(const std::string header)
 {
-    std::string header_value;
-    std::map<std::string, std::string>::iterator headers_iterator;
+    std::string headerValue;
+    std::map<std::string, std::string>::iterator headersIterator;
 
-    headers_iterator = headers.find(header);
+    headersIterator = mHeaders.find(header);
 
-    if (headers_iterator != headers.end())
+    if (headersIterator != mHeaders.end())
     {
-        header_value = headers_iterator->second;
+        headerValue = headersIterator->second;
     }
-    return header_value;
+    return headerValue;
 }
 std::vector<uint8_t> UlfiusRequest::getBody()
 {
-    return body;
+    return mBody;
 }

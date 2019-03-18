@@ -25,15 +25,15 @@
 class UlfiusResponse: public punica::rest::Response
 {
 public:
-    UlfiusResponse(struct _u_response *u_response);
+    UlfiusResponse(struct _u_response *uResponse);
     ~UlfiusResponse();
 
-    void setBody(std::vector<uint8_t> binary_data);
+    void setBody(std::vector<uint8_t> binaryData);
     void setCode(const punica::rest::StatusCode code);
     void setHeader(const std::string header, const std::string value);
 
 private:
-    struct _u_response *ulfius_response;
+    struct _u_response *mUlfiusResponse;
 };
 
 #endif // PUNICA_PLUGIN_MANAGER_REST_ULFIUS_RESPONSE_HPP

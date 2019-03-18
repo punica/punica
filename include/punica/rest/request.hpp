@@ -21,6 +21,7 @@
 #define PUNICA_REST_REQUEST_HPP
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -32,7 +33,8 @@ namespace rest {
 class Request
 {
 public:
-    typedef Request *ptr;
+    // typedef Request *ptr;
+    typedef std::shared_ptr<Request> ptr;
 
     virtual ~Request() { }
 

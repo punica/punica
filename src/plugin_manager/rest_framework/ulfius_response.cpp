@@ -32,23 +32,23 @@ extern "C" {
 } // extern "C"
 #endif
 
-UlfiusResponse::UlfiusResponse(struct _u_response *u_response):
-    ulfius_response(u_response) { }
+UlfiusResponse::UlfiusResponse(struct _u_response *uResponse):
+    mUlfiusResponse(uResponse) { }
 
 UlfiusResponse::~UlfiusResponse() { }
 
-void UlfiusResponse::setBody(std::vector<uint8_t> binary_data)
+void UlfiusResponse::setBody(std::vector<uint8_t> binaryData)
 {
-    if (ulfius_response->binary_body != NULL)
+    if (mUlfiusResponse->binary_body != NULL)
     {
-        free(ulfius_response->binary_body);
+        free(mUlfiusResponse->binary_body);
     }
 
-    ulfius_response->binary_body = malloc(binary_data.size());
-    if (ulfius_response->binary_body != NULL)
+    mUlfiusResponse->binary_body = malloc(binaryData.size());
+    if (mUlfiusResponse->binary_body != NULL)
     {
-        ulfius_response->binary_body_length = binary_data.size();
-        std::memcpy(ulfius_response->binary_body, binary_data.data(), binary_data.size());
+        mUlfiusResponse->binary_body_length = binaryData.size();
+        std::memcpy(mUlfiusResponse->binary_body, binaryData.data(), binaryData.size());
     }
     else
     {
@@ -58,13 +58,13 @@ void UlfiusResponse::setBody(std::vector<uint8_t> binary_data)
 
 void UlfiusResponse::setCode(punica::rest::StatusCode code)
 {
-    ulfius_response->status = static_cast<int>(code);
+    mUlfiusResponse->status = static_cast<int>(code);
 }
 
 void UlfiusResponse::setHeader(const std::string header, const std::string value)
 {
-    const char *c_header = header.c_str();
-    const char *c_value = value.c_str();
+    const char *cHeader = header.c_str();
+    const char *cValue = value.c_str();
 
-    u_map_put(ulfius_response->map_header, c_header, c_value);
+    u_map_put(mUlfiusResponse->map_header, cHeader, cValue);
 }

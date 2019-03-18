@@ -21,6 +21,7 @@
 #define PUNICA_REST_RESPONSE_HPP
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -50,7 +51,8 @@ enum StatusCode
 class Response
 {
 public:
-    typedef Response *ptr;
+    // typedef Response *ptr;
+    typedef std::shared_ptr<Response> ptr;
 
     virtual ~Response() { }
 

@@ -25,7 +25,7 @@
 class UlfiusRequest: public punica::rest::Request
 {
 public:
-    UlfiusRequest(const struct _u_request *u_request);
+    UlfiusRequest(const struct _u_request *uRequest);
     ~UlfiusRequest();
 
     std::string getPath();
@@ -34,10 +34,10 @@ public:
     std::vector<uint8_t> getBody();
 
 private:
-    std::string path;
-    std::string method;
-    std::map<std::string, std::string> headers;
-    std::vector<uint8_t> body;
+    std::string mPath;
+    std::string mMethod;
+    std::map<std::string, std::string> mHeaders;
+    std::vector<uint8_t> mBody;
 };
 
 #endif // PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REQUEST_HPP
