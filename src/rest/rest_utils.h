@@ -68,7 +68,7 @@ int database_prepare_array(json_t *j_array, linked_list_t *device_list);
 json_t *database_entry_to_json(void *entry, const char *key, database_base64_action action, size_t entry_size);
 void *database_json_to_entry(json_t *j_object, const char *key, database_base64_action action, size_t *entry_size);
 
-int utils_get_server_key(uint8_t *buffer, size_t *length, void *context);
+int utils_get_server_key(uint8_t *buffer, size_t *length, const char *cert_file);
 
 database_entry_t *database_get_entry_by_name(const char *name, linked_list_t *device_list);
 

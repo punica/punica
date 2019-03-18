@@ -776,16 +776,15 @@ int database_prepare_array(json_t *j_array, linked_list_t *device_list)
     return 0;
 }
 
-int utils_get_server_key(uint8_t *buffer, size_t *length, void *context)
+int utils_get_server_key(uint8_t *buffer, size_t *length, const char *cert_file)
 {
-    rest_context_t *rest = (rest_context_t *)context;
     gnutls_x509_crt_t cert = NULL;
     gnutls_datum_t cert_buffer = {NULL, 0};
     int ret = -1;
 
     gnutls_x509_crt_init(&cert);
 
-    if (gnutls_load_file(rest->settings->coap.certificate_file, &cert_buffer))
+    if (gnutls_load_file(cert_file, &cert_buffer))
     {
         goto exit;
     }

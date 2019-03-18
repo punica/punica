@@ -71,7 +71,7 @@ static int rest_devices_remove_list(linked_list_t *list, const char *uuid)
     return -1;
 }
 
-static int append_server_key(json_t *j_object, void *context)
+static int append_server_key(json_t *j_object, const char *certificate_file)
 {
     uint8_t binary_buffer[1024];
     size_t binary_length;
@@ -85,7 +85,7 @@ static int append_server_key(json_t *j_object, void *context)
     }
 
     binary_length = sizeof(binary_buffer);
-    if (utils_get_server_key(binary_buffer, &binary_length, context))
+    if (utils_get_server_key(binary_buffer, &binary_length, certificate_file))
     {
         return -1;
     }
@@ -113,6 +113,7 @@ static int append_server_key(json_t *j_object, void *context)
 
 static json_t *rest_devices_prepare_resp(database_entry_t *device_entry, void *context)
 {
+    rest_context_t *rest = (rest_context_t *)context;
     json_t *j_resp_obj = NULL;
     json_t *uuid = NULL, *name = NULL, *mode = NULL, *public_key = NULL;
     char *mode_string;
@@ -132,7 +133,7 @@ static json_t *rest_devices_prepare_resp(database_entry_t *device_entry, void *c
     {
         mode_string = "cert";
 
-        if (append_server_key(j_resp_obj, context))
+        if (append_server_key(j_resp_obj, rest->settings->coap.certificate_file))
         {
             goto exit;
         }
