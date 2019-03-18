@@ -338,6 +338,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
     }
 
     linked_list_add(rest->devicesList, device_entry);
+    ulfius_set_json_body_response(resp, 201, j_post_resp);
     status = 0;
 
 //  if database file not specified then only save locally
@@ -347,18 +348,17 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
 
         if (database_prepare_array(jdatabase_list, rest->devicesList))
         {
-            ulfius_set_json_body_response(resp, 500, j_post_resp);
+            log_message(LOG_LEVEL_ERROR, "[DEVICES POST] Failed to prepare JSON array for database file.\n");
             goto exit;
         }
 
         if (json_dump_file(jdatabase_list, rest->settings->coap.database_file, 0) != 0)
         {
-            ulfius_set_json_body_response(resp, 500, j_post_resp);
+            log_message(LOG_LEVEL_ERROR, "[DEVICES POST] Failed to write to database file.\n");
             goto exit;
         }
     }
 
-    ulfius_set_json_body_response(resp, 201, j_post_resp);
 exit:
     if (status)
     {
@@ -423,10 +423,11 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
         goto exit;
     }
 
+    ulfius_set_empty_body_response(resp, 201);
+
 //  if database file does not exist then only save locally
     if (rest->settings->coap.database_file == NULL)
     {
-        ulfius_set_empty_body_response(resp, 201);
         goto exit;
     }
 
@@ -434,17 +435,16 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
 
     if (database_prepare_array(jdatabase_list, rest->devicesList))
     {
-        ulfius_set_empty_body_response(resp, 500);
+        log_message(LOG_LEVEL_ERROR, "[DEVICES PUT] Failed to prepare JSON array for database file.\n");
         goto exit;
     }
 
     if (json_dump_file(jdatabase_list, rest->settings->coap.database_file, 0) != 0)
     {
-        ulfius_set_empty_body_response(resp, 500);
+        log_message(LOG_LEVEL_ERROR, "[DEVICES PUT] Failed to write to database file.\n");
         goto exit;
     }
 
-    ulfius_set_empty_body_response(resp, 201);
 exit:
     json_decref(jdevice);
     json_decref(jdatabase_list);
@@ -475,10 +475,12 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
         ulfius_set_empty_body_response(resp, 404);
         goto exit;
     }
+
+    ulfius_set_empty_body_response(resp, 200);
+
 //  if database file not specified then only save locally
     if (rest->settings->coap.database_file == NULL)
     {
-        ulfius_set_empty_body_response(resp, 200);
         goto exit;
     }
 
@@ -486,17 +488,16 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
 
     if (database_prepare_array(jdatabase_list, rest->devicesList))
     {
-        ulfius_set_empty_body_response(resp, 500);
+        log_message(LOG_LEVEL_ERROR, "[DEVICES DELETE] Failed to prepare JSON array for database file.\n");
         goto exit;
     }
 
     if (json_dump_file(jdatabase_list, rest->settings->coap.database_file, 0) != 0)
     {
-        ulfius_set_empty_body_response(resp, 500);
+        log_message(LOG_LEVEL_ERROR, "[DEVICES DELETE] Failed to write to database file.\n");
         goto exit;
     }
 
-    ulfius_set_empty_body_response(resp, 200);
 exit:
     json_decref(jdatabase_list);
     rest_unlock(rest);
