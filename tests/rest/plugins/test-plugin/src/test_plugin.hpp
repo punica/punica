@@ -27,26 +27,26 @@
 class TestPlugin: public punica::plugin::Plugin
 {
 public:
-    TestPlugin(std::string test_stamp): stamp(test_stamp) { }
+    TestPlugin(std::string testStamp): mStamp(testStamp) { }
     ~TestPlugin() { }
 
     std::string getStamp();
-    void setStamp(std::string new_stamp);
+    void setStamp(std::string newStamp);
 
 private:
-    std::string stamp;
+    std::string mStamp;
 };
 
-punica::rest::StatusCode stamp(punica::rest::Request *request,
-                               punica::rest::Response *response,
-                               void *context);
+punica::rest::StatusCode stampCallback(punica::rest::Request *request,
+                                       punica::rest::Response *response,
+                                       void *context);
 
-static punica::plugin::Plugin *NewTestPlugin(punica::Core *core);
-static void DeleteTestPlugin(punica::plugin::Plugin *plugin);
+static punica::plugin::Plugin *newTestPlugin(punica::Core *core);
+static void deleteTestPlugin(punica::plugin::Plugin *plugin);
 
-extern "C" const punica::plugin::plugin_api_t PLUGIN_API =
+extern "C" const punica::plugin::PluginApi PLUGIN_API =
 {
     .version = { 0, 0, 0},
-    .create = NewTestPlugin,
-    .destroy = DeleteTestPlugin,
+    .create = newTestPlugin,
+    .destroy = deleteTestPlugin,
 };

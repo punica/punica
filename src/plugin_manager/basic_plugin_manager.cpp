@@ -72,7 +72,7 @@ BasicPluginManager::BasicPluginManager(punica::Core *plugin_core):
 
 BasicPluginManager::~BasicPluginManager()
 {
-    std::map<std::string, std::pair<punica::plugin::Plugin *, punica::plugin::plugin_api_t *> >::iterator
+    std::map<std::string, std::pair<punica::plugin::Plugin *, punica::plugin::PluginApi *> >::iterator
     plugins_iterator;
 
     for (plugins_iterator = plugins.begin(); plugins_iterator != plugins.end(); ++plugins_iterator)
@@ -98,30 +98,30 @@ bool BasicPluginManager::loadPlugin(std::string path, std::string name)
         return false;
     }
 
-    punica::plugin::plugin_api_t *plugin_api = static_cast<punica::plugin::plugin_api_t *>(dlsym(dll,
-                                               PLUGIN_API_HANDLE_NAME));
+    punica::plugin::PluginApi *pluginApi = static_cast<punica::plugin::PluginApi *>(dlsym(dll,
+                                           PLUGIN_API_HANDLE_NAME));
 
-    if (plugin_api == NULL)
+    if (pluginApi == NULL)
     {
         std::cerr << "Failed to load plugin api from '" << path << "\"!" << std::endl;
         return false;
     }
 
-    if (plugin_api->create == NULL)
+    if (pluginApi->create == NULL)
     {
         std::cerr << "Failed to load plugin api from '" << path << "\"!" << std::endl;
         std::cerr << "Missing PLUGIN_API->create()" << std::endl;
         return false;
     }
-    if (plugin_api->destroy == NULL)
+    if (pluginApi->destroy == NULL)
     {
         std::cerr << "Failed to load plugin api from '" << path << "\"!" << std::endl;
         std::cerr << "Missing PLUGIN_API->destroy()" << std::endl;
         return false;
     }
 
-    punica::plugin::plugin_version_t plugin_version = plugin_api->version;
-    punica::plugin::Plugin *plugin = plugin_api->create(core);
+    punica::plugin::PluginVersion pluginVersion = pluginApi->version;
+    punica::plugin::Plugin *plugin = pluginApi->create(core);
 
     if (plugin == NULL)
     {
@@ -129,18 +129,18 @@ bool BasicPluginManager::loadPlugin(std::string path, std::string name)
         return false;
     }
 
-    plugins[name] = std::make_pair(plugin, plugin_api);
+    plugins[name] = std::make_pair(plugin, pluginApi);
 
     return true;
 }
 
 bool BasicPluginManager::unloadPlugin(std::string name)
 {
-    std::map<std::string, std::pair<punica::plugin::Plugin *, punica::plugin::plugin_api_t *> >::iterator
+    std::map<std::string, std::pair<punica::plugin::Plugin *, punica::plugin::PluginApi *> >::iterator
     plugins_iterator =
         plugins.find(name);
     punica::plugin::Plugin *plugin;
-    punica::plugin::plugin_api_t *plugin_api;
+    punica::plugin::PluginApi *pluginApi;
 
     if (plugins_iterator == plugins.end())
     {
@@ -148,9 +148,9 @@ bool BasicPluginManager::unloadPlugin(std::string name)
     }
 
     plugin = plugins_iterator->second.first;
-    plugin_api = plugins_iterator->second.second;
+    pluginApi = plugins_iterator->second.second;
 
-    plugin_api->destroy(plugin);
+    pluginApi->destroy(plugin);
 
     plugins.erase(plugins_iterator);
 

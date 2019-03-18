@@ -49,15 +49,18 @@ BasicCore::BasicCore(struct _u_instance *ulfius_instance,
     mRestCore = new UlfiusRestCore(ulfius_instance);
     mLwm2mCore = new BasicLwm2mCore(rest_context);
 }
+
 BasicCore::~BasicCore()
 {
     delete mRestCore;
     delete mLwm2mCore;
 }
+
 punica::rest::Core *BasicCore::getRestCore()
 {
     return mRestCore;
 }
+
 punica::lwm2m::Core *BasicCore::getLwm2mCore()
 {
     return mLwm2mCore;

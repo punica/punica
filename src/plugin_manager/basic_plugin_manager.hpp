@@ -32,7 +32,7 @@ public:
 
 private:
     punica::Core *core;
-    std::map<std::string, std::pair<punica::plugin::Plugin *, punica::plugin::plugin_api_t *> > plugins;
+    std::map<std::string, std::pair<punica::plugin::Plugin *, punica::plugin::PluginApi *> > plugins;
 };
 
 #endif // PUNICA_PLUGIN_MANAGER_BASIC_PLUGIN_MANAGER_HPP 

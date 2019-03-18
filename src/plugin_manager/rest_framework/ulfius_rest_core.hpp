@@ -31,18 +31,16 @@ public:
     UlfiusRestCore(struct _u_instance *instance);
     ~UlfiusRestCore();
 
-    void addHandler(const std::string method,
-                    const std::string url_prefix,
-                    unsigned int priority,
-                    punica::rest::callback_function_t handler_function,
-                    void *handler_context);
+    void addCallbackHandler(const std::string method,
+                            const std::string urlPrefix,
+                            const std::string urlFormat,
+                            unsigned int priority,
+                            punica::rest::CallbackFunction handler_function,
+                            void *handler_context);
 
 private:
-    static int ulfiusCallback(const struct _u_request *u_request,
-                              struct _u_response *u_response, void *context);
-
-    std::vector<punica::rest::CallbackHandler *> callbackHandlers;
-    struct _u_instance *ulfius_instance;
+    punica::rest::CallbackHandler::vector mCallbackHandlers;
+    struct _u_instance *mUlfiusInstance;
 };
 
 #endif // PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REST_CORE_HPP

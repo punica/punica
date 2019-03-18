@@ -24,12 +24,12 @@
 class PluginWithoutApi: public punica::plugin::Plugin
 {
 public:
-    PluginWithoutApi(std::string test_stamp): stamp(test_stamp) { }
+    PluginWithoutApi(std::string testStamp): mStamp(testStamp) { }
     ~PluginWithoutApi() { }
 
     std::string getStamp();
-    void setStamp(std::string new_stamp);
+    void setStamp(std::string newStamp);
 
 private:
-    std::string stamp;
+    std::string mStamp;
 };

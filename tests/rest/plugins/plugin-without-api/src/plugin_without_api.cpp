@@ -21,10 +21,10 @@
 
 std::string PluginWithoutApi::getStamp()
 {
-    return stamp;
+    return mStamp;
 }
 
-void PluginWithoutApi::setStamp(std::string new_stamp)
+void PluginWithoutApi::setStamp(std::string newStamp)
 {
-    stamp = new_stamp;
+    mStamp = newStamp;
 }

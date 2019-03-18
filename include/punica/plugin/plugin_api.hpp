@@ -28,22 +28,22 @@
 namespace punica {
 namespace plugin {
 
-typedef Plugin *(*plugin_create_t)(Core *core);
-typedef void (*plugin_destroy_t)(Plugin *plugin);
+typedef Plugin *(*PluginCreate)(Core *core);
+typedef void (*PluginDestroy)(Plugin *plugin);
 
 typedef struct
 {
     uint32_t major: 8,
              minor: 8,
              revision: 16;
-} plugin_version_t;
+} PluginVersion;
 
 typedef struct
 {
-    plugin_version_t version;
-    plugin_create_t create;
-    plugin_destroy_t destroy;
-} plugin_api_t;
+    PluginVersion version;
+    PluginCreate create;
+    PluginDestroy destroy;
+} PluginApi;
 
 } /* namespace plugin */
 } /* namespace punica */

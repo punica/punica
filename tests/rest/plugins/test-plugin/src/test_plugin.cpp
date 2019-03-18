@@ -24,87 +24,94 @@
 
 std::string TestPlugin::getStamp()
 {
-    return stamp;
+    return mStamp;
 }
 
-void TestPlugin::setStamp(std::string new_stamp)
+void TestPlugin::setStamp(std::string newStamp)
 {
-    stamp = new_stamp;
+    mStamp = newStamp;
 }
 
-punica::rest::StatusCode stamp(punica::rest::Request *request,
-                               punica::rest::Response *response,
-                               void *context)
+punica::rest::StatusCode stampCallback(punica::rest::Request *request,
+                                       punica::rest::Response *response,
+                                       void *context)
 {
     TestPlugin* plugin = reinterpret_cast<TestPlugin *>(context);
     std::string stamp;
-    std::string append_header_value;
+    std::string appendHeaderValue;
     std::string method = request->getMethod();
-    std::string string_request_body;
-    std::string string_response_body;
-    std::vector<uint8_t> request_body;
-    std::vector<uint8_t> response_body;
-    punica::rest::StatusCode status_code = punica::rest::success_ok;
+    std::string stringRequestBody;
+    std::string stringResponseBody;
+    std::vector<uint8_t> requestBody;
+    std::vector<uint8_t> responseBody;
+    punica::rest::StatusCode statusCode = punica::rest::success_ok;
     
     response->setHeader("Test-status", "success");
   
     if (method == "GET")
     {
-        string_response_body = plugin->getStamp();
+        stringResponseBody = plugin->getStamp();
     }
     else if (method == "PUT")
     {
-        request_body = request->getBody();
-        request_body.push_back('\0');
-        string_request_body = std::string(reinterpret_cast<char *>(request_body.data()));
+        requestBody = request->getBody();
+        requestBody.push_back('\0');
+        stringRequestBody =
+            std::string(reinterpret_cast<char *>(requestBody.data()));
 
-        plugin->setStamp(string_request_body);
+        plugin->setStamp(stringRequestBody);
 
-        status_code = punica::rest::success_no_content;
+        statusCode = punica::rest::success_no_content;
     }
     else if (method == "POST")
     {
-        request_body = request->getBody();
-        request_body.push_back('\0');
-        string_request_body = std::string(reinterpret_cast<char *>(request_body.data()));
-        append_header_value = request->getHeader("Append");
+        requestBody = request->getBody();
+        requestBody.push_back('\0');
+        stringRequestBody =
+            std::string(reinterpret_cast<char *>(requestBody.data()));
+
+        appendHeaderValue = request->getHeader("Append");
 
         stamp = plugin->getStamp();
-        if ((append_header_value == "1")
-         || (append_header_value == "yes")
-         || (append_header_value == "true"))
+        if ((appendHeaderValue == "1")
+         || (appendHeaderValue == "yes")
+         || (appendHeaderValue == "true"))
         {
-            string_response_body = string_request_body + stamp;
+            stringResponseBody = stringRequestBody + stamp;
         }
         else
         {
-            string_response_body = stamp + string_request_body;
+            stringResponseBody = stamp + stringRequestBody;
         }
     }
     else
     {
         response->setHeader("Test-status", "fail");
 
-        status_code = punica::rest::client_error_method_not_allowed;
+        statusCode = punica::rest::client_error_method_not_allowed;
     }
 
-    response_body = std::vector<uint8_t>(string_response_body.begin(), string_response_body.end());
+    responseBody = std::vector<uint8_t>(stringResponseBody.begin(),
+                                        stringResponseBody.end());
 
-    response->setCode(status_code);
-    response->setBody(response_body);
-    return status_code;
+    response->setCode(statusCode);
+    response->setBody(responseBody);
+    return statusCode;
 }
 
-static punica::plugin::Plugin *NewTestPlugin(punica::Core *core)
+static punica::plugin::Plugin *newTestPlugin(punica::Core *core)
 {
     TestPlugin *plugin = new TestPlugin("Test Plugin Stamp");
-    punica::rest::Core *rest_core = core->getRestCore();
-    rest_core->addHandler("*", "/test_plugin/stamp", 10, stamp, reinterpret_cast<void *>(plugin));
+    punica::rest::Core *restCore = core->getRestCore();
+    void *pluginContext = reinterpret_cast<void *>(plugin);
+
+    restCore->addCallbackHandler("*", "/test_plugin/stamp", "", 10,
+                                 stampCallback, pluginContext);
 
     return plugin;
 }
 
-static void DeleteTestPlugin(punica::plugin::Plugin *plugin)
+static void deleteTestPlugin(punica::plugin::Plugin *plugin)
 {
     delete static_cast<TestPlugin *>(plugin);
 }

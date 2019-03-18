@@ -20,18 +20,29 @@
 #ifndef PUNICA_REST_CALLBACK_HANDLER_HPP
 #define PUNICA_REST_CALLBACK_HANDLER_HPP
 
+#include <memory>
+
+#include <punica/rest/request.hpp>
+#include <punica/rest/response.hpp>
+
 namespace punica {
 namespace rest {
+
+typedef StatusCode(*CallbackFunction)(Request::ptr, Response::ptr, void *);
 
 class CallbackHandler
 {
 public:
-    CallbackHandler(callback_function_t handler_function,
-                    void *handler_context)
-        : function(handler_function), context(handler_context)
-    { }
-    callback_function_t function;
-    void *context;
+    // typedef CallbackHandler *ptr;
+    typedef std::unique_ptr<CallbackHandler> ptr;
+    typedef std::vector<CallbackHandler::ptr> vector;
+
+    ~CallbackHandler() { }
+
+private:
+    CallbackFunction mFunction;
+    std::string mMethod, mUrlPrefix, mUrlFormat;
+    void *mContext;
 };
 
 } /* namespace rest */

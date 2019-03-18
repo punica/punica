@@ -33,7 +33,7 @@ public:
 static punica::plugin::Plugin *NewPluginWithoutDestroy(punica::Core *core);
 static void DeletePluginWithoutDestroy(punica::plugin::Plugin *plugin);
 
-extern "C" const punica::plugin::plugin_api_t PLUGIN_API =
+extern "C" const punica::plugin::PluginApi PLUGIN_API =
 {
     .version = { 0, 0, 0},
     .create = NewPluginWithoutDestroy,

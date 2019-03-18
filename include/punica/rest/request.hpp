@@ -32,6 +32,8 @@ namespace rest {
 class Request
 {
 public:
+    typedef Request *ptr;
+
     virtual ~Request() { }
 
     virtual std::string getPath() = 0;

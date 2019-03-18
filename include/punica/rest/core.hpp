@@ -22,24 +22,25 @@
 
 #include <string>
 
-#include <punica/rest/request.hpp>
-#include <punica/rest/response.hpp>
+#include <punica/rest/callback_handler.hpp>
 
 namespace punica {
 namespace rest {
-
-typedef StatusCode(*callback_function_t)(Request *, Response *, void *);
 
 class Core
 {
 public:
     virtual ~Core() { }
 
-    virtual void addHandler(const std::string method,
-                            const std::string url_prefix,
-                            unsigned int priority,
-                            callback_function_t handler_function,
-                            void *handler_context) = 0;
+    virtual void addCallbackHandler(const std::string method,
+                                    const std::string urlPrefix,
+                                    const std::string urlFormat,
+                                    unsigned int priority,
+                                    CallbackFunction handlerFunction,
+                                    void *handlerContext) = 0;
+
+private:
+    CallbackHandler::vector mCallbackHandlers;
 };
 
 } /* namespace rest */

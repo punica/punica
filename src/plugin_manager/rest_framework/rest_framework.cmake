@@ -2,7 +2,8 @@
 
 set(REST_FRAMEWORK_SOURCES_DIR ${CMAKE_CURRENT_LIST_DIR})
 set(REST_FRAMEWORK_SOURCES
+    ${REST_FRAMEWORK_SOURCES_DIR}/ulfius_rest_core.cpp
+    ${REST_FRAMEWORK_SOURCES_DIR}/ulfius_callback_handler.cpp
     ${REST_FRAMEWORK_SOURCES_DIR}/ulfius_request.cpp
     ${REST_FRAMEWORK_SOURCES_DIR}/ulfius_response.cpp
-    ${REST_FRAMEWORK_SOURCES_DIR}/ulfius_rest_core.cpp
     )
