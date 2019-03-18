@@ -41,7 +41,7 @@ punica::rest::StatusCode stampCallback(punica::rest::Request::ptr request,
                                        punica::rest::Response::ptr response,
                                        void *context);
 
-static punica::plugin::Plugin *newTestPlugin(punica::Core *core);
+static punica::plugin::Plugin *newTestPlugin(punica::Core::ptr core);
 static void deleteTestPlugin(punica::plugin::Plugin *plugin);
 
 extern "C" const punica::plugin::PluginApi PLUGIN_API =

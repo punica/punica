@@ -28,7 +28,7 @@
 namespace punica {
 namespace plugin {
 
-typedef Plugin *(*PluginCreate)(Core *core);
+typedef Plugin *(*PluginCreate)(Core::ptr core);
 typedef void (*PluginDestroy)(Plugin *plugin);
 
 typedef struct

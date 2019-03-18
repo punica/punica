@@ -20,6 +20,8 @@
 #ifndef PUNICA_CORE_HPP
 #define PUNICA_CORE_HPP
 
+#include <memory>
+
 #include <punica/rest/core.hpp>
 #include <punica/lwm2m/core.hpp>
 
@@ -28,14 +30,16 @@ namespace punica {
 class Core
 {
 public:
+    typedef std::shared_ptr<Core> ptr;
+
     virtual ~Core() { }
 
-    virtual punica::rest::Core *getRestCore() = 0;
-    virtual punica::lwm2m::Core *getLwm2mCore() = 0;
+    virtual punica::rest::Core::ptr getRestCore() = 0;
+    virtual punica::lwm2m::Core::ptr getLwm2mCore() = 0;
 
 protected:
-    punica::rest::Core *mRestCore;
-    punica::lwm2m::Core *mLwm2mCore;
+    punica::rest::Core::ptr mRestCore;
+    punica::lwm2m::Core::ptr mLwm2mCore;
 };
 
 } /* namespace punica */

@@ -591,7 +591,6 @@ int main(int argc, char *argv[])
     }
 
     basic_plugin_manager_delete(plugin_manager);
-    basic_punica_core_delete(punica_core);
     plugins_unload(&settings.plugins);
 
     ulfius_stop_framework(&instance);

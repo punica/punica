@@ -33,7 +33,6 @@ namespace rest {
 class Request
 {
 public:
-    // typedef Request *ptr;
     typedef std::shared_ptr<Request> ptr;
 
     virtual ~Request() { }

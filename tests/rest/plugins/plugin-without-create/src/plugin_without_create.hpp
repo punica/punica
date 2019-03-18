@@ -30,12 +30,11 @@ public:
     ~PluginWithoutCreate() { }
 };
 
-static punica::plugin::Plugin *NewPluginWithoutCreate(punica::Core *core);
-static void DeletePluginWithoutCreate(punica::plugin::Plugin *plugin);
+static void deletePluginWithoutCreate(punica::plugin::Plugin *plugin);
 
 extern "C" const punica::plugin::PluginApi PLUGIN_API =
 {
     .version = { 0, 0, 0},
     .create = NULL,
-    .destroy = DeletePluginWithoutCreate,
+    .destroy = deletePluginWithoutCreate,
 };

@@ -20,6 +20,7 @@
 #ifndef PUNICA_REST_CORE_HPP
 #define PUNICA_REST_CORE_HPP
 
+#include <memory>
 #include <string>
 
 #include <punica/rest/callback_handler.hpp>
@@ -30,6 +31,8 @@ namespace rest {
 class Core
 {
 public:
+    typedef std::shared_ptr<Core> ptr;
+
     virtual ~Core() { }
 
     virtual void addCallbackHandler(const std::string method,

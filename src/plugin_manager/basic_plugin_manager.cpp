@@ -31,7 +31,7 @@ extern "C" {
 
 basic_plugin_manager_t *basic_plugin_manager_new(basic_punica_core_t *c_core)
 {
-    BasicCore *core = reinterpret_cast<BasicCore *>(c_core);
+    punica::Core::ptr core(reinterpret_cast<BasicCore *>(c_core));
 
     return reinterpret_cast<basic_plugin_manager_t *>(new BasicPluginManager(core));
 }
@@ -65,25 +65,25 @@ int basic_plugin_manager_unload_plugin(basic_plugin_manager_t *c_manager,
 } // extern "C"
 #endif
 
-BasicPluginManager::BasicPluginManager(punica::Core *plugin_core):
-    core(plugin_core),
-    plugins()
+BasicPluginManager::BasicPluginManager(punica::Core::ptr core):
+    mCore(core),
+    mPlugins()
 { }
 
 BasicPluginManager::~BasicPluginManager()
 {
     std::map<std::string, std::pair<punica::plugin::Plugin *, punica::plugin::PluginApi *> >::iterator
-    plugins_iterator;
+    pluginsIterator;
 
-    for (plugins_iterator = plugins.begin(); plugins_iterator != plugins.end(); ++plugins_iterator)
+    for (pluginsIterator = mPlugins.begin(); pluginsIterator != mPlugins.end(); ++pluginsIterator)
     {
-        unloadPlugin(plugins_iterator->first);
+        unloadPlugin(pluginsIterator->first);
     }
 }
 
 bool BasicPluginManager::loadPlugin(std::string path, std::string name)
 {
-    if (plugins.find(name) != plugins.end())
+    if (mPlugins.find(name) != mPlugins.end())
     {
         if (unloadPlugin(name) != true)
         {
@@ -121,7 +121,7 @@ bool BasicPluginManager::loadPlugin(std::string path, std::string name)
     }
 
     punica::plugin::PluginVersion pluginVersion = pluginApi->version;
-    punica::plugin::Plugin *plugin = pluginApi->create(core);
+    punica::plugin::Plugin *plugin = pluginApi->create(mCore);
 
     if (plugin == NULL)
     {
@@ -129,7 +129,7 @@ bool BasicPluginManager::loadPlugin(std::string path, std::string name)
         return false;
     }
 
-    plugins[name] = std::make_pair(plugin, pluginApi);
+    mPlugins[name] = std::make_pair(plugin, pluginApi);
 
     return true;
 }
@@ -137,22 +137,21 @@ bool BasicPluginManager::loadPlugin(std::string path, std::string name)
 bool BasicPluginManager::unloadPlugin(std::string name)
 {
     std::map<std::string, std::pair<punica::plugin::Plugin *, punica::plugin::PluginApi *> >::iterator
-    plugins_iterator =
-        plugins.find(name);
+    pluginsIterator = mPlugins.find(name);
     punica::plugin::Plugin *plugin;
     punica::plugin::PluginApi *pluginApi;
 
-    if (plugins_iterator == plugins.end())
+    if (pluginsIterator == mPlugins.end())
     {
         return false;
     }
 
-    plugin = plugins_iterator->second.first;
-    pluginApi = plugins_iterator->second.second;
+    plugin = pluginsIterator->second.first;
+    pluginApi = pluginsIterator->second.second;
 
     pluginApi->destroy(plugin);
 
-    plugins.erase(plugins_iterator);
+    mPlugins.erase(pluginsIterator);
 
     return true;
 }

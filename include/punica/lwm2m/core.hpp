@@ -20,12 +20,16 @@
 #ifndef PUNICA_LWM2M_CORE_HPP
 #define PUNICA_LWM2M_CORE_HPP
 
+#include <memory>
+
 namespace punica {
 namespace lwm2m {
 
 class Core
 {
 public:
+    typedef std::shared_ptr<Core> ptr;
+
     virtual ~Core() { }
 
     virtual void *getContext() = 0;

@@ -43,25 +43,24 @@ void basic_punica_core_delete(basic_punica_core_t *core)
 } // extern "C"
 #endif
 
-BasicCore::BasicCore(struct _u_instance *ulfius_instance,
-                     void *rest_context)
-{
-    mRestCore = new UlfiusRestCore(ulfius_instance);
-    mLwm2mCore = new BasicLwm2mCore(rest_context);
-}
+BasicCore::BasicCore(struct _u_instance *ulfiusInstance,
+                     void *restContext):
+    mRestCore(new UlfiusRestCore(ulfiusInstance)),
+    mLwm2mCore(new BasicLwm2mCore(restContext))
+{ }
 
 BasicCore::~BasicCore()
 {
-    delete mRestCore;
-    delete mLwm2mCore;
+    // delete mRestCore;
+    // delete mLwm2mCore;
 }
 
-punica::rest::Core *BasicCore::getRestCore()
+punica::rest::Core::ptr BasicCore::getRestCore()
 {
     return mRestCore;
 }
 
-punica::lwm2m::Core *BasicCore::getLwm2mCore()
+punica::lwm2m::Core::ptr BasicCore::getLwm2mCore()
 {
     return mLwm2mCore;
 }

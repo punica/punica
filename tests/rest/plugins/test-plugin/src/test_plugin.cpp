@@ -99,10 +99,10 @@ punica::rest::StatusCode stampCallback(punica::rest::Request::ptr request,
     return statusCode;
 }
 
-static punica::plugin::Plugin *newTestPlugin(punica::Core *core)
+static punica::plugin::Plugin *newTestPlugin(punica::Core::ptr core)
 {
     TestPlugin *plugin = new TestPlugin("Test Plugin Stamp");
-    punica::rest::Core *restCore = core->getRestCore();
+    punica::rest::Core::ptr restCore = core->getRestCore();
     void *pluginContext = reinterpret_cast<void *>(plugin);
 
     restCore->addCallbackHandler("*", "/test_plugin/stamp", "", 10,

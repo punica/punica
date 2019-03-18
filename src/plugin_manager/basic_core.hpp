@@ -35,15 +35,15 @@ extern "C" {
 class BasicCore: public punica::Core
 {
 public:
-    BasicCore(struct _u_instance *ulfius_instance,
-              void *rest_context);
+    BasicCore(struct _u_instance *ulfiusInstance,
+              void *restContext);
     ~BasicCore();
-    punica::rest::Core *getRestCore();
-    punica::lwm2m::Core *getLwm2mCore();
+    punica::rest::Core::ptr getRestCore();
+    punica::lwm2m::Core::ptr getLwm2mCore();
 
 private:
-    punica::rest::Core *restCore;
-    punica::lwm2m::Core *lwm2mCore;
+    punica::rest::Core::ptr mRestCore;
+    punica::lwm2m::Core::ptr mLwm2mCore;
 };
 
 #endif // PUNICA_PLUGIN_MANAGER_BASIC_CORE_HPP

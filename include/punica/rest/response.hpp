@@ -51,7 +51,6 @@ enum StatusCode
 class Response
 {
 public:
-    // typedef Response *ptr;
     typedef std::shared_ptr<Response> ptr;
 
     virtual ~Response() { }
