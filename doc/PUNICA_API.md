@@ -460,17 +460,9 @@ The code in this directory is licensed under the MIT license, however please not
 **Manage registered devices with devices REST API**
   ----  
   
-  Punica provides an infrastructure for device DTLS security credentials creation and managment, where the server acts as the central node of operation - generating, signing, validating and distributing new keys. Currently two security modes are supported: the use of pre-shared keys and x509 certificates. The collection of device identification information and security credentials will be called a `device entry`. The following keywords are used in the device entry context:
-
-  ***mode*** - device security credentials mode. `psk`, `cert` or `none`,
+  Punica provides an infrastructure for device DTLS security credentials creation and managment, where the server acts as the central node of operation - generating, signing, validating and distributing new keys. Currently two security modes are supported: the use of pre-shared keys and x509 certificates. The collection of device identification information and security credentials will be called a `device entry`. Keywords used in the device entry context are defined in the README.md file. One new keyword only used in /devices REST:
   
-  ***uuid*** - a unique identifier used to specify a device entry,
-  
-  ***secret_key*** - device pre-shared key or x509 private key,
-  
-  ***public_key*** - device pre-shared id or x509 certificate,
-  
-  ***server_key*** - server x509 certificate or void in case of `psk` mode.
+  ***server_key*** - server x509 certificate or void in case of `psk` and `none` modes.
   
 **List registered devices entries**
 ----
