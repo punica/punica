@@ -19,6 +19,7 @@
 
 #include <string.h>
 
+#include "../database.h"
 #include "../punica.h"
 #include "../linked_list.h"
 #include "../settings.h"
