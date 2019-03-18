@@ -1,12 +1,9 @@
 const chai = require('chai');
-const chai_http = require('chai-http');
 const should = chai.should();
 const https = require('https');
 const punica = require('punica');
 const fs = require('fs');
 var ClientInterface = require('./client-secure-if');
-
-chai.use(chai_http);
 
 describe('Secure endpoints interface', () => {
 
@@ -235,9 +232,9 @@ describe('Secure endpoints interface', () => {
     let certOptionsSwitchedName = Object.assign({}, certOptions1);
     certOptionsSwitchedName.clientName = certOptions2.clientName;
 
-    let clientPsk = new ClientInterface(certOptionsSwitchedName);
+    let clientCert = new ClientInterface(certOptionsSwitchedName);
 
-    clientPsk.connect((err) => {
+    clientCert.connect((err) => {
       if (err) {
         err.should.equal('4.00');
         done();
