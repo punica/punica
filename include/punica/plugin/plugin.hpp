@@ -20,8 +20,6 @@
 #ifndef PUNICA_PLUGIN_PLUGIN_HPP
 #define PUNICA_PLUGIN_PLUGIN_HPP
 
-#include <string>
-
 namespace punica {
 namespace plugin {
 
