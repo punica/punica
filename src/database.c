@@ -85,7 +85,7 @@ int database_load_file(rest_context_t *rest)
 
     json_array_foreach(j_database, index, j_entry)
     {
-        if (database_validate_entry(j_entry, device_list))
+        if (database_validate_entry(j_entry))
         {
             fprintf(stdout, "Found error(s) in device entry no. %ld\n", index);
             continue;

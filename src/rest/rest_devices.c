@@ -306,7 +306,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
     }
 
     jdevice_list = json_loadb(req->binary_body, req->binary_body_length, 0, NULL);
-    if (database_validate_new_entry(jdevice_list, rest->devicesList))
+    if (database_validate_new_entry(jdevice_list))
     {
         ulfius_set_empty_body_response(resp, 400);
         goto exit;
