@@ -268,7 +268,7 @@ void database_free_entry(database_entry_t *device_entry)
     }
 }
 
-int database_validate_new_entry(json_t *j_new_device_object, linked_list_t *device_list)
+int database_validate_new_entry(json_t *j_new_device_object)
 {
     int key_check = 0;
     const char *key, *value_string;
@@ -315,7 +315,7 @@ int database_validate_new_entry(json_t *j_new_device_object, linked_list_t *devi
     return 0;
 }
 
-int database_validate_entry(json_t *j_device_object, linked_list_t *device_list)
+int database_validate_entry(json_t *j_device_object)
 {
     int key_check = 0;
     const char *key, *value_string;
