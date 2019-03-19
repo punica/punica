@@ -237,7 +237,7 @@ exit:
     return entry;
 }
 
-database_entry_t *database_get_entry_by_name(linked_list_t *device_list, const char *name)
+database_entry_t *database_get_entry_by_uuid(linked_list_t *device_list, const char *uuid)
 {
     linked_list_entry_t *device_entry;
     database_entry_t *device_data;
@@ -246,7 +246,7 @@ database_entry_t *database_get_entry_by_name(linked_list_t *device_list, const c
     {
         device_data = (database_entry_t *)device_entry->data;
 
-        if (strcmp(name, device_data->name) == 0)
+        if (strcmp(uuid, device_data->uuid) == 0)
         {
             return device_data;
         }
@@ -273,7 +273,6 @@ int database_validate_new_entry(json_t *j_new_device_object, linked_list_t *devi
     int key_check = 0;
     const char *key, *value_string;
     json_t *j_value;
-    database_entry_t *device_entry;
 
     if (!json_is_object(j_new_device_object))
     {
@@ -304,12 +303,6 @@ int database_validate_new_entry(json_t *j_new_device_object, linked_list_t *devi
         {
             value_string = json_string_value(j_value);
 
-            device_entry = database_get_entry_by_name(device_list, value_string);
-            if (device_entry != NULL)
-            {
-                return -1;
-            }
-
             key_check |= DATABASE_NAME_KEY_BIT;
         }
     }
@@ -330,7 +323,6 @@ int database_validate_entry(json_t *j_device_object, linked_list_t *device_list)
     uint8_t buffer[512];
     size_t buffer_len = sizeof(buffer);
     int ret;
-    database_entry_t *device_entry;
 
     if (!json_is_object(j_device_object))
     {
@@ -350,12 +342,6 @@ int database_validate_entry(json_t *j_device_object, linked_list_t *device_list)
         else if (strcasecmp(key, "name") == 0)
         {
             value_string = json_string_value(j_value);
-
-            device_entry = database_get_entry_by_name(device_list, value_string);
-            if (device_entry != NULL)
-            {
-                return -1;
-            }
 
             key_check |= DATABASE_NAME_KEY_BIT;
         }

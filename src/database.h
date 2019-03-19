@@ -38,6 +38,6 @@ json_t *database_entry_to_json(void *entry, const char *key, database_base64_act
 void *database_json_to_entry(json_t *j_object, const char *key, database_base64_action action,
                              size_t *entry_size);
 
-database_entry_t *database_get_entry_by_name(linked_list_t *device_list, const char *name);
+database_entry_t *database_get_entry_by_uuid(linked_list_t *device_list, const char *uuid);
 
 #endif //DATABASE_H

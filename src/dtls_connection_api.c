@@ -31,12 +31,20 @@
 
 #define BUFFER_SIZE 1024
 
+typedef enum
+{
+    CIPHERSUITE_PSK,
+    CIPHERSUITE_CERT,
+    CIPHERSUITE_UNDEFINED,
+} session_ciphersuite_t;
+
 typedef struct _device_connection_t
 {
     int sock;
     gnutls_session_t session;
     struct sockaddr_storage addr;
     socklen_t addr_size;
+    void *device_identifier;
 } device_connection_t;
 
 typedef struct secure_connection_context_t
@@ -54,6 +62,7 @@ typedef struct secure_connection_context_t
     gnutls_psk_server_credentials_t server_psk;
     void *data;
     f_psk_cb_t psk_cb;
+    f_identifier_cb_t identifier_cb;
 } secure_connection_context_t;
 
 static int dtls_connection_start(void *context_p);
@@ -62,7 +71,117 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
 static int dtls_connection_send(void *context_p, void *connection, uint8_t *buffer, size_t length);
 static int dtls_connection_close(void *context_p, void *connection);
 static int dtls_connection_stop(void *context_p);
-static bool dtls_connection_validate(const char *name, void *connection);
+
+static session_ciphersuite_t get_session_ciphersuite(gnutls_session_t session)
+{
+    gnutls_cipher_algorithm_t cipher;
+    gnutls_kx_algorithm_t key_ex;
+
+    cipher = gnutls_cipher_get(session);
+    key_ex = gnutls_kx_get(session);
+
+    if (key_ex == GNUTLS_KX_ECDHE_ECDSA
+        && (cipher == GNUTLS_CIPHER_AES_128_CCM_8
+            || cipher == GNUTLS_CIPHER_AES_128_CBC))
+    {
+        return CIPHERSUITE_CERT;
+    }
+    else if (key_ex == GNUTLS_KX_PSK
+             && (cipher == GNUTLS_CIPHER_AES_128_CCM_8
+                 || cipher == GNUTLS_CIPHER_AES_128_CBC))
+    {
+        return CIPHERSUITE_PSK;
+    }
+    else
+    {
+        return CIPHERSUITE_UNDEFINED;
+    }
+}
+
+static void *dtls_connection_retrieve_identifier(void *connection)
+{
+    device_connection_t *conn = (device_connection_t *)connection;
+
+    if (conn == NULL)
+    {
+        return NULL;
+    }
+
+    return conn->device_identifier;
+}
+
+static int dtls_connection_store_identifier(device_connection_t *conn,
+                                            session_ciphersuite_t ciphersuite)
+{
+    void *public_data;
+    gnutls_x509_crt_t cert;
+    const gnutls_datum_t *cert_list;
+    size_t size = 0;
+    secure_connection_context_t *context;
+
+    context = gnutls_session_get_ptr(conn->session);
+
+    if (ciphersuite == CIPHERSUITE_PSK)
+    {
+        public_data = (void *)gnutls_psk_server_get_username(conn->session);
+        if (public_data == NULL)
+        {
+            return -1;
+        }
+    }
+    else if (ciphersuite == CIPHERSUITE_CERT)
+    {
+        cert_list = gnutls_certificate_get_peers(conn->session, NULL);
+        if (cert_list == NULL)
+        {
+            return -1;
+        }
+        if (gnutls_x509_crt_init(&cert) != GNUTLS_E_SUCCESS)
+        {
+            return -1;
+        }
+        if (gnutls_x509_crt_import(cert, &cert_list[0], GNUTLS_X509_FMT_DER))
+        {
+            gnutls_x509_crt_deinit(cert);
+            return -1;
+        }
+
+        gnutls_x509_crt_export(cert, GNUTLS_X509_FMT_PEM, NULL, &size);
+
+        public_data = malloc(size);
+        if (public_data == NULL)
+        {
+            gnutls_x509_crt_deinit(cert);
+            return -1;
+        }
+        if (gnutls_x509_crt_export(cert, GNUTLS_X509_FMT_PEM, public_data, &size))
+        {
+            free(public_data);
+            gnutls_x509_crt_deinit(cert);
+            return -1;
+        }
+
+        gnutls_x509_crt_deinit(cert);
+    }
+    else
+    {
+        return -1;
+    }
+
+    conn->device_identifier = context->identifier_cb(public_data, context->data);
+
+    if (ciphersuite == CIPHERSUITE_CERT)
+    {
+        free(public_data);
+    }
+
+    if (conn->device_identifier == NULL)
+    {
+        return -1;
+    }
+
+    return 0;
+}
 
 static ssize_t dtls_connection_net_send(gnutls_transport_ptr_t context, const void *data,
                                         size_t size)
@@ -204,7 +323,8 @@ static device_connection_t *dtls_connection_new_listen(secure_connection_context
 }
 
 connection_api_t *dtls_connection_api_init(int port, int address_family,
-                                           const char *certificate_file, const char *private_key_file, void *data, f_psk_cb_t psk_cb)
+                                           const char *certificate_file, const char *private_key_file, void *data, f_psk_cb_t psk_cb,
+                                           f_identifier_cb_t identifier_cb)
 {
     secure_connection_context_t *context;
     context = calloc(1, sizeof(secure_connection_context_t));
@@ -219,13 +339,14 @@ connection_api_t *dtls_connection_api_init(int port, int address_family,
     context->private_key_file = private_key_file;
     context->data = data;
     context->psk_cb = psk_cb;
+    context->identifier_cb = identifier_cb;
 
     context->api.f_start = dtls_connection_start;
     context->api.f_receive = dtls_connection_receive;
     context->api.f_send = dtls_connection_send;
     context->api.f_close = dtls_connection_close;
     context->api.f_stop = dtls_connection_stop;
-    context->api.f_validate = dtls_connection_validate;
+    context->api.f_retrieve_identifier = dtls_connection_retrieve_identifier;
 
     return &context->api;
 }
@@ -317,6 +438,7 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
     linked_list_entry_t *conn_entry;
     const char *err_str;
     gnutls_dtls_prestate_st prestate;
+    session_ciphersuite_t ciphersuite;
 
 //  to reduce code redundancy
     sock = context->conn_listen->sock;
@@ -357,8 +479,19 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
             {
                 ret = gnutls_handshake(conn->session);
 
-                //handshake continues until success
-                if (ret != GNUTLS_E_AGAIN && ret != GNUTLS_E_SUCCESS)
+                // handshake continues until success
+                if (ret == GNUTLS_E_SUCCESS)
+                {
+                    ciphersuite = get_session_ciphersuite(conn->session);
+
+                    if (dtls_connection_store_identifier(conn, ciphersuite))
+                    {
+                        log_message(LOG_LEVEL_WARN, "Failed to store connection identifier\n");
+                        dtls_connection_close(context, conn);
+                        return 0;
+                    }
+                }
+                else if (ret != GNUTLS_E_AGAIN)
                 {
                     err_str = gnutls_strerror(ret);
                     log_message(LOG_LEVEL_WARN, "Handshake failed with message: '%s'\n", err_str);
@@ -521,105 +654,4 @@ static int dtls_connection_stop(void *context_p)
     free(context->conn_listen);
 
     return 0;
-}
-
-static bool dtls_connection_validate_psk(const char *name, device_connection_t *conn,
-                                         linked_list_t *device_list)
-{
-    database_entry_t *device_data;
-    const char *psk_id;
-
-    psk_id = gnutls_psk_server_get_username(conn->session);
-
-    device_data = database_get_entry_by_name(device_list, name);
-    if (device_data == NULL)
-    {
-        return false;
-    }
-
-    if (memcmp(psk_id, device_data->public_key, device_data->public_key_len) == 0)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-static bool dtls_connection_validate_cert(const char *name, device_connection_t *conn,
-                                          linked_list_t *device_list)
-{
-    gnutls_x509_crt_t cert;
-    const gnutls_datum_t *cert_list;
-    char uuid[256];
-    size_t size;
-    database_entry_t *device_data;
-
-    cert_list = gnutls_certificate_get_peers(conn->session, NULL);
-    if (cert_list == NULL)
-    {
-        return false;
-    }
-    if (gnutls_x509_crt_init(&cert) != GNUTLS_E_SUCCESS)
-    {
-        return false;
-    }
-    if (gnutls_x509_crt_import(cert, &cert_list[0], GNUTLS_X509_FMT_DER))
-    {
-        return false;
-    }
-
-    size = sizeof(uuid);
-    if (gnutls_x509_crt_get_subject_alt_name(cert, 0, uuid, &size, NULL) != GNUTLS_SAN_DNSNAME)
-    {
-        return false;
-    }
-
-    device_data = database_get_entry_by_name(device_list, name);
-    if (device_data == NULL)
-    {
-        return false;
-    }
-
-    if (strcmp(uuid, device_data->uuid) == 0)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-static bool dtls_connection_validate(const char *name, void *connection)
-{
-    device_connection_t *conn = (device_connection_t *)connection;
-    gnutls_cipher_algorithm_t cipher;
-    gnutls_kx_algorithm_t key_ex;
-    linked_list_t *device_list;
-    secure_connection_context_t *context;
-
-    context = gnutls_session_get_ptr(conn->session);
-    device_list = context->data;
-
-    cipher = gnutls_cipher_get(conn->session);
-    key_ex = gnutls_kx_get(conn->session);
-
-    if (key_ex == GNUTLS_KX_ECDHE_ECDSA
-        && (cipher == GNUTLS_CIPHER_AES_128_CCM_8
-            || cipher == GNUTLS_CIPHER_AES_128_CBC))
-    {
-        return dtls_connection_validate_cert(name, conn, device_list);
-    }
-    else if (key_ex == GNUTLS_KX_PSK
-             && (cipher == GNUTLS_CIPHER_AES_128_CCM_8
-                 || cipher == GNUTLS_CIPHER_AES_128_CBC))
-    {
-        return dtls_connection_validate_psk(name, conn, device_list);
-    }
-    else
-    {
-        return false;
-    }
 }

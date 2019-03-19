@@ -133,7 +133,7 @@ connection_api_t *udp_connection_api_init(int port, int address_family)
     context->api.f_send = udp_connection_send;
     context->api.f_close = udp_connection_close;
     context->api.f_stop = udp_connection_stop;
-    context->api.f_validate = NULL;
+    context->api.f_retrieve_identifier = NULL;
 
     return &context->api;
 }
