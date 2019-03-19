@@ -24,7 +24,7 @@
 #include "../linked_list.h"
 #include "../settings.h"
 
-static int rest_devices_update_list(linked_list_t *list, const char *name, const char *uuid)
+static int rest_devices_update_list(linked_list_t *list, const char *name, const char *id)
 {
     linked_list_entry_t *device_entry;
     database_entry_t *device_data;
@@ -34,7 +34,7 @@ static int rest_devices_update_list(linked_list_t *list, const char *name, const
     {
         device_data = (database_entry_t *)device_entry->data;
 
-        if (strcmp(device_data->uuid, uuid) == 0)
+        if (strcmp(device_data->uuid, id) == 0)
         {
             new_name = strdup(name);
             if (new_name == NULL)
@@ -52,7 +52,7 @@ static int rest_devices_update_list(linked_list_t *list, const char *name, const
     return -1;
 }
 
-static int rest_devices_remove_list(linked_list_t *list, const char *uuid)
+static int rest_devices_remove_list(linked_list_t *list, const char *id)
 {
     linked_list_entry_t *device_entry;
     database_entry_t *device_data;
@@ -61,7 +61,7 @@ static int rest_devices_remove_list(linked_list_t *list, const char *uuid)
     {
         device_data = (database_entry_t *)device_entry->data;
 
-        if (strcmp(uuid, device_data->uuid) == 0)
+        if (strcmp(id, device_data->uuid) == 0)
         {
             linked_list_remove(list, (void *)device_data);
             database_free_entry(device_data);
@@ -389,9 +389,9 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
         goto exit;
     }
 
-    const char *uuid;
-    uuid = u_map_get(req->map_url, "id");
-    if (uuid == NULL)
+    const char *id;
+    id = u_map_get(req->map_url, "id");
+    if (id == NULL)
     {
         ulfius_set_empty_body_response(resp, 400);
         goto exit;
@@ -418,7 +418,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
         goto exit;
     }
 
-    if (rest_devices_update_list(rest->devicesList, name, uuid))
+    if (rest_devices_update_list(rest->devicesList, name, id))
     {
         ulfius_set_empty_body_response(resp, 400);
         goto exit;
@@ -462,15 +462,15 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
 
     rest_lock(rest);
 
-    const char *uuid;
-    uuid = u_map_get(req->map_url, "id");
-    if (uuid == NULL)
+    const char *id;
+    id = u_map_get(req->map_url, "id");
+    if (id == NULL)
     {
         ulfius_set_empty_body_response(resp, 400);
         goto exit;
     }
 
-    if (rest_devices_remove_list(rest->devicesList, uuid))
+    if (rest_devices_remove_list(rest->devicesList, id))
     {
         //  device not found
         ulfius_set_empty_body_response(resp, 404);

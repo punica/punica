@@ -479,7 +479,7 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
             {
                 ret = gnutls_handshake(conn->session);
 
-                // handshake continues until success
+                //handshake continues until success
                 if (ret == GNUTLS_E_SUCCESS)
                 {
                     ciphersuite = get_session_ciphersuite(conn->session);
