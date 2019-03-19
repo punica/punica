@@ -37,9 +37,7 @@ private:
     std::string mStamp;
 };
 
-int stampCallback(punica::rest::Request::ptr request,
-                                       punica::rest::Response::ptr response,
-                                       void *context);
+punica::rest::CallbackFunction stampCallback;
 
 static punica::plugin::Plugin *newTestPlugin(punica::Core::ptr core);
 static void deleteTestPlugin(punica::plugin::Plugin *plugin);

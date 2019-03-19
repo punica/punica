@@ -107,7 +107,7 @@ static punica::plugin::Plugin *newTestPlugin(punica::Core::ptr core)
     void *pluginContext = reinterpret_cast<void *>(plugin);
 
     restCore->addCallbackHandler("*", "/test_plugin/stamp", "", 10,
-                                 stampCallback, pluginContext);
+                                 &stampCallback, pluginContext);
 
     return plugin;
 }

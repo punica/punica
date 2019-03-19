@@ -39,7 +39,7 @@ public:
                                     const std::string urlPrefix,
                                     const std::string urlFormat,
                                     unsigned int priority,
-                                    CallbackFunction handlerFunction,
+                                    CallbackFunction *handlerFunction,
                                     void *handlerContext) = 0;
 
 private:

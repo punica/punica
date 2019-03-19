@@ -28,7 +28,7 @@
 namespace punica {
 namespace rest {
 
-typedef int(*CallbackFunction)(Request::ptr, Response::ptr, void *);
+typedef int(CallbackFunction)(Request::ptr, Response::ptr, void *);
 
 class CallbackHandler
 {
@@ -39,7 +39,7 @@ public:
     ~CallbackHandler() { }
 
 private:
-    CallbackFunction mFunction;
+    CallbackFunction *mFunction;
     std::string mMethod, mUrlPrefix, mUrlFormat;
     void *mContext;
 };

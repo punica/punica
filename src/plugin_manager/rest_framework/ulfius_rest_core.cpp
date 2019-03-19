@@ -43,7 +43,7 @@ void UlfiusRestCore::addCallbackHandler(const std::string method,
                                         const std::string urlPrefix,
                                         const std::string urlFormat,
                                         unsigned int priority,
-                                        punica::rest::CallbackFunction handlerFunction,
+                                        punica::rest::CallbackFunction *handlerFunction,
                                         void *handlerContext)
 {
     UlfiusCallbackHandler *rawHandler =

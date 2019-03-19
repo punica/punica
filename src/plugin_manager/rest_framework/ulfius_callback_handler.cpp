@@ -31,7 +31,7 @@ UlfiusCallbackHandler::UlfiusCallbackHandler(struct _u_instance *uInstance,
                                              const std::string prefix,
                                              const std::string format,
                                              unsigned int priority,
-                                             punica::rest::CallbackFunction function,
+                                             punica::rest::CallbackFunction *function,
                                              void *context):
     mUlfiusInstance(uInstance),
     mMethod(method),

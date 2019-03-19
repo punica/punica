@@ -35,7 +35,7 @@ public:
                             const std::string urlPrefix,
                             const std::string urlFormat,
                             unsigned int priority,
-                            punica::rest::CallbackFunction handler_function,
+                            punica::rest::CallbackFunction *handler_function,
                             void *handler_context);
 
 private:

@@ -40,14 +40,14 @@ public:
                           const std::string prefix,
                           const std::string format,
                           unsigned int priority,
-                          punica::rest::CallbackFunction handlerFunction,
+                          punica::rest::CallbackFunction *handlerFunction,
                           void *handlerContext);
     ~UlfiusCallbackHandler();
 
 private:
     struct _u_instance *mUlfiusInstance;
     std::string mMethod, mUrlPrefix, mUrlFormat;
-    punica::rest::CallbackFunction mFunction;
+    punica::rest::CallbackFunction *mFunction;
     void *mContext;
 
     static int ulfiusCallback(const struct _u_request *uRequest,
