@@ -37,7 +37,7 @@ private:
     std::string mStamp;
 };
 
-punica::rest::StatusCode stampCallback(punica::rest::Request::ptr request,
+int stampCallback(punica::rest::Request::ptr request,
                                        punica::rest::Response::ptr response,
                                        void *context);
 

@@ -29,7 +29,7 @@ public:
     ~UlfiusResponse();
 
     void setBody(std::vector<uint8_t> binaryData);
-    void setCode(const punica::rest::StatusCode code);
+    void setCode(const int code);
     void setHeader(const std::string header, const std::string value);
 
 private:

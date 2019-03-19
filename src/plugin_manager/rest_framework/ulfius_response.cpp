@@ -56,7 +56,7 @@ void UlfiusResponse::setBody(std::vector<uint8_t> binaryData)
     }
 }
 
-void UlfiusResponse::setCode(punica::rest::StatusCode code)
+void UlfiusResponse::setCode(const int code)
 {
     mUlfiusResponse->status = static_cast<int>(code);
 }

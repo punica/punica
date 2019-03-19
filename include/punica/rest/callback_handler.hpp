@@ -28,7 +28,7 @@
 namespace punica {
 namespace rest {
 
-typedef StatusCode(*CallbackFunction)(Request::ptr, Response::ptr, void *);
+typedef int(*CallbackFunction)(Request::ptr, Response::ptr, void *);
 
 class CallbackHandler
 {

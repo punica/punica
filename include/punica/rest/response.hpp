@@ -30,24 +30,6 @@
 namespace punica {
 namespace rest {
 
-enum StatusCode
-{
-    unknown = 0,
-    information_continue = 100,
-    success_ok = 200,
-    success_created = 201,
-    success_accepted = 202,
-    success_no_content = 204,
-    success_reset_content = 205,
-    client_error = 400,
-    client_error_unauthorized = 401,
-    client_error_forbidden = 403,
-    client_error_not_found = 404,
-    client_error_method_not_allowed = 405,
-    client_error_not_acceptable = 406,
-    server_error_internal_server_error = 500
-};
-
 class Response
 {
 public:
@@ -56,7 +38,7 @@ public:
     virtual ~Response() { }
 
     virtual void setBody(std::vector<uint8_t> binary_data) = 0;
-    virtual void setCode(StatusCode code) = 0;
+    virtual void setCode(const int code) = 0;
     virtual void setHeader(const std::string header,
                            const std::string value) = 0;
 };

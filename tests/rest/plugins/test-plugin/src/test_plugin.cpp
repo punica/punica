@@ -20,6 +20,8 @@
 #include <vector>
 #include <stdint.h>
 
+#include <punica/rest/http_codes.h>
+
 #include "test_plugin.hpp"
 
 std::string TestPlugin::getStamp()
@@ -32,7 +34,7 @@ void TestPlugin::setStamp(std::string newStamp)
     mStamp = newStamp;
 }
 
-punica::rest::StatusCode stampCallback(punica::rest::Request::ptr request,
+int stampCallback(punica::rest::Request::ptr request,
                                        punica::rest::Response::ptr response,
                                        void *context)
 {
@@ -44,7 +46,7 @@ punica::rest::StatusCode stampCallback(punica::rest::Request::ptr request,
     std::string stringResponseBody;
     std::vector<uint8_t> requestBody;
     std::vector<uint8_t> responseBody;
-    punica::rest::StatusCode statusCode = punica::rest::success_ok;
+    int statusCode = HTTP_200_OK;
     
     response->setHeader("Test-status", "success");
   
@@ -61,7 +63,7 @@ punica::rest::StatusCode stampCallback(punica::rest::Request::ptr request,
 
         plugin->setStamp(stringRequestBody);
 
-        statusCode = punica::rest::success_no_content;
+        statusCode = HTTP_204_NO_CONTENT;
     }
     else if (method == "POST")
     {
@@ -88,13 +90,12 @@ punica::rest::StatusCode stampCallback(punica::rest::Request::ptr request,
     {
         response->setHeader("Test-status", "fail");
 
-        statusCode = punica::rest::client_error_method_not_allowed;
+        statusCode = HTTP_405_METHOD_NOT_ALLOWED;
     }
 
     responseBody = std::vector<uint8_t>(stringResponseBody.begin(),
                                         stringResponseBody.end());
 
-    response->setCode(statusCode);
     response->setBody(responseBody);
     return statusCode;
 }

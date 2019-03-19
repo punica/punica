@@ -19,6 +19,8 @@
 
 #include <cstring>
 
+#include <punica/rest/http_codes.h>
+
 #include "ulfius_callback_handler.hpp"
 
 #include "ulfius_request.hpp"
@@ -55,38 +57,26 @@ int UlfiusCallbackHandler::ulfiusCallback(const struct _u_request *uRequest,
 {
     UlfiusCallbackHandler *handler =
         static_cast<UlfiusCallbackHandler *>(handlerContext);
-    punica::rest::StatusCode statusCode;
+    int statusCode;
 
     punica::rest::Request::ptr request(new UlfiusRequest(uRequest));
     punica::rest::Response::ptr response(new UlfiusResponse(uResponse));
 
     statusCode = handler->mFunction(request, response, handler->mContext);
+    response->setCode(statusCode);
 
     switch (statusCode)
     {
-    case punica::rest::information_continue:
+    case HTTP_100_CONTINUE:
         return U_CALLBACK_CONTINUE;
 
-    case punica::rest::success_ok:
-    case punica::rest::success_created:
-    case punica::rest::success_accepted:
-    case punica::rest::success_no_content:
-    case punica::rest::success_reset_content:
-
-    case punica::rest::client_error:
-    case punica::rest::client_error_forbidden:
-    case punica::rest::client_error_not_found:
-    case punica::rest::client_error_method_not_allowed:
-    case punica::rest::client_error_not_acceptable:
-        return U_CALLBACK_COMPLETE;
-
-    case punica::rest::client_error_unauthorized:
+    case HTTP_401_UNAUTHORIZED:
         return U_CALLBACK_UNAUTHORIZED;
 
-    case punica::rest::server_error_internal_server_error:
+    case HTTP_500_INTERNAL_ERROR:
         return U_CALLBACK_ERROR;
 
     default:
-        return U_CALLBACK_ERROR;
+        return U_CALLBACK_COMPLETE;
     }
 }

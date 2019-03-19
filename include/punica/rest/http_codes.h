@@ -17,29 +17,42 @@
  *
  */
 
+#ifndef PUNICA_REST_HTTP_CODES_H
+#define PUNICA_REST_HTTP_CODES_H
 
-#ifndef HTTP_CODES_H
-#define HTTP_CODES_H
+/* 1xx: Informational
+   Request received, continuing process */
+#define HTTP_100_CONTINUE                              100
+#define HTTP_101_SWITCHING_PROTOCOLS                   101
 
-#define HTTP_200_OK                 200
-#define HTTP_201_CREATED            201
-#define HTTP_202_ACCEPTED           202
-#define HTTP_204_NO_CONTENT         204
+/* 2xx: Success
+   The action was successfully received, understood, and accepted */
+#define HTTP_200_OK                                    200
+#define HTTP_201_CREATED                               201
+#define HTTP_202_ACCEPTED                              202
+#define HTTP_203_NON_AUTHORITATIVE_INFORMATION         203
+#define HTTP_204_NO_CONTENT                            204
+#define HTTP_205_RESET_CONTENT                         205
+#define HTTP_206_PARTIAL_CONTENT                       205
 
-#define HTTP_400_BAD_REQUEST        400
-#define HTTP_401_UNAUTHORIZES       401
-#define HTTP_403_FORBIDDEN          403
-#define HTTP_404_NOT_FOUND          404
-#define HTTP_405_METHOD_NOT_ALLOWED 405
-#define HTTP_406_NOT_ACCEPTABLE     406
-#define HTTP_408_REQUEST_TIMEOUT    408
-#define HTTP_409_CONFLICT           409
-#define HTTP_410_GONE               410
-#define HTTP_413_PAYLOAD_TOO_LARGE  413
-#define HTTP_415_UNSUPPORTED_MEDIA_TYPE 415
+/* 4xx: Client Error
+   The request contains bad syntax or cannot be fulfilled */
+#define HTTP_400_BAD_REQUEST                           400
+#define HTTP_401_UNAUTHORIZED                          401
+#define HTTP_403_FORBIDDEN                             403
+#define HTTP_404_NOT_FOUND                             404
+#define HTTP_405_METHOD_NOT_ALLOWED                    405
+#define HTTP_406_NOT_ACCEPTABLE                        406
+#define HTTP_408_REQUEST_TIMEOUT                       408
+#define HTTP_409_CONFLICT                              409
+#define HTTP_410_GONE                                  410
+#define HTTP_413_PAYLOAD_TOO_LARGE                     413
+#define HTTP_414_URI_TOO_LONG                          414
+#define HTTP_415_UNSUPPORTED_MEDIA_TYPE                415
 
-#define HTTP_500_INTERNAL_ERROR     500
-#define HTTP_501_NOT_IMPLEMENTED    501
+/* 5xx: Server Error
+   The server failed to fulfill an apparently valid request */
+#define HTTP_500_INTERNAL_ERROR                        500
+#define HTTP_501_NOT_IMPLEMENTED                       501
 
-#endif // HTTP_CODES_H
-
+#endif // PUNICA_REST_HTTP_CODES_H
