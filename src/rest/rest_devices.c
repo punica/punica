@@ -24,7 +24,7 @@
 #include "../linked_list.h"
 #include "../settings.h"
 
-static int rest_devices_update_list(linked_list_t *list, const char *name, const char *id)
+static int rest_devices_update_list(const char *id, linked_list_t *list, const char *name)
 {
     linked_list_entry_t *device_entry;
     database_entry_t *device_data;
@@ -418,7 +418,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
         goto exit;
     }
 
-    if (rest_devices_update_list(rest->devicesList, name, id))
+    if (rest_devices_update_list(id, rest->devicesList, name))
     {
         ulfius_set_empty_body_response(resp, 400);
         goto exit;
