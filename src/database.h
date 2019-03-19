@@ -24,8 +24,8 @@
 
 int database_load_file(rest_context_t *rest);
 
-int database_validate_entry(json_t *j_device_object, linked_list_t *device_list);
-int database_validate_new_entry(json_t *j_new_device_object, linked_list_t *device_list);
+int database_validate_entry(json_t *j_device_object);
+int database_validate_new_entry(json_t *j_new_device_object);
 
 database_entry_t *database_create_entry(json_t *j_device_object);
 database_entry_t *database_create_new_entry(json_t *j_new_device_object, void *context);
