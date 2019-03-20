@@ -32,14 +32,6 @@ typedef enum
     DEVICE_CREDENTIALS_NONE = 3,
 } credentials_mode_t;
 
-typedef enum
-{
-    BASE64_NO_ACTION = 0,
-    BASE64_DECODE = 1,
-    BASE64_ENCODE = 2,
-}database_base64_action;
-
-
 typedef struct
 {
     char *uuid;
@@ -58,6 +50,14 @@ int coap_to_http_status(int status);
 int utils_get_server_key(uint8_t *buffer, size_t *length, const char *cert_file);
 
 int device_new_credentials(database_entry_t *device_entry, void *context);
+
+json_t *json_from_string(const char *string, const char *key);
+
+json_t *json_from_binary(uint8_t *buffer, const char *key, size_t buffer_length);
+
+char *string_from_json(json_t *j_object, const char *key);
+
+uint8_t *binary_from_json(json_t *j_object, const char *key, size_t *buffer_length);
 
 #endif // REST_UTILS_H
 

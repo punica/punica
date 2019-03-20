@@ -268,3 +268,103 @@ exit:
     gnutls_x509_crt_deinit(cert);
     return ret;
 }
+
+json_t *json_from_string(const char *string, const char *key)
+{
+    json_t *j_object, *j_string;
+
+    j_object = json_object();
+    if (j_object == NULL)
+    {
+        return NULL;
+    }
+
+    j_string = json_string(string);
+    if (j_string == NULL)
+    {
+        return NULL;
+    }
+
+    if (json_object_set_new(j_object, key, j_string) != 0)
+    {
+        json_decref(j_string);
+        return NULL;
+    }
+
+    return j_object;
+}
+
+json_t *json_from_binary(uint8_t *buffer, const char *key, size_t buffer_length)
+{
+    char base64_string[1024] = {0};
+    size_t base64_length = sizeof(base64_string);
+    json_t *j_object;
+
+    if (base64_encode(buffer, buffer_length, base64_string, &base64_length) != 0)
+    {
+        return NULL;
+    }
+
+    j_object = json_from_string(base64_string, key);
+    if (j_object == NULL)
+    {
+        return NULL;
+    }
+
+    return j_object;
+}
+
+char *string_from_json(json_t *j_object, const char *key)
+{
+    json_t *j_value;
+    const char *string;
+
+    j_value = json_object_get(j_object, key);
+    if (j_value == NULL)
+    {
+        return NULL;
+    }
+
+    string = json_string_value(j_value);
+    if (string == NULL)
+    {
+        return NULL;
+    }
+
+    return strdup(string);
+}
+
+uint8_t *binary_from_json(json_t *j_object, const char *key, size_t *buffer_length)
+{
+    uint8_t *binary_buffer;
+    int status;
+    char *base64_string;
+
+    base64_string = string_from_json(j_object, key);
+    if (base64_string == NULL)
+    {
+        return NULL;
+    }
+
+    status = base64_decode(base64_string, NULL, buffer_length);
+    free(base64_string);
+
+    if (status != 0)
+    {
+        return NULL;
+    }
+
+    binary_buffer = malloc(*buffer_length);
+    if (binary_buffer == NULL)
+    {
+        return NULL;
+    }
+
+    if (base64_decode(base64_string, binary_buffer, buffer_length) != 0)
+    {
+        free(binary_buffer);
+        return NULL;
+    }
+
+    return binary_buffer;
+}

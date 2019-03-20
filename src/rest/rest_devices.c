@@ -144,10 +144,11 @@ static json_t *rest_devices_entry_to_resp(database_entry_t *device_entry, void *
         mode_string = "none";
     }
 
-    uuid = database_entry_to_json(device_entry->uuid, "uuid", BASE64_NO_ACTION, 0);
-    name = database_entry_to_json(device_entry->name, "name", BASE64_NO_ACTION, 0);
-    mode = database_entry_to_json(mode_string, "mode", BASE64_NO_ACTION, 0);
-    public_key = database_entry_to_json(device_entry->public_key, "public_key", BASE64_ENCODE, device_entry->public_key_len);
+    //TODO: pakeisti
+    uuid = json_from_string(device_entry->uuid, "uuid");
+    name = json_from_string(device_entry->name, "name");
+    mode = json_from_string(mode_string, "mode");
+    public_key = json_from_binary(device_entry->public_key, "public_key", device_entry->public_key_len);
 
     if ((uuid == NULL)
         || (name == NULL)

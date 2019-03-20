@@ -107,136 +107,6 @@ exit:
     return ret;
 }
 
-json_t *database_entry_to_json(void *entry, const char *key, database_base64_action action,
-                               size_t entry_size)
-{
-    json_t *j_object = NULL, *j_string = NULL;
-    char base64_string[1024] = {0};
-    size_t base64_length = sizeof(base64_string);
-    int status = -1;
-
-    j_object = json_object();
-    if (j_object == NULL)
-    {
-        goto exit;
-    }
-
-    if (action == BASE64_NO_ACTION)
-    {
-        j_string = json_string((const char *)entry);
-        if (j_string == NULL)
-        {
-            goto exit;
-        }
-
-        if (json_object_set_new(j_object, key, j_string))
-        {
-            json_decref(j_string);
-            goto exit;
-        }
-    }
-    else if (action == BASE64_ENCODE)
-    {
-        if (base64_encode(entry, entry_size, base64_string, &base64_length))
-        {
-            goto exit;
-        }
-
-        j_string = json_string((const char *)base64_string);
-        if (j_string == NULL)
-        {
-            goto exit;
-        }
-
-        if (json_object_set_new(j_object, key, j_string))
-        {
-            json_decref(j_string);
-            goto exit;
-        }
-    }
-    else
-    {
-        goto exit;
-    }
-
-    status = 0;
-exit:
-    if (status)
-    {
-        json_decref(j_object);
-        return NULL;
-    }
-    return j_object;
-}
-
-void *database_json_to_entry(json_t *j_object, const char *key,
-                             database_base64_action base64_action, size_t *entry_size)
-{
-    json_t *j_value;
-    const char *json_string;
-    size_t binary_length;
-    void *entry = NULL;
-    int status = -1;
-
-    j_value = json_object_get(j_object, key);
-    if (j_value == NULL)
-    {
-        goto exit;
-    }
-
-    json_string = json_string_value(j_value);
-    if (json_string == NULL)
-    {
-        goto exit;
-    }
-
-    if (base64_action == BASE64_NO_ACTION)
-    {
-        entry = strdup(json_string);
-        if (entry == NULL)
-        {
-            goto exit;
-        }
-        if (entry_size)
-        {
-            *entry_size = strlen(entry) + 1;
-        }
-    }
-    else if (base64_action == BASE64_DECODE)
-    {
-        if (base64_decode(json_string, NULL, &binary_length))
-        {
-            goto exit;
-        }
-
-        entry = malloc(binary_length);
-        if (entry == NULL)
-        {
-            goto exit;
-        }
-
-        if (base64_decode(json_string, entry, &binary_length))
-        {
-            goto exit;
-        }
-
-        *entry_size = binary_length;
-    }
-    else
-    {
-        goto exit;
-    }
-
-    status = 0;
-exit:
-    if (status)
-    {
-        free(entry);
-        return NULL;
-    }
-    return entry;
-}
-
 database_entry_t *database_get_entry_by_uuid(linked_list_t *device_list, const char *uuid)
 {
     linked_list_entry_t *device_entry;
@@ -414,7 +284,7 @@ database_entry_t *database_create_entry(json_t *j_device_object)
         goto exit;
     }
 
-    mode = database_json_to_entry(j_device_object, "mode", BASE64_NO_ACTION, NULL);
+    mode = string_from_json(j_device_object, "mode");
     if (mode == NULL)
     {
         goto exit;
@@ -437,14 +307,11 @@ database_entry_t *database_create_entry(json_t *j_device_object)
         goto exit;
     }
 
-    device_entry->uuid = database_json_to_entry(j_device_object, "uuid", BASE64_NO_ACTION, NULL);
-    device_entry->name = database_json_to_entry(j_device_object, "name", BASE64_NO_ACTION, NULL);
-    device_entry->public_key = database_json_to_entry(j_device_object, "public_key", BASE64_DECODE,
-                                                      &device_entry->public_key_len);
-    device_entry->secret_key = database_json_to_entry(j_device_object, "secret_key", BASE64_DECODE,
-                                                      &device_entry->secret_key_len);
-    device_entry->serial = database_json_to_entry(j_device_object, "serial", BASE64_DECODE,
-                                                  &device_entry->serial_len);
+    device_entry->uuid = string_from_json(j_device_object, "uuid");
+    device_entry->name = string_from_json(j_device_object, "name");
+    device_entry->public_key = binary_from_json(j_device_object, "public_key", &device_entry->public_key_len);
+    device_entry->secret_key = binary_from_json(j_device_object, "secret_key", &device_entry->secret_key_len);
+    device_entry->serial = binary_from_json(j_device_object, "serial", &device_entry->serial_len);
 
     if (device_entry->uuid == NULL
         || device_entry->name == NULL
@@ -488,7 +355,7 @@ database_entry_t *database_create_new_entry(json_t *j_device_object, void *conte
         goto exit;
     }
 
-    mode = database_json_to_entry(j_device_object, "mode", BASE64_NO_ACTION, NULL);
+    mode = string_from_json(j_device_object, "mode");
     if (mode == NULL)
     {
         goto exit;
@@ -511,7 +378,7 @@ database_entry_t *database_create_new_entry(json_t *j_device_object, void *conte
         goto exit;
     }
 
-    device_entry->name = database_json_to_entry(j_device_object, "name", BASE64_NO_ACTION, NULL);
+    device_entry->name = string_from_json(j_device_object, "name");
     if (device_entry->name == NULL)
     {
         goto exit;
