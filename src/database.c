@@ -33,6 +33,46 @@
 #define DATABASE_ALL_NEW_KEYS_SET   0x06
 #define DATABASE_ALL_KEYS_SET       0x3F
 
+static credentials_mode_t credentials_type_from_string(const char *string)
+{
+    if (strcasecmp(string, "psk") == 0)
+    {
+        return DEVICE_CREDENTIALS_PSK;
+    }
+    else if (strcasecmp(string, "cert") == 0)
+    {
+        return DEVICE_CREDENTIALS_CERT;
+    }
+    else if (strcasecmp(string, "none") == 0)
+    {
+        return DEVICE_CREDENTIALS_NONE;
+    }
+    else
+    {
+        return DEVICE_CREDENTIALS_UNDEFINED;
+    }
+}
+
+static credentials_mode_t credentials_type_from_json(json_t *j_object)
+{
+    const char *mode;
+    json_t *j_value;
+
+    j_value = json_object_get(j_object, "mode");
+    if (j_value == NULL)
+    {
+        return DEVICE_CREDENTIALS_UNDEFINED;
+    }
+
+    mode = json_string_value(j_value);
+    if (mode == NULL)
+    {
+        return DEVICE_CREDENTIALS_UNDEFINED;
+    }
+
+    return credentials_type_from_string(mode);
+}
+
 int database_load_file(rest_context_t *rest)
 {
     json_error_t error;
@@ -129,10 +169,22 @@ void database_free_entry(database_entry_t *device_entry)
 {
     if (device_entry)
     {
-        free(device_entry->uuid);
-        free(device_entry->name);
-        free(device_entry->public_key);
-        free(device_entry->secret_key);
+        if (device_entry->uuid)
+        {
+            free(device_entry->uuid);
+        }
+        if (device_entry->name)
+        {
+            free(device_entry->name);
+        }
+        if (device_entry->public_key)
+        {
+            free(device_entry->public_key);
+        }
+        if (device_entry->secret_key)
+        {
+            free(device_entry->secret_key);
+        }
 
         free(device_entry);
     }
@@ -160,9 +212,7 @@ int database_validate_new_entry(json_t *j_new_device_object)
         {
             value_string = json_string_value(j_value);
 
-            if (strcasecmp(value_string, "psk")
-                && strcasecmp(value_string, "cert")
-                && strcasecmp(value_string, "none"))
+            if (credentials_type_from_string(value_string) == DEVICE_CREDENTIALS_UNDEFINED)
             {
                 return -1;
             }
@@ -219,9 +269,7 @@ int database_validate_entry(json_t *j_device_object)
         {
             value_string = json_string_value(j_value);
 
-            if (strcasecmp(value_string, "psk")
-                && strcasecmp(value_string, "cert")
-                && strcasecmp(value_string, "none"))
+            if (credentials_type_from_string(value_string) == DEVICE_CREDENTIALS_UNDEFINED)
             {
                 return -1;
             }
@@ -269,69 +317,72 @@ int database_validate_entry(json_t *j_device_object)
 
 database_entry_t *database_create_entry(json_t *j_device_object)
 {
-    const char *mode;
     int status = -1;
     database_entry_t *device_entry = NULL;
 
     if (j_device_object == NULL)
     {
-        goto exit;
+        return NULL;
     }
 
     device_entry = calloc(1, sizeof(database_entry_t));
     if (device_entry == NULL)
     {
-        goto exit;
+        return NULL;
     }
 
-    mode = string_from_json_object(j_device_object, "mode");
-    if (mode == NULL)
-    {
-        goto exit;
-    }
-
-    if (strcasecmp(mode, "psk") == 0)
-    {
-        device_entry->mode = DEVICE_CREDENTIALS_PSK;
-    }
-    else if (strcasecmp(mode, "cert") == 0)
-    {
-        device_entry->mode = DEVICE_CREDENTIALS_CERT;
-    }
-    else if (strcasecmp(mode, "none") == 0)
-    {
-        device_entry->mode = DEVICE_CREDENTIALS_NONE;
-    }
-    else
+    device_entry->mode = credentials_type_from_json(j_device_object);
+    if (device_entry->mode == DEVICE_CREDENTIALS_UNDEFINED)
     {
         goto exit;
     }
 
     device_entry->uuid = string_from_json_object(j_device_object, "uuid");
     device_entry->name = string_from_json_object(j_device_object, "name");
-    device_entry->public_key = binary_from_json_object(j_device_object, "public_key",
-                                                       &device_entry->public_key_len);
-    device_entry->secret_key = binary_from_json_object(j_device_object, "secret_key",
-                                                       &device_entry->secret_key_len);
-    device_entry->serial = binary_from_json_object(j_device_object, "serial",
-                                                   &device_entry->serial_len);
 
     if (device_entry->uuid == NULL
-        || device_entry->name == NULL
-        || (device_entry->mode ==
-            DEVICE_CREDENTIALS_PSK // some entry types must contain keys that other don't
-            && (device_entry->secret_key == NULL
-                || device_entry->public_key == NULL))
-        || (device_entry->mode == DEVICE_CREDENTIALS_CERT
-            && (device_entry->serial == NULL
-                || device_entry->public_key == NULL)))
+        || device_entry->name == NULL)
     {
+        goto exit;
+    }
+
+    switch (device_entry->mode)
+    {
+    case DEVICE_CREDENTIALS_PSK:
+        device_entry->public_key = binary_from_json_object(j_device_object, "public_key",
+                                                           &device_entry->public_key_len);
+        device_entry->secret_key = binary_from_json_object(j_device_object, "secret_key",
+                                                           &device_entry->secret_key_len);
+
+        if (device_entry->public_key == NULL
+            || device_entry->secret_key == NULL)
+        {
+            goto exit;
+        }
+
+        break;
+    case DEVICE_CREDENTIALS_CERT:
+        device_entry->public_key = binary_from_json_object(j_device_object, "public_key",
+                                                           &device_entry->public_key_len);
+        device_entry->serial = binary_from_json_object(j_device_object, "serial",
+                                                       &device_entry->serial_len);
+
+        if (device_entry->public_key == NULL
+            || device_entry->serial == NULL)
+        {
+            goto exit;
+        }
+
+        break;
+    case DEVICE_CREDENTIALS_NONE:
+        break;
+    default:
         goto exit;
     }
 
     status = 0;
 exit:
-    if (status)
+    if (status != 0)
     {
         database_free_entry(device_entry);
         device_entry = NULL;
@@ -343,40 +394,22 @@ database_entry_t *database_create_new_entry(json_t *j_device_object, void *conte
 {
     uuid_t b_uuid;
     char *uuid = NULL;
-    char *mode;
     int status = -1;
     database_entry_t *device_entry = NULL;
 
     if (j_device_object == NULL)
     {
-        goto exit;
+        return NULL;
     }
 
     device_entry = calloc(1, sizeof(database_entry_t));
     if (device_entry == NULL)
     {
-        goto exit;
+        return NULL;
     }
 
-    mode = string_from_json_object(j_device_object, "mode");
-    if (mode == NULL)
-    {
-        goto exit;
-    }
-
-    if (strcasecmp(mode, "psk") == 0)
-    {
-        device_entry->mode = DEVICE_CREDENTIALS_PSK;
-    }
-    else if (strcasecmp(mode, "cert") == 0)
-    {
-        device_entry->mode = DEVICE_CREDENTIALS_CERT;
-    }
-    else if (strcasecmp(mode, "none") == 0)
-    {
-        device_entry->mode = DEVICE_CREDENTIALS_NONE;
-    }
-    else
+    device_entry->mode = credentials_type_from_json(j_device_object);
+    if (device_entry->mode == DEVICE_CREDENTIALS_UNDEFINED)
     {
         goto exit;
     }
@@ -396,8 +429,9 @@ database_entry_t *database_create_new_entry(json_t *j_device_object, void *conte
     }
 
     uuid_unparse(b_uuid, uuid);
-
     device_entry->uuid = strdup(uuid);
+    free(uuid);
+
     if (device_entry->uuid == NULL)
     {
         goto exit;
@@ -410,13 +444,11 @@ database_entry_t *database_create_new_entry(json_t *j_device_object, void *conte
 
     status = 0;
 exit:
-    if (status)
+    if (status != 0)
     {
         database_free_entry(device_entry);
         device_entry = NULL;
     }
-    free(uuid);
-    free(mode);
     return device_entry;
 }
 
