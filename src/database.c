@@ -390,7 +390,8 @@ exit:
     return device_entry;
 }
 
-database_entry_t *database_create_new_entry(json_t *j_device_object, void *context)
+database_entry_t *database_create_new_entry(json_t *j_device_object, linked_list_t *device_list,
+                                            const char *certificate, const char *private_key)
 {
     uuid_t b_uuid;
     char *uuid = NULL;
@@ -437,7 +438,7 @@ database_entry_t *database_create_new_entry(json_t *j_device_object, void *conte
         goto exit;
     }
 
-    if (device_new_credentials(device_entry, context))
+    if (device_new_credentials(device_entry, device_list, certificate, private_key))
     {
         goto exit;
     }

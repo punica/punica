@@ -25,10 +25,8 @@
 #define PSK_ID_BUFFER_LENGTH      12
 #define PSK_BUFFER_LENGTH         16
 
-static int find_existing_serial(uint8_t *serial, size_t length, void *context)
+static int find_existing_serial(uint8_t *serial, size_t length, linked_list_t *list)
 {
-    rest_context_t *rest = (rest_context_t *)context;
-    linked_list_t *list = rest->devicesList;
     linked_list_entry_t *device_entry;
     database_entry_t *device_data;
 
@@ -106,9 +104,8 @@ static int device_new_psk(database_entry_t *device_entry)
     return 0;
 }
 
-static int device_new_certificate(database_entry_t *device_entry, void *context)
+static int device_new_certificate(database_entry_t *device_entry, linked_list_t *device_list, const char *certificate, const char *private_key)
 {
-    rest_context_t *rest = (rest_context_t *)context;
     gnutls_x509_crt_t device_cert = NULL;
     gnutls_x509_privkey_t device_key = NULL;
     gnutls_x509_crt_t ca_cert = NULL;
@@ -126,8 +123,8 @@ static int device_new_certificate(database_entry_t *device_entry, void *context)
         goto exit;
     }
 
-    if (gnutls_load_file(rest->settings->coap.certificate_file, &ca_cert_buffer)
-        || gnutls_load_file(rest->settings->coap.private_key_file, &ca_key_buffer))
+    if (gnutls_load_file(certificate, &ca_cert_buffer)
+        || gnutls_load_file(private_key, &ca_key_buffer))
     {
         goto exit;
     }
@@ -152,7 +149,7 @@ static int device_new_certificate(database_entry_t *device_entry, void *context)
     do
     {
         generate_serial(device_entry->serial, &device_entry->serial_len);
-    } while (find_existing_serial(device_entry->serial, device_entry->serial_len, context));
+    } while (find_existing_serial(device_entry->serial, device_entry->serial_len, device_list));
 
     activation_time = time(NULL);
 
@@ -205,7 +202,7 @@ exit:
     return ret;
 }
 
-int device_new_credentials(database_entry_t *device_entry, void *context)
+int device_new_credentials(database_entry_t *device_entry, linked_list_t *device_list, const char *certificate, const char *private_key)
 {
     if (device_entry->mode == DEVICE_CREDENTIALS_PSK)
     {
@@ -213,7 +210,7 @@ int device_new_credentials(database_entry_t *device_entry, void *context)
     }
     else if (device_entry->mode == DEVICE_CREDENTIALS_CERT)
     {
-        return device_new_certificate(device_entry, context);
+        return device_new_certificate(device_entry, device_list, certificate, private_key);
     }
     else if (device_entry->mode == DEVICE_CREDENTIALS_NONE)
     {

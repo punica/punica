@@ -171,9 +171,8 @@ static int json_object_add_binary(json_t *j_object, uint8_t *buffer, const char 
     return 0;
 }
 
-static json_t *rest_devices_entry_to_resp(database_entry_t *device_entry, void *context)
+static json_t *rest_devices_entry_to_resp(database_entry_t *device_entry, const char *certificate_file)
 {
-    rest_context_t *rest = (rest_context_t *)context;
     json_t *j_resp_obj = NULL;
     char *mode_string;
 
@@ -191,7 +190,7 @@ static json_t *rest_devices_entry_to_resp(database_entry_t *device_entry, void *
     {
         mode_string = "cert";
 
-        if (append_server_key(j_resp_obj, rest->settings->coap.certificate_file))
+        if (append_server_key(j_resp_obj, certificate_file))
         {
             json_decref(j_resp_obj);
             return NULL;
@@ -266,7 +265,7 @@ int rest_devices_get_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     {
         device_data = (database_entry_t *)device_entry->data;
 
-        j_entry_object = rest_devices_entry_to_resp(device_data, context);
+        j_entry_object = rest_devices_entry_to_resp(device_data, rest->settings->coap.certificate_file);
         if (j_entry_object == NULL)
         {
             ulfius_set_empty_body_response(resp, 500);
@@ -307,7 +306,7 @@ int rest_devices_get_name_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void 
         device_data = (database_entry_t *)device_entry->data;
         if (strcmp(id, device_data->uuid) == 0)
         {
-            j_entry_object = rest_devices_entry_to_resp(device_data, context);
+            j_entry_object = rest_devices_entry_to_resp(device_data, rest->settings->coap.certificate_file);
             if (j_entry_object == NULL)
             {
                 ulfius_set_empty_body_response(resp, 500);
@@ -355,7 +354,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         return U_CALLBACK_COMPLETE;
     }
 
-    device_entry = database_create_new_entry(jdevice_list, context);
+    device_entry = database_create_new_entry(jdevice_list, rest->devicesList, rest->settings->coap.certificate_file, rest->settings->coap.private_key_file);
     json_decref(jdevice_list);
 
     if (device_entry == NULL)
@@ -364,7 +363,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         return U_CALLBACK_COMPLETE;
     }
 
-    j_post_resp = rest_devices_entry_to_resp(device_entry, context);
+    j_post_resp = rest_devices_entry_to_resp(device_entry, rest->settings->coap.certificate_file);
     if (j_post_resp == NULL)
     {
         ulfius_set_empty_body_response(resp, 500);
