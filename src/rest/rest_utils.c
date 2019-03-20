@@ -346,21 +346,23 @@ uint8_t *binary_from_json(json_t *j_object, const char *key, size_t *buffer_leng
         return NULL;
     }
 
-    status = base64_decode(base64_string, NULL, buffer_length);
-    free(base64_string);
-
-    if (status != 0)
+    if (base64_decode(base64_string, NULL, buffer_length) != 0)
     {
+        free(base64_string);
         return NULL;
     }
 
     binary_buffer = malloc(*buffer_length);
     if (binary_buffer == NULL)
     {
+        free(base64_string);
         return NULL;
     }
 
-    if (base64_decode(base64_string, binary_buffer, buffer_length) != 0)
+    status = base64_decode(base64_string, binary_buffer, buffer_length);
+    free(base64_string);
+
+    if (status != 0)
     {
         free(binary_buffer);
         return NULL;
