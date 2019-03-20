@@ -269,7 +269,7 @@ exit:
     return ret;
 }
 
-json_t *json_from_string(const char *string, const char *key)
+json_t *json_object_from_string(const char *string, const char *key)
 {
     json_t *j_object, *j_string;
 
@@ -294,7 +294,7 @@ json_t *json_from_string(const char *string, const char *key)
     return j_object;
 }
 
-json_t *json_from_binary(uint8_t *buffer, const char *key, size_t buffer_length)
+json_t *json_object_from_binary(uint8_t *buffer, const char *key, size_t buffer_length)
 {
     char base64_string[1024] = {0};
     size_t base64_length = sizeof(base64_string);
@@ -305,7 +305,7 @@ json_t *json_from_binary(uint8_t *buffer, const char *key, size_t buffer_length)
         return NULL;
     }
 
-    j_object = json_from_string(base64_string, key);
+    j_object = json_object_from_string(base64_string, key);
     if (j_object == NULL)
     {
         return NULL;
@@ -314,7 +314,7 @@ json_t *json_from_binary(uint8_t *buffer, const char *key, size_t buffer_length)
     return j_object;
 }
 
-char *string_from_json(json_t *j_object, const char *key)
+char *string_from_json_object(json_t *j_object, const char *key)
 {
     json_t *j_value;
     const char *string;
@@ -334,13 +334,13 @@ char *string_from_json(json_t *j_object, const char *key)
     return strdup(string);
 }
 
-uint8_t *binary_from_json(json_t *j_object, const char *key, size_t *buffer_length)
+uint8_t *binary_from_json_object(json_t *j_object, const char *key, size_t *buffer_length)
 {
     uint8_t *binary_buffer;
     int status;
     char *base64_string;
 
-    base64_string = string_from_json(j_object, key);
+    base64_string = string_from_json_object(j_object, key);
     if (base64_string == NULL)
     {
         return NULL;

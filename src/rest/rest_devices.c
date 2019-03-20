@@ -116,7 +116,7 @@ static int append_server_key(json_t *j_object, const char *certificate_file)
         return -1;
     }
 
-    j_string = json_from_binary(binary_buffer, "server_key", binary_length);
+    j_string = json_object_from_binary(binary_buffer, "server_key", binary_length);
     if (j_string == NULL)
     {
         return -1;
@@ -164,10 +164,10 @@ static json_t *rest_devices_entry_to_resp(database_entry_t *device_entry, void *
     }
 
     //TODO: pakeisti
-    uuid = json_from_string(device_entry->uuid, "uuid");
-    name = json_from_string(device_entry->name, "name");
-    mode = json_from_string(mode_string, "mode");
-    public_key = json_from_binary(device_entry->public_key, "public_key", device_entry->public_key_len);
+    uuid = json_object_from_string(device_entry->uuid, "uuid");
+    name = json_object_from_string(device_entry->name, "name");
+    mode = json_object_from_string(mode_string, "mode");
+    public_key = json_object_from_binary(device_entry->public_key, "public_key", device_entry->public_key_len);
 
     if ((uuid == NULL)
         || (name == NULL)
@@ -209,7 +209,7 @@ static int append_client_key(json_t *j_object, database_entry_t *device_entry)
         return -1;
     }
 
-    j_string = json_from_binary(device_entry->secret_key, "secret_key", device_entry->secret_key_len);
+    j_string = json_object_from_binary(device_entry->secret_key, "secret_key", device_entry->secret_key_len);
     if (j_string == NULL)
     {
         return -1;
@@ -410,7 +410,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
         return U_CALLBACK_COMPLETE;
     }
 
-    name = string_from_json(jdevice, "name");
+    name = string_from_json_object(jdevice, "name");
     json_decref(jdevice);
 
     if (name == NULL)
