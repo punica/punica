@@ -309,8 +309,10 @@ database_entry_t *database_create_entry(json_t *j_device_object)
 
     device_entry->uuid = string_from_json(j_device_object, "uuid");
     device_entry->name = string_from_json(j_device_object, "name");
-    device_entry->public_key = binary_from_json(j_device_object, "public_key", &device_entry->public_key_len);
-    device_entry->secret_key = binary_from_json(j_device_object, "secret_key", &device_entry->secret_key_len);
+    device_entry->public_key = binary_from_json(j_device_object, "public_key",
+                                                &device_entry->public_key_len);
+    device_entry->secret_key = binary_from_json(j_device_object, "secret_key",
+                                                &device_entry->secret_key_len);
     device_entry->serial = binary_from_json(j_device_object, "serial", &device_entry->serial_len);
 
     if (device_entry->uuid == NULL
