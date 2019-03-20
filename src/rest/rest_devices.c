@@ -131,18 +131,56 @@ static int append_server_key(json_t *j_object, const char *certificate_file)
     return 0;
 }
 
+static int json_object_add_string(json_t *j_object, const char *string, const char *key)
+{
+    json_t *j_string;
+
+    j_string = json_object_from_string(string, key);
+    if (j_string == NULL)
+    {
+        return -1;
+    }
+
+    if (json_object_update(j_object, j_string) != 0)
+    {
+        json_decref(j_string);
+        return -1;
+    }
+
+    json_decref(j_string);
+    return 0;
+}
+
+static int json_object_add_binary(json_t *j_object, uint8_t *buffer, const char *key, size_t buffer_length)
+{
+    json_t *j_binary;
+
+    j_binary = json_object_from_binary(buffer, key, buffer_length);
+    if (j_binary == NULL)
+    {
+        return -1;
+    }
+
+    if (json_object_update(j_object, j_binary) != 0)
+    {
+        json_decref(j_binary);
+        return -1;
+    }
+
+    json_decref(j_binary);
+    return 0;
+}
+
 static json_t *rest_devices_entry_to_resp(database_entry_t *device_entry, void *context)
 {
     rest_context_t *rest = (rest_context_t *)context;
     json_t *j_resp_obj = NULL;
-    json_t *uuid = NULL, *name = NULL, *mode = NULL, *public_key = NULL;
     char *mode_string;
-    int ret = -1;
 
     j_resp_obj = json_object();
     if (j_resp_obj == NULL)
     {
-        goto exit;
+        return NULL;
     }
 
     if (device_entry->mode == DEVICE_CREDENTIALS_PSK)
@@ -155,7 +193,8 @@ static json_t *rest_devices_entry_to_resp(database_entry_t *device_entry, void *
 
         if (append_server_key(j_resp_obj, rest->settings->coap.certificate_file))
         {
-            goto exit;
+            json_decref(j_resp_obj);
+            return NULL;
         }
     }
     else if (device_entry->mode == DEVICE_CREDENTIALS_NONE)
@@ -163,40 +202,27 @@ static json_t *rest_devices_entry_to_resp(database_entry_t *device_entry, void *
         mode_string = "none";
     }
 
-    //TODO: pakeisti
-    uuid = json_object_from_string(device_entry->uuid, "uuid");
-    name = json_object_from_string(device_entry->name, "name");
-    mode = json_object_from_string(mode_string, "mode");
-    public_key = json_object_from_binary(device_entry->public_key, "public_key", device_entry->public_key_len);
-
-    if ((uuid == NULL)
-        || (name == NULL)
-        || (mode == NULL)
-        || (public_key == NULL))
-    {
-        goto exit;
-    }
-
-    if (json_object_update(j_resp_obj, uuid)
-        || json_object_update(j_resp_obj, name)
-        || json_object_update(j_resp_obj, mode)
-        || json_object_update(j_resp_obj, public_key))
-    {
-        goto exit;
-    }
-
-    ret = 0;
-exit:
-    //TODO: decrefs
-    json_decref(uuid);
-    json_decref(name);
-    json_decref(mode);
-    json_decref(public_key);
-    if (ret)
+    if (json_object_add_string(j_resp_obj, device_entry->uuid, "uuid"))
     {
         json_decref(j_resp_obj);
         return NULL;
     }
+    if (json_object_add_string(j_resp_obj, device_entry->name, "name"))
+    {
+        json_decref(j_resp_obj);
+        return NULL;
+    }
+    if (json_object_add_string(j_resp_obj, mode_string, "mode"))
+    {
+        json_decref(j_resp_obj);
+        return NULL;
+    }
+    if (json_object_add_binary(j_resp_obj, device_entry->public_key, "public_key", device_entry->public_key_len))
+    {
+        json_decref(j_resp_obj);
+        return NULL;
+    }
+
     return j_resp_obj;
 }
 
