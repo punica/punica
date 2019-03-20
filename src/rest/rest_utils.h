@@ -48,7 +48,7 @@ typedef struct
 
 int coap_to_http_status(int status);
 
-int utils_get_server_key(uint8_t *buffer, size_t *length, const char *cert_file);
+int utils_load_certificate(uint8_t *buffer, size_t *length, const char *cert_file);
 
 int device_new_credentials(database_entry_t *device_entry, void *context);
 

@@ -241,7 +241,7 @@ int coap_to_http_status(int status)
     }
 }
 
-int utils_get_server_key(uint8_t *buffer, size_t *length, const char *cert_file)
+int utils_load_certificate(uint8_t *buffer, size_t *length, const char *cert_file)
 {
     gnutls_x509_crt_t cert = NULL;
     gnutls_datum_t cert_buffer = {NULL, 0};

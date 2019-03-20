@@ -111,7 +111,7 @@ static int append_server_key(json_t *j_object, const char *certificate_file)
     }
 
     binary_length = sizeof(binary_buffer);
-    if (utils_get_server_key(binary_buffer, &binary_length, certificate_file))
+    if (utils_load_certificate(binary_buffer, &binary_length, certificate_file))
     {
         return -1;
     }
