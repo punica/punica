@@ -240,30 +240,27 @@ int coap_to_http_status(int status)
 
 int utils_load_certificate(uint8_t *buffer, size_t *length, const char *cert_file)
 {
-    gnutls_x509_crt_t cert = NULL;
-    gnutls_datum_t cert_buffer = {NULL, 0};
-    int ret = -1;
+    static bool cert_loaded = false;
+    static gnutls_datum_t cert_buffer = {NULL, 0};
 
-    gnutls_x509_crt_init(&cert);
-
-    if (gnutls_load_file(cert_file, &cert_buffer))
+    if (cert_loaded == false)
     {
-        goto exit;
-    }
-    if (gnutls_x509_crt_import(cert, &cert_buffer, GNUTLS_X509_FMT_PEM))
-    {
-        goto exit;
-    }
-    if (gnutls_x509_crt_export(cert, GNUTLS_X509_FMT_PEM, buffer, length))
-    {
-        goto exit;
+        if (gnutls_load_file(cert_file, &cert_buffer) != 0)
+        {
+            return -1;
+        }
+        cert_loaded = true;
     }
 
-    ret = 0;
-exit:
-    gnutls_free(cert_buffer.data);
-    gnutls_x509_crt_deinit(cert);
-    return ret;
+    if (*length < cert_buffer.size)
+    {
+        return -1;
+    }
+
+    memcpy(buffer, cert_buffer.data, cert_buffer.size);
+    *length = cert_buffer.size;
+
+    return 0;
 }
 
 json_t *json_object_from_string(const char *string, const char *key)
