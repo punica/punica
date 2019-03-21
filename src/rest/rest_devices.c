@@ -465,7 +465,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     free(name);
 
 //  if database file does not exist then only save locally
-    if (rest->settings->coap.database_file == NULL)
+    if (rest->settings->coap.database_file)
     {
         if (rest_devices_save_list_to_file(rest->devicesList, rest->settings->coap.database_file))
         {
@@ -503,7 +503,7 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
     ulfius_set_empty_body_response(resp, 200);
 
 //  if database file not specified then only save locally
-    if (rest->settings->coap.database_file == NULL)
+    if (rest->settings->coap.database_file)
     {
         if (rest_devices_save_list_to_file(rest->devicesList, rest->settings->coap.database_file))
         {
