@@ -335,6 +335,48 @@ describe('Devices interface', () => {
           done();
         });
     });
+
+    it('should return 400 if payload is empty', (done) => {
+      chai.request(server)
+        .put('/devices/' + test_uuid)
+        .set('Content-Type', 'application/json')
+        .send('')
+        .end( (err, res) => {
+          res.should.have.status(400);
+          done();
+        });
+    });
+
+    it('should return 415 if missing header', (done) => {
+      chai.request(server)
+        .put('/devices/' + test_uuid)
+        .end( (err, res) => {
+          res.should.have.status(415);
+          done();
+        });
+    });
+
+    it('should return 400 if wrong key in payload', (done) => {
+      chai.request(server)
+        .put('/devices/' + test_uuid)
+        .set('Content-Type', 'application/json')
+        .send('{"key":"wrong"}')
+        .end( (err, res) => {
+          res.should.have.status(400);
+          done();
+        });
+    });
+
+    it('should return 400 if invalid value at key in payload', (done) => {
+      chai.request(server)
+        .put('/devices/' + test_uuid)
+        .set('Content-Type', 'application/json')
+        .send('{"name":true}')
+        .end( (err, res) => {
+          res.should.have.status(400);
+          done();
+        });
+    });
   });
 
   describe('DELETE /devices:uuid', function() {
@@ -367,4 +409,3 @@ describe('Devices interface', () => {
     });
   });
 });
-
