@@ -155,6 +155,15 @@ describe('Devices interface', () => {
         });
     });
 
+    it('should return 415 if missing header', (done) => {
+      chai.request(server)
+        .post('/devices')
+        .end( (err, res) => {
+          res.should.have.status(415);
+          done();
+        });
+    });
+
     it('should return 400 if the payload is an array instead of an object', (done) => {
       chai.request(server)
         .post('/devices')
