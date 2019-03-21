@@ -229,7 +229,7 @@ static int dtls_connection_new_socket(secure_connection_context_t *context)
             continue;
         }
 
-//        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tc)))
+//        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)))
 //        {
 //            close(sock);
 //            sock = -1;
