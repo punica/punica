@@ -196,6 +196,10 @@ static int dtls_connection_new_socket(secure_connection_context_t *context)
     int sock, enable;
     struct addrinfo hints, *addr_list, *cur;
     char port_str[16];
+//    struct timeval tv;
+//
+//    tv.tv_sec = 40;
+//    tv.tv_usec = 0;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = context->address_family;
@@ -224,6 +228,13 @@ static int dtls_connection_new_socket(secure_connection_context_t *context)
             sock = -1;
             continue;
         }
+
+//        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tc)))
+//        {
+//            close(sock);
+//            sock = -1;
+//            continue;
+//        }
 
         if (bind(sock, cur->ai_addr, cur->ai_addrlen))
         {
