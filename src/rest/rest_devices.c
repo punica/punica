@@ -103,28 +103,35 @@ static int append_server_key(json_t *j_object, const char *certificate_file)
 {
     uint8_t binary_buffer[1024];
     size_t binary_length;
-    json_t *j_string;
+    static json_t *j_string;
+    static bool cert_loaded = false;
 
     if (!json_is_object(j_object))
     {
         return -1;
     }
 
-    binary_length = sizeof(binary_buffer);
-    if (utils_load_certificate(binary_buffer, &binary_length, certificate_file))
+    if (cert_loaded == false)
     {
-        return -1;
-    }
+        binary_length = sizeof(binary_buffer);
+        if (utils_load_certificate(binary_buffer, &binary_length, certificate_file))
+        {
+            return -1;
+        }
 
-    j_string = json_object_from_binary(binary_buffer, "server_key", binary_length);
-    if (j_string == NULL)
-    {
-        return -1;
+        j_string = json_object_from_binary(binary_buffer, "server_key", binary_length);
+        if (j_string == NULL)
+        {
+            return -1;
+        }
+
+        cert_loaded = true;
     }
 
     if (json_object_update(j_object, j_string))
     {
         json_decref(j_string);
+        cert_loaded = false;
         return -1;
     }
 

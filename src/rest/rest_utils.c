@@ -240,16 +240,11 @@ int coap_to_http_status(int status)
 
 int utils_load_certificate(uint8_t *buffer, size_t *length, const char *cert_file)
 {
-    static bool cert_loaded = false;
-    static gnutls_datum_t cert_buffer = {NULL, 0};
+    gnutls_datum_t cert_buffer = {NULL, 0};
 
-    if (cert_loaded == false)
+    if (gnutls_load_file(cert_file, &cert_buffer) != 0)
     {
-        if (gnutls_load_file(cert_file, &cert_buffer) != 0)
-        {
-            return -1;
-        }
-        cert_loaded = true;
+        return -1;
     }
 
     if (*length < cert_buffer.size)
