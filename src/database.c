@@ -394,7 +394,7 @@ database_entry_t *database_create_new_entry(json_t *j_device_object, linked_list
                                             const char *certificate, const char *private_key)
 {
     uuid_t b_uuid;
-    char *uuid = NULL;
+    char uuid[64];
     int status = -1;
     database_entry_t *device_entry = NULL;
 
@@ -423,15 +423,8 @@ database_entry_t *database_create_new_entry(json_t *j_device_object, linked_list
 
     uuid_generate_random(b_uuid);
 
-    uuid = malloc(37);
-    if (uuid == NULL)
-    {
-        goto exit;
-    }
-
     uuid_unparse(b_uuid, uuid);
     device_entry->uuid = strdup(uuid);
-    free(uuid);
 
     if (device_entry->uuid == NULL)
     {
