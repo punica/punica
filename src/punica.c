@@ -289,14 +289,13 @@ int psk_find_callback(const char *name, void *data, uint8_t **psk_buffer, size_t
     {
         device_data = (database_entry_t *)device_entry->data;
 
-        if (device_data->mode == DEVICE_CREDENTIALS_PSK)
+        if (device_data->mode == DEVICE_CREDENTIALS_PSK
+            && device_data->public_key_len == strlen(name)
+            && memcmp(name, device_data->public_key, device_data->public_key_len) == 0)
         {
-            if (memcmp(name, device_data->public_key, device_data->public_key_len) == 0)
-            {
-                *psk_buffer = device_data->secret_key;
-                *psk_len = device_data->secret_key_len;
-                return 0;
-            }
+            *psk_buffer = device_data->secret_key;
+            *psk_len = device_data->secret_key_len;
+            return 0;
         }
     }
 
