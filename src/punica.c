@@ -352,12 +352,7 @@ bool lwm2m_name_is_valid(const char *name, void *session, void *user_data)
         return false;
     }
 
-    if (strcmp(name, device_entry->name) == 0)
-    {
-        return true;
-    }
-
-    return false;
+    return strcmp(name, device_entry->name) == 0;
 }
 
 int main(int argc, char *argv[])
