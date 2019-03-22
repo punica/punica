@@ -101,7 +101,7 @@ static int rest_devices_remove_list(linked_list_t *list, const char *id)
 
 static int append_server_key(json_t *j_object, const char *certificate_file)
 {
-    uint8_t binary_buffer[1024];
+    uint8_t binary_buffer[1024]; // sufficient size to store certificate
     size_t binary_length;
     static json_t *j_string;
     static bool cert_loaded = false;

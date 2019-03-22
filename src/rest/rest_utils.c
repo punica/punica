@@ -285,7 +285,7 @@ json_t *json_object_from_string(const char *string, const char *key)
 
 json_t *json_object_from_binary(uint8_t *buffer, const char *key, size_t buffer_length)
 {
-    char base64_string[1024] = {0};
+    char base64_string[1024] = {0}; // provide sufficient size
     size_t base64_length = sizeof(base64_string);
     json_t *j_object;
 
