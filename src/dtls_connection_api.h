@@ -39,7 +39,7 @@
  *      negative value on error
  */
 connection_api_t *dtls_connection_api_init(int port, int address_family, const char *cert_file,
-                                           const char *key_file, void *data, f_psk_cb_t psk_cb, f_identifier_cb_t identifier_cb);
+                                           const char *key_file, void *data, f_psk_cb_t psk_cb, f_handshake_done_cb_t handshake_done_cb);
 
 /*
  * Deinitialize a DTLS connection context

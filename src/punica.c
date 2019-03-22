@@ -98,7 +98,7 @@ static void init_signals(void)
 }
 
 static connection_api_t *api_init(coap_settings_t *coap, void *data, f_psk_cb_t psk_cb,
-                                  f_identifier_cb_t identifier_cb)
+                                  f_handshake_done_cb_t handshake_done_cb)
 {
     if (coap->security_mode == PUNICA_COAP_MODE_INSECURE)
     {
@@ -107,7 +107,7 @@ static connection_api_t *api_init(coap_settings_t *coap, void *data, f_psk_cb_t 
     else if (coap->security_mode == PUNICA_COAP_MODE_SECURE)
     {
         return dtls_connection_api_init(coap->port, AF_INET6, coap->certificate_file,
-                                        coap->private_key_file, data, psk_cb, identifier_cb);
+                                        coap->private_key_file, data, psk_cb, handshake_done_cb);
     }
     else
     {
@@ -250,28 +250,33 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
     }
 }
 
-void *identifier_find_callback(void *public_data, void *data)
+//TODO: 'void *api' is a temporary workaround and will be fixed when issue #67 is addressed
+int identifier_find_callback(void *connection, void *public_data, size_t public_data_length,
+                             void *data, void *api)
 {
     database_entry_t *device_data;
     linked_list_entry_t *device_entry;
     linked_list_t *device_list = (linked_list_t *)data;
+    connection_api_t *conn_api = api;
 
     if (device_list == NULL)
     {
-        return NULL;
+        return -1;
     }
 
     for (device_entry = device_list->head; device_entry != NULL; device_entry = device_entry->next)
     {
         device_data = (database_entry_t *)device_entry->data;
 
-        if (memcmp(public_data, device_data->public_key, device_data->public_key_len) == 0)
+        if (public_data_length == device_data->public_key_len
+            && memcmp(public_data, device_data->public_key, device_data->public_key_len) == 0)
         {
-            return device_data->uuid;
+            conn_api->f_set_identifier(connection, device_data->uuid);
+            return 0;
         }
     }
 
-    return NULL;
+    return -1;
 }
 
 int psk_find_callback(const char *name, void *data, uint8_t **psk_buffer, size_t *psk_len)
@@ -335,12 +340,12 @@ bool lwm2m_name_is_valid(const char *name, void *session, void *user_data)
     database_entry_t *device_entry;
     const char *uuid;
 
-    if (api->f_retrieve_identifier == NULL)
+    if (api->f_get_identifier == NULL)
     {
         return true;
     }
 
-    uuid = api->f_retrieve_identifier(session);
+    uuid = api->f_get_identifier(session);
     if (uuid == NULL)
     {
         return false;

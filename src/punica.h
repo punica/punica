@@ -121,7 +121,22 @@ typedef int (*f_stop_t)(void *context);
  * Notes:
  *      This function is an exception in connection API that doesn't use the context pointer
 */
-typedef void *(*f_retrieve_identifier_t)(void *connection);
+typedef const void *(*f_get_identifier_t)(void *connection);
+/*
+ * Stores identifier in connection
+ *
+ * Parameters:
+ *      connection - server/client connection context for upper communications layers,
+ *      identifier - pointer to identifier
+ *
+ * Returns:
+ *      0 on success,
+ *      negative value on error
+ *
+ * Notes:
+ *      This function is an exception in connection API that doesn't use the context pointer
+*/
+typedef int (*f_set_identifier_t)(void *connection, void *identifier);
 
 typedef struct connection_api_t
 {
@@ -130,7 +145,8 @@ typedef struct connection_api_t
     f_send_t     f_send;
     f_close_t    f_close;
     f_stop_t     f_stop;
-    f_retrieve_identifier_t f_retrieve_identifier;
+    f_get_identifier_t f_get_identifier;
+    f_set_identifier_t f_set_identifier;
 } connection_api_t;
 
 /*
@@ -151,17 +167,21 @@ typedef struct connection_api_t
 typedef int (*f_psk_cb_t)(const char *name, void *data, uint8_t **psk, size_t *psk_len);
 
 /*
- * Called by connection api to get an identifier to store in it's connection context
+ * Called by connection api after finished handshake
  *
  * Parameters:
- *      public_data - pointer to data that is used to find associated identifier,
+ *      connection - server/client connection context for upper communications layers,
+ *      public_data - pointer to data that is used to find an identifier,
+ *      public_data_length - length of public_data,
  *      data - pointer to database storing client credentials
+ *      api - workaround, will be fixed in issue #67
  *
  * Returns:
  *      pointer to identifier on success,
  *      NULL on failure
 */
-typedef void *(*f_identifier_cb_t)(void *public_data, void *data);
+typedef int (*f_handshake_done_cb_t)(void *connection, void *public_data, size_t public_data_length,
+                                     void *data, void *api);
 
 typedef struct _u_request ulfius_req_t;
 typedef struct _u_response ulfius_resp_t;
