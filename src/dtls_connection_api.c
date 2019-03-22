@@ -334,7 +334,9 @@ static device_connection_t *dtls_connection_new_listen(secure_connection_context
 }
 
 connection_api_t *dtls_connection_api_init(int port, int address_family,
-                                           const char *certificate_file, const char *private_key_file, void *data, f_psk_cb_t psk_cb,
+                                           const char *certificate_file,
+                                           const char *private_key_file,
+                                           void *data, f_psk_cb_t psk_cb,
                                            f_identifier_cb_t identifier_cb)
 {
     secure_connection_context_t *context;
