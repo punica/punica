@@ -32,7 +32,7 @@
  * Communications layer structure wrapper for connection API and callback functions,
  * used to distinguish a session pointer from other function arguments
  */
-typedef void * session_t;
+typedef void *session_t;
 
 /*
  * Connection API functions. Used for socket creation, management and communication.
@@ -186,7 +186,8 @@ typedef int (*f_psk_cb_t)(const char *name, void *data, uint8_t **psk, size_t *p
  *      pointer to identifier on success,
  *      NULL on failure
 */
-typedef int (*f_handshake_done_cb_t)(session_t connection, void *public_data, size_t public_data_length,
+typedef int (*f_handshake_done_cb_t)(session_t connection, void *public_data,
+                                     size_t public_data_length,
                                      void *data, void *api);
 
 typedef struct _u_request ulfius_req_t;
