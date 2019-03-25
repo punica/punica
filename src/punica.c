@@ -251,7 +251,7 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
 }
 
 //TODO: 'void *api' is a temporary workaround and will be fixed when issue #67 is addressed
-int identifier_find_callback(void *connection, void *public_data, size_t public_data_length,
+int identifier_find_callback(session_t connection, void *public_data, size_t public_data_length,
                              void *data, void *api)
 {
     database_entry_t *device_data;
@@ -307,7 +307,7 @@ int psk_find_callback(const char *name, void *data, uint8_t **psk_buffer, size_t
     return -1;
 }
 
-uint8_t lwm2m_buffer_send(void *session, uint8_t *buffer, size_t length, void *user_data)
+uint8_t lwm2m_buffer_send(session_t session, uint8_t *buffer, size_t length, void *user_data)
 {
     callback_data_t *callback_data = (callback_data_t *)user_data;
     connection_api_t *conn_api = callback_data->api;
@@ -327,12 +327,12 @@ uint8_t lwm2m_buffer_send(void *session, uint8_t *buffer, size_t length, void *u
     return COAP_NO_ERROR;
 }
 
-bool lwm2m_session_is_equal(void *session1, void *session2, void *userData)
+bool lwm2m_session_is_equal(session_t session1, session_t session2, void *userData)
 {
     return (session1 == session2);
 }
 
-bool lwm2m_name_is_valid(const char *name, void *session, void *user_data)
+bool lwm2m_name_is_valid(const char *name, session_t session, void *user_data)
 {
     callback_data_t *callback_data = (callback_data_t *)user_data;
     connection_api_t *api = callback_data->api;
@@ -367,7 +367,7 @@ int main(int argc, char *argv[])
     rest_context_t rest;
     connection_api_t *conn_api;
     uint8_t buffer[1500];
-    void *connection;
+    session_t connection;
     callback_data_t callback_data;
 
     static settings_t settings =

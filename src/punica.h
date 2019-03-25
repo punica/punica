@@ -29,6 +29,12 @@
 #include "settings.h"
 
 /*
+ * Communications layer structure wrapper for connection API and callback functions,
+ * used to distinguish a session pointer from other function arguments
+ */
+typedef void * session_t;
+
+/*
  * Connection API functions. Used for socket creation, management and communication.
  * API initialization depends on communication instance implementation:
  *
@@ -69,7 +75,7 @@ typedef int (*f_start_t)(void *context);
  *      positive value of length of data received,
  *      negative value on error
 */
-typedef int (*f_receive_t)(void *context, uint8_t *buffer, size_t size, void **connection,
+typedef int (*f_receive_t)(void *context, uint8_t *buffer, size_t size, session_t *connection,
                            struct timeval *tv);
 /*
  * Send data to peer
@@ -84,7 +90,7 @@ typedef int (*f_receive_t)(void *context, uint8_t *buffer, size_t size, void **c
  *      0 on success,
  *      negative value on error
 */
-typedef int (*f_send_t)(void *context, void *connection, uint8_t *buffer, size_t length);
+typedef int (*f_send_t)(void *context, session_t connection, uint8_t *buffer, size_t length);
 /*
  * Close connection with peer
  *
@@ -96,7 +102,7 @@ typedef int (*f_send_t)(void *context, void *connection, uint8_t *buffer, size_t
  *      0 on success,
  *      negative value on error
 */
-typedef int (*f_close_t)(void *context, void *connection);
+typedef int (*f_close_t)(void *context, session_t connection);
 /*
  * Stops and deinitializes communication context. Closes connections with all peers
  *
@@ -121,7 +127,7 @@ typedef int (*f_stop_t)(void *context);
  * Notes:
  *      This function is an exception in connection API that doesn't use the context pointer
 */
-typedef const void *(*f_get_identifier_t)(void *connection);
+typedef const void *(*f_get_identifier_t)(session_t connection);
 /*
  * Stores identifier in connection
  *
@@ -136,7 +142,7 @@ typedef const void *(*f_get_identifier_t)(void *connection);
  * Notes:
  *      This function is an exception in connection API that doesn't use the context pointer
 */
-typedef int (*f_set_identifier_t)(void *connection, void *identifier);
+typedef int (*f_set_identifier_t)(session_t connection, void *identifier);
 
 typedef struct connection_api_t
 {
@@ -180,7 +186,7 @@ typedef int (*f_psk_cb_t)(const char *name, void *data, uint8_t **psk, size_t *p
  *      pointer to identifier on success,
  *      NULL on failure
 */
-typedef int (*f_handshake_done_cb_t)(void *connection, void *public_data, size_t public_data_length,
+typedef int (*f_handshake_done_cb_t)(session_t connection, void *public_data, size_t public_data_length,
                                      void *data, void *api);
 
 typedef struct _u_request ulfius_req_t;
