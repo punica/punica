@@ -196,12 +196,6 @@ static json_t *rest_devices_entry_to_resp(database_entry_t *device_entry, const 
     else if (device_entry->mode == DEVICE_CREDENTIALS_CERT)
     {
         mode_string = "cert";
-
-        if (append_server_key(j_resp_obj, certificate_file))
-        {
-            json_decref(j_resp_obj);
-            return NULL;
-        }
     }
     else if (device_entry->mode == DEVICE_CREDENTIALS_NONE)
     {
@@ -232,6 +226,15 @@ static json_t *rest_devices_entry_to_resp(database_entry_t *device_entry, const 
     {
         json_decref(j_resp_obj);
         return NULL;
+    }
+
+    if (device_entry->mode == DEVICE_CREDENTIALS_CERT)
+    {
+        if (append_server_key(j_resp_obj, certificate_file))
+        {
+            json_decref(j_resp_obj);
+            return NULL;
+        }
     }
 
     return j_resp_obj;
