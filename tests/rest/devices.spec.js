@@ -175,11 +175,22 @@ describe('Devices interface', () => {
         });
     });
 
-    it('should return 400 if missing keys in payload', (done) => {
+    it('should return 400 if missing key \'mode\' in payload', (done) => {
       chai.request(server)
         .post('/devices')
         .set('Content-Type', 'application/json')
         .send('{"name":"client-psk-2"}')
+        .end( (err, res) => {
+          res.should.have.status(400);
+          done();
+        });
+    });
+
+    it('should return 400 if missing key \'name\' in payload', (done) => {
+      chai.request(server)
+        .post('/devices')
+        .set('Content-Type', 'application/json')
+        .send('{"mode":"none"}')
         .end( (err, res) => {
           res.should.have.status(400);
           done();
