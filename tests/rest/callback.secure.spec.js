@@ -31,9 +31,9 @@ describe('Secure notifications interface', function () {
     server.start();
 
     const valid_cred_options = {
-      key: fs.readFileSync('../../other_private.key'),
-      cert: fs.readFileSync('../../other_certificate.pem'),
-      ca: fs.readFileSync('../../certificate.pem'),
+      key: fs.readFileSync('keys/other_private.key'),
+      cert: fs.readFileSync('keys/other_certificate.pem'),
+      ca: fs.readFileSync('keys/certificate.pem'),
       requestCert: true,
       rejectUnauthorized: true,
     };
@@ -41,9 +41,9 @@ describe('Secure notifications interface', function () {
     valid_callback_server.listen(9998, 'localhost');
 
     const invalid_cred_options = {
-      key: fs.readFileSync('../../other_private.key'),
-      cert: fs.readFileSync('../../other_certificate.pem'),
-      ca: fs.readFileSync('../../other_certificate.pem'),
+      key: fs.readFileSync('keys/other_private.key'),
+      cert: fs.readFileSync('keys/other_certificate.pem'),
+      ca: fs.readFileSync('keys/other_certificate.pem'),
       requestCert: true,
       rejectUnauthorized: true,
     };
@@ -54,7 +54,7 @@ describe('Secure notifications interface', function () {
       host: 'localhost',
       port: '8889',
       ca: [
-        fs.readFileSync('../../certificate.pem'),
+        fs.readFileSync('keys/certificate.pem'),
       ],
     };
     
@@ -98,7 +98,7 @@ describe('Secure notifications interface', function () {
         host: 'localhost',
         port: '8889',
         ca: [
-          fs.readFileSync('../../certificate.pem'),
+          fs.readFileSync('keys/certificate.pem'),
         ],
       };
 
@@ -127,7 +127,7 @@ describe('Secure notifications interface', function () {
         host: 'localhost',
         port: '8889',
         ca: [
-          fs.readFileSync('../../certificate.pem'),
+          fs.readFileSync('keys/certificate.pem'),
         ],
       };
 
@@ -156,7 +156,7 @@ describe('Secure notifications interface', function () {
         host: 'localhost',
         port: '8889',
         ca: [
-          fs.readFileSync('../../certificate.pem'),
+          fs.readFileSync('keys/certificate.pem'),
         ],
       };
 

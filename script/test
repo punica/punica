@@ -40,12 +40,13 @@ else
 fi
 
 CERTIFICATE_SETTINGS_TEMPLATE="${PROJECT_ROOT_DIR}/tests/rest/certificate_template.cfg"
-TEST_PRIVATE_KEY="${PROJECT_ROOT_DIR}/private.key"
-TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/certificate.pem"
-OTHER_TEST_PRIVATE_KEY="${PROJECT_ROOT_DIR}/other_private.key"
-OTHER_TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/other_certificate.pem"
-ECDSA_TEST_PRIVATE_KEY="${PROJECT_ROOT_DIR}/ecdsa.key"
-ECDSA_TEST_CERTIFICATE="${PROJECT_ROOT_DIR}/ecdsa.pem"
+KEY_DIR="${PROJECT_ROOT_DIR}/tests/rest/keys"
+TEST_PRIVATE_KEY="${KEY_DIR}/private.key"
+TEST_CERTIFICATE="${KEY_DIR}/certificate.pem"
+OTHER_TEST_PRIVATE_KEY="${KEY_DIR}/other_private.key"
+OTHER_TEST_CERTIFICATE="${KEY_DIR}/other_certificate.pem"
+ECDSA_TEST_PRIVATE_KEY="${KEY_DIR}/ecdsa.key"
+ECDSA_TEST_CERTIFICATE="${KEY_DIR}/ecdsa.pem"
 
 CERTTOOL_BIN="certtool"
 
@@ -204,6 +205,9 @@ then
 fi
 
 echo "==> Generating security files..."
+if [ ! -d "${KEY_DIR}" ]; then
+    eval "mkdir ${KEY_DIR}"
+fi
 generate_key_and_certificate ${TEST_PRIVATE_KEY} ${TEST_CERTIFICATE} ${CERTIFICATE_SETTINGS_TEMPLATE}
 generate_key_and_certificate ${OTHER_TEST_PRIVATE_KEY} ${OTHER_TEST_CERTIFICATE} ${CERTIFICATE_SETTINGS_TEMPLATE}
 generate_key_and_certificate_ecdsa ${ECDSA_TEST_PRIVATE_KEY} ${ECDSA_TEST_CERTIFICATE}
