@@ -347,51 +347,49 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
     const char *ct;
     json_t *jdevice_list = NULL, *j_post_resp = NULL;
     database_entry_t *device_entry = NULL;
+    int resp_status = 500;
+
+    rest_lock(rest);
 
     ct = u_map_get_case(req->map_header, "Content-Type");
     if (ct == NULL || strcmp(ct, "application/json") != 0)
     {
-        ulfius_set_empty_body_response(resp, 415);
-        return U_CALLBACK_COMPLETE;
+        resp_status = 415;
+        goto exit;
     }
 
     jdevice_list = json_loadb(req->binary_body, req->binary_body_length, 0, NULL);
     if (jdevice_list == NULL)
     {
-        ulfius_set_empty_body_response(resp, 400);
-        return U_CALLBACK_COMPLETE;
+        resp_status = 400;
+        goto exit;
     }
 
     if (database_validate_new_entry(jdevice_list) != 0)
     {
-        ulfius_set_empty_body_response(resp, 400);
-        json_decref(jdevice_list);
-        return U_CALLBACK_COMPLETE;
+        resp_status = 400;
+        goto exit;
     }
 
     device_entry = database_create_new_entry(jdevice_list, rest->devicesList, rest->settings->coap.certificate_file, rest->settings->coap.private_key_file);
-    json_decref(jdevice_list);
 
     if (device_entry == NULL)
     {
-        ulfius_set_empty_body_response(resp, 500);
-        return U_CALLBACK_COMPLETE;
+        resp_status = 500;
+        goto exit;
     }
 
     j_post_resp = rest_devices_entry_to_resp(device_entry, rest->settings->coap.certificate_file);
     if (j_post_resp == NULL)
     {
-        ulfius_set_empty_body_response(resp, 500);
-        database_free_entry(device_entry);
-        return U_CALLBACK_COMPLETE;
+        resp_status = 500;
+        goto exit;
     }
 
     if (append_client_key(j_post_resp, device_entry) != 0)
     {
-        ulfius_set_empty_body_response(resp, 500);
-        json_decref(j_post_resp);
-        database_free_entry(device_entry);
-        return U_CALLBACK_COMPLETE;
+        resp_status = 500;
+        goto exit;
     }
 
     if (device_entry->mode == DEVICE_CREDENTIALS_CERT)
@@ -401,11 +399,9 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         device_entry->secret_key_len = 0;
     }
 
-    rest_lock(rest);
-
+    resp_status = 201;
     linked_list_add(rest->devicesList, device_entry);
-    ulfius_set_json_body_response(resp, 201, j_post_resp);
-    json_decref(j_post_resp);
+    ulfius_set_json_body_response(resp, resp_status, j_post_resp);
 
 //  if database file not specified then only save locally
     if (rest->settings->coap.database_file)
@@ -416,7 +412,26 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         }
     }
 
+exit:
     rest_unlock(rest);
+
+    if (jdevice_list != NULL)
+    {
+        json_decref(jdevice_list);
+    }
+    if (j_post_resp != NULL)
+    {
+        json_decref(j_post_resp);
+    }
+    if (resp_status != 201)
+    {
+        ulfius_set_empty_body_response(resp, resp_status);
+
+        if (device_entry != NULL)
+        {
+            database_free_entry(device_entry);
+        }
+    }
 
     return U_CALLBACK_COMPLETE;
 }
