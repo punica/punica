@@ -207,6 +207,11 @@ static json_t *rest_devices_entry_to_resp(database_entry_t *device_entry, const 
     {
         mode_string = "none";
     }
+    else
+    {
+        json_decref(j_resp_obj);
+        return NULL;
+    }
 
     if (json_object_add_string(j_resp_obj, device_entry->uuid, "uuid"))
     {
