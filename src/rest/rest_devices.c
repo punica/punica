@@ -345,50 +345,50 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
 {
     rest_context_t *rest = (rest_context_t *)context;
     const char *ct;
-    json_t *jdevice_list = NULL, *j_post_resp = NULL;
+    json_t *jdevice_list = NULL;
+    json_t *j_post_resp = NULL;
     database_entry_t *device_entry = NULL;
-    int resp_status = 500;
+    int status = -1;
 
     rest_lock(rest);
 
     ct = u_map_get_case(req->map_header, "Content-Type");
     if (ct == NULL || strcmp(ct, "application/json") != 0)
     {
-        resp_status = 415;
+        ulfius_set_empty_body_response(resp, 415);
         goto exit;
     }
 
     jdevice_list = json_loadb(req->binary_body, req->binary_body_length, 0, NULL);
     if (jdevice_list == NULL)
     {
-        resp_status = 400;
+        ulfius_set_empty_body_response(resp, 400);
         goto exit;
     }
 
     if (database_validate_new_entry(jdevice_list) != 0)
     {
-        resp_status = 400;
+        ulfius_set_empty_body_response(resp, 400);
         goto exit;
     }
 
     device_entry = database_create_new_entry(jdevice_list, rest->devicesList, rest->settings->coap.certificate_file, rest->settings->coap.private_key_file);
-
     if (device_entry == NULL)
     {
-        resp_status = 500;
+        ulfius_set_empty_body_response(resp, 500);
         goto exit;
     }
 
     j_post_resp = rest_devices_entry_to_resp(device_entry, rest->settings->coap.certificate_file);
     if (j_post_resp == NULL)
     {
-        resp_status = 500;
+        ulfius_set_empty_body_response(resp, 500);
         goto exit;
     }
 
     if (append_client_key(j_post_resp, device_entry) != 0)
     {
-        resp_status = 500;
+        ulfius_set_empty_body_response(resp, 500);
         goto exit;
     }
 
@@ -399,9 +399,7 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         device_entry->secret_key_len = 0;
     }
 
-    resp_status = 201;
     linked_list_add(rest->devicesList, device_entry);
-    ulfius_set_json_body_response(resp, resp_status, j_post_resp);
 
 //  if database file not specified then only save locally
     if (rest->settings->coap.database_file)
@@ -412,9 +410,9 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         }
     }
 
+    ulfius_set_json_body_response(resp, 201, j_post_resp);
+    status = 0;
 exit:
-    rest_unlock(rest);
-
     if (jdevice_list != NULL)
     {
         json_decref(jdevice_list);
@@ -423,15 +421,14 @@ exit:
     {
         json_decref(j_post_resp);
     }
-    if (resp_status != 201)
+    if (status != 0)
     {
-        ulfius_set_empty_body_response(resp, resp_status);
-
         if (device_entry != NULL)
         {
             database_free_entry(device_entry);
         }
     }
+    rest_unlock(rest);
 
     return U_CALLBACK_COMPLETE;
 }
@@ -440,14 +437,17 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
 {
     rest_context_t *rest = (rest_context_t *)context;
     json_t *jdevice = NULL;
-    char *name;
+    json_t *j_object;
+    const char *name;
+
+    rest_lock(rest);
 
     const char *ct;
     ct = u_map_get_case(req->map_header, "Content-Type");
     if (ct == NULL || strcmp(ct, "application/json") != 0)
     {
         ulfius_set_empty_body_response(resp, 415);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
     }
 
     const char *id;
@@ -455,37 +455,35 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     if (id == NULL)
     {
         ulfius_set_empty_body_response(resp, 400);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
     }
 
     jdevice = json_loadb(req->binary_body, req->binary_body_length, 0, NULL);
     if (!json_is_object(jdevice))
     {
         ulfius_set_empty_body_response(resp, 400);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
     }
 
-    name = string_from_json_object(jdevice, "name");
-    json_decref(jdevice);
+    j_object = json_object_get(jdevice, "name");
+    if (j_object == NULL)
+    {
+        ulfius_set_empty_body_response(resp, 400);
+        goto exit;
+    }
 
+    name = json_string_value(j_object);
     if (name == NULL)
     {
         ulfius_set_empty_body_response(resp, 400);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
     }
-
-    rest_lock(rest);
 
     if (rest_devices_update_list(id, rest->devicesList, name))
     {
         ulfius_set_empty_body_response(resp, 400);
-        rest_unlock(rest);
-        free(name);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
     }
-
-    ulfius_set_empty_body_response(resp, 201);
-    free(name);
 
 //  if database file does not exist then only save locally
     if (rest->settings->coap.database_file)
@@ -496,6 +494,12 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
         }
     }
 
+    ulfius_set_empty_body_response(resp, 201);
+exit:
+    if (jdevice != NULL)
+    {
+        json_decref(jdevice);
+    }
     rest_unlock(rest);
 
     return U_CALLBACK_COMPLETE;
@@ -505,25 +509,22 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
 {
     rest_context_t *rest = (rest_context_t *)context;
 
+    rest_lock(rest);
+
     const char *id;
     id = u_map_get(req->map_url, "id");
     if (id == NULL)
     {
         ulfius_set_empty_body_response(resp, 400);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
     }
-
-    rest_lock(rest);
 
     if (rest_devices_remove_list(rest->devicesList, id))
     {
         //  device not found
         ulfius_set_empty_body_response(resp, 404);
-        rest_unlock(rest);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
     }
-
-    ulfius_set_empty_body_response(resp, 200);
 
 //  if database file not specified then only save locally
     if (rest->settings->coap.database_file)
@@ -534,6 +535,8 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
         }
     }
 
+    ulfius_set_empty_body_response(resp, 200);
+exit:
     rest_unlock(rest);
 
     return U_CALLBACK_COMPLETE;
