@@ -1,1 +1,12 @@
-script/log
+# vim editor generated temporary files
+*.swp
+
+# ctags generated file
+tags
+
+# build directory
+build
+
+# cibuild script generated directories
+secure
+regular
