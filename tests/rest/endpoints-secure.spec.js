@@ -39,9 +39,9 @@ describe('Secure endpoints interface', () => {
     serverPort: serverPort,
     socketType: socketType,
     cipher: 'cert',
-    CAPath: '../../ecdsa.pem',
-    certificatePath: '../../ecdsa.pem',
-    keyPath: '../../ecdsa.key',
+    CAPath: 'keys/ecdsa.pem',
+    certificatePath: 'keys/ecdsa.pem',
+    keyPath: 'keys/ecdsa.key',
   };
 
   before(() => {
