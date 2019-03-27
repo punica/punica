@@ -390,12 +390,10 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
     linked_list_add(rest->devicesList, device_entry);
 
 //  if database file not specified then only save locally
-    if (rest->settings->coap.database_file)
+    if (rest->settings->coap.database_file != NULL
+        && rest_devices_save_list_to_file(rest->devicesList, rest->settings->coap.database_file) != 0)
     {
-        if (rest_devices_save_list_to_file(rest->devicesList, rest->settings->coap.database_file))
-        {
-            log_message(LOG_LEVEL_ERROR, "[DEVICES POST] Failed to write to database file.\n");
-        }
+        log_message(LOG_LEVEL_ERROR, "[DEVICES POST] Failed to write to database file.\n");
     }
 
     ulfius_set_json_body_response(resp, 201, j_post_resp);
@@ -474,12 +472,10 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     }
 
 //  if database file does not exist then only save locally
-    if (rest->settings->coap.database_file)
+    if (rest->settings->coap.database_file != NULL
+        && rest_devices_save_list_to_file(rest->devicesList, rest->settings->coap.database_file) != 0)
     {
-        if (rest_devices_save_list_to_file(rest->devicesList, rest->settings->coap.database_file))
-        {
-            log_message(LOG_LEVEL_ERROR, "[DEVICES PUT] Failed to write to database file.\n");
-        }
+        log_message(LOG_LEVEL_ERROR, "[DEVICES PUT] Failed to write to database file.\n");
     }
 
     ulfius_set_empty_body_response(resp, 201);
@@ -515,12 +511,10 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
     }
 
 //  if database file not specified then only save locally
-    if (rest->settings->coap.database_file)
+    if (rest->settings->coap.database_file != NULL
+        && rest_devices_save_list_to_file(rest->devicesList, rest->settings->coap.database_file) != 0)
     {
-        if (rest_devices_save_list_to_file(rest->devicesList, rest->settings->coap.database_file))
-        {
-            log_message(LOG_LEVEL_ERROR, "[DEVICES DELETE] Failed to write to database file.\n");
-        }
+        log_message(LOG_LEVEL_ERROR, "[DEVICES DELETE] Failed to write to database file.\n");
     }
 
     ulfius_set_empty_body_response(resp, 200);
