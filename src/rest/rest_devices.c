@@ -423,7 +423,6 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
 {
     rest_context_t *rest = (rest_context_t *)context;
     json_t *jdevice = NULL;
-    json_t *j_object;
     const char *name;
 
     rest_lock(rest);
@@ -451,14 +450,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
         goto exit;
     }
 
-    j_object = json_object_get(jdevice, "name");
-    if (j_object == NULL)
-    {
-        ulfius_set_empty_body_response(resp, 400);
-        goto exit;
-    }
-
-    name = json_string_value(j_object);
+    name = json_string_value(json_object_get(jdevice, "name"));
     if (name == NULL)
     {
         ulfius_set_empty_body_response(resp, 400);
