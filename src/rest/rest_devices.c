@@ -207,22 +207,10 @@ static json_t *rest_devices_entry_to_resp(database_entry_t *device_entry, const 
         return NULL;
     }
 
-    if (json_object_add_string(j_resp_obj, device_entry->uuid, "uuid"))
-    {
-        json_decref(j_resp_obj);
-        return NULL;
-    }
-    if (json_object_add_string(j_resp_obj, device_entry->name, "name"))
-    {
-        json_decref(j_resp_obj);
-        return NULL;
-    }
-    if (json_object_add_string(j_resp_obj, mode_string, "mode"))
-    {
-        json_decref(j_resp_obj);
-        return NULL;
-    }
-    if (json_object_add_binary(j_resp_obj, device_entry->public_key, "public_key", device_entry->public_key_len))
+    if (json_object_add_string(j_resp_obj, device_entry->uuid, "uuid")
+        && json_object_add_string(j_resp_obj, device_entry->name, "name")
+        && json_object_add_string(j_resp_obj, mode_string, "mode")
+        && json_object_add_binary(j_resp_obj, device_entry->public_key, "public_key", device_entry->public_key_len))
     {
         json_decref(j_resp_obj);
         return NULL;
