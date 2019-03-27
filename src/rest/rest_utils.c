@@ -34,15 +34,11 @@ static int find_existing_serial(uint8_t *serial, size_t length, linked_list_t *l
     {
         device_data = (database_entry_t *)device_entry->data;
 
-        if (device_data)
+        if (device_data
+            && device_data->serial_len == length
+            && memcmp(device_data->serial, serial, length) == 0)
         {
-            if (device_data->serial_len == length)
-            {
-                if (memcmp(device_data->serial, serial, length) == 0)
-                {
-                    return -1;
-                }
-            }
+            return -1;
         }
     }
 
