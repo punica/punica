@@ -51,7 +51,7 @@ static int rest_devices_save_list_to_file(linked_list_t *device_list, const char
     return 0;
 }
 
-static int rest_devices_update_list(const char *id, linked_list_t *list, const char *name)
+static int rest_devices_update_list(linked_list_t *list, const char *id, const char *name)
 {
     linked_list_entry_t *device_entry;
     database_entry_t *device_data;
@@ -479,7 +479,7 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
         goto exit;
     }
 
-    if (rest_devices_update_list(id, rest->devicesList, name))
+    if (rest_devices_update_list(rest->devicesList, id, name))
     {
         ulfius_set_empty_body_response(resp, 400);
         goto exit;
