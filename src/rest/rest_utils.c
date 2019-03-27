@@ -100,7 +100,8 @@ static int device_new_psk(database_entry_t *device_entry)
     return 0;
 }
 
-static int device_new_certificate(database_entry_t *device_entry, linked_list_t *device_list, const char *certificate, const char *private_key)
+static int device_new_certificate(database_entry_t *device_entry, linked_list_t *device_list,
+                                  const char *certificate, const char *private_key)
 {
     gnutls_x509_crt_t device_cert = NULL;
     gnutls_x509_privkey_t device_key = NULL;
@@ -131,7 +132,8 @@ static int device_new_certificate(database_entry_t *device_entry, linked_list_t 
         goto exit;
     }
 
-    if (gnutls_x509_privkey_generate(device_key, GNUTLS_PK_EC, GNUTLS_CURVE_TO_BITS(GNUTLS_ECC_CURVE_SECP256R1), 0))
+    if (gnutls_x509_privkey_generate(device_key, GNUTLS_PK_EC,
+                                     GNUTLS_CURVE_TO_BITS(GNUTLS_ECC_CURVE_SECP256R1), 0))
     {
         goto exit;
     }
@@ -158,7 +160,8 @@ static int device_new_certificate(database_entry_t *device_entry, linked_list_t 
         goto exit;
     }
 
-    if (gnutls_x509_crt_set_subject_alt_name(device_cert, GNUTLS_SAN_DNSNAME, device_entry->uuid, strlen(device_entry->uuid) + 1, GNUTLS_FSAN_SET))
+    if (gnutls_x509_crt_set_subject_alt_name(device_cert, GNUTLS_SAN_DNSNAME, device_entry->uuid,
+                                             strlen(device_entry->uuid) + 1, GNUTLS_FSAN_SET))
     {
         goto exit;
     }
@@ -180,8 +183,10 @@ static int device_new_certificate(database_entry_t *device_entry, linked_list_t 
         goto exit;
     }
 
-    if (gnutls_x509_crt_export(device_cert, GNUTLS_X509_FMT_PEM, device_entry->public_key, &device_entry->public_key_len)
-        || gnutls_x509_privkey_export(device_key, GNUTLS_X509_FMT_PEM, device_entry->secret_key, &device_entry->secret_key_len))
+    if (gnutls_x509_crt_export(device_cert, GNUTLS_X509_FMT_PEM, device_entry->public_key,
+                               &device_entry->public_key_len)
+        || gnutls_x509_privkey_export(device_key, GNUTLS_X509_FMT_PEM, device_entry->secret_key,
+                                      &device_entry->secret_key_len))
     {
         goto exit;
     }
@@ -198,7 +203,8 @@ exit:
     return ret;
 }
 
-int device_new_credentials(database_entry_t *device_entry, linked_list_t *device_list, const char *certificate, const char *private_key)
+int device_new_credentials(database_entry_t *device_entry, linked_list_t *device_list,
+                           const char *certificate, const char *private_key)
 {
     if (device_entry->mode == DEVICE_CREDENTIALS_PSK)
     {

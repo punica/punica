@@ -158,7 +158,8 @@ static int json_object_add_string(json_t *j_object, const char *string, const ch
     return 0;
 }
 
-static int json_object_add_binary(json_t *j_object, uint8_t *buffer, const char *key, size_t buffer_length)
+static int json_object_add_binary(json_t *j_object, uint8_t *buffer, const char *key,
+                                  size_t buffer_length)
 {
     json_t *j_binary;
 
@@ -178,7 +179,8 @@ static int json_object_add_binary(json_t *j_object, uint8_t *buffer, const char 
     return 0;
 }
 
-static json_t *rest_devices_entry_to_resp(database_entry_t *device_entry, const char *certificate_file)
+static json_t *rest_devices_entry_to_resp(database_entry_t *device_entry,
+                                          const char *certificate_file)
 {
     json_t *j_resp_obj = NULL;
     char *mode_string;
@@ -210,7 +212,8 @@ static json_t *rest_devices_entry_to_resp(database_entry_t *device_entry, const 
     if (json_object_add_string(j_resp_obj, device_entry->uuid, "uuid")
         || json_object_add_string(j_resp_obj, device_entry->name, "name")
         || json_object_add_string(j_resp_obj, mode_string, "mode")
-        || json_object_add_binary(j_resp_obj, device_entry->public_key, "public_key", device_entry->public_key_len))
+        || json_object_add_binary(j_resp_obj, device_entry->public_key, "public_key",
+                                  device_entry->public_key_len))
     {
         json_decref(j_resp_obj);
         return NULL;
@@ -237,7 +240,8 @@ static int append_client_key(json_t *j_object, database_entry_t *device_entry)
         return -1;
     }
 
-    j_string = json_object_from_binary(device_entry->secret_key, "secret_key", device_entry->secret_key_len);
+    j_string = json_object_from_binary(device_entry->secret_key, "secret_key",
+                                       device_entry->secret_key_len);
     if (j_string == NULL)
     {
         return -1;
@@ -360,7 +364,8 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         goto exit;
     }
 
-    device_entry = database_create_new_entry(jdevice_list, rest->devicesList, rest->settings->coap.certificate_file, rest->settings->coap.private_key_file);
+    device_entry = database_create_new_entry(jdevice_list, rest->devicesList,
+                                             rest->settings->coap.certificate_file, rest->settings->coap.private_key_file);
     if (device_entry == NULL)
     {
         ulfius_set_empty_body_response(resp, 500);
