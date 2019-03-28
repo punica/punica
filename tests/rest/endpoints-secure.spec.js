@@ -7,6 +7,8 @@ var ClientInterface = require('./client-secure-if');
 
 chai.use(chai_http);
 
+const key_dir = './keys';
+
 describe('Secure endpoints interface', () => {
 
   const serverURI = '::1';
@@ -39,9 +41,9 @@ describe('Secure endpoints interface', () => {
     serverPort: serverPort,
     socketType: socketType,
     cipher: 'cert',
-    CAPath: 'keys/ecdsa.pem',
-    certificatePath: 'keys/ecdsa.pem',
-    keyPath: 'keys/ecdsa.key',
+    CAPath: key_dir + '/ecdsa.pem',
+    certificatePath: key_dir + '/ecdsa.pem',
+    keyPath: key_dir + '/ecdsa.key',
   };
 
   before(() => {
