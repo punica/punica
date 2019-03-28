@@ -49,10 +49,12 @@ static void generate_serial(uint8_t *buffer, size_t *length)
 {
     int ret;
 
-    do
+    ret = rest_get_random(buffer, 20);
+
+    if ((buffer[0] >> 7) == 1) // Serial number must be positive
     {
-        ret = rest_get_random(buffer, 20);
-    } while ((buffer[0] >> 7) == 1); // Serial number must be positive
+        buffer[0] &= 0x7f;
+    }
 
     *length = ret;
 }
