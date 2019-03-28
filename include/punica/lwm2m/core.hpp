@@ -31,8 +31,6 @@ public:
     typedef std::shared_ptr<Core> ptr;
 
     virtual ~Core() { }
-
-    virtual void *getContext() = 0;
 };
 
 } /* namespace lwm2m */

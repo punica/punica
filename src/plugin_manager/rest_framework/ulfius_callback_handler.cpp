@@ -26,6 +26,37 @@
 #include "ulfius_request.hpp"
 #include "ulfius_response.hpp"
 
+static int ulfiusCallback(const struct _u_request *uRequest,
+                          struct _u_response *uResponse,
+                          void *handlerContext)
+{
+    UlfiusCallbackHandler *handler =
+        static_cast<UlfiusCallbackHandler *>(handlerContext);
+    int statusCode;
+
+    punica::rest::Request::ptr request(new UlfiusRequest(uRequest));
+    punica::rest::Response::ptr response(new UlfiusResponse(uResponse));
+
+    statusCode = handler->callFunction(request, response);
+    response->setCode(statusCode);
+    return U_CALLBACK_COMPLETE;
+
+    switch (statusCode)
+    {
+    case HTTP_100_CONTINUE:
+        return U_CALLBACK_CONTINUE;
+
+    case HTTP_401_UNAUTHORIZED:
+        return U_CALLBACK_UNAUTHORIZED;
+
+    case HTTP_500_INTERNAL_ERROR:
+        return U_CALLBACK_ERROR;
+
+    default:
+        return U_CALLBACK_COMPLETE;
+    }
+}
+
 UlfiusCallbackHandler::UlfiusCallbackHandler(struct _u_instance *uInstance,
                                              const std::string method,
                                              const std::string prefix,
@@ -51,32 +82,23 @@ UlfiusCallbackHandler::~UlfiusCallbackHandler()
                                   mUrlPrefix.c_str(), mUrlFormat.c_str());
 }
 
-int UlfiusCallbackHandler::ulfiusCallback(const struct _u_request *uRequest,
-                                          struct _u_response *uResponse,
-                                          void *handlerContext)
+int UlfiusCallbackHandler::callFunction(punica::rest::Request::ptr request,
+                                        punica::rest::Response::ptr response)
 {
-    UlfiusCallbackHandler *handler =
-        static_cast<UlfiusCallbackHandler *>(handlerContext);
-    int statusCode;
+    return mFunction(request, response, mContext);
+}
 
-    punica::rest::Request::ptr request(new UlfiusRequest(uRequest));
-    punica::rest::Response::ptr response(new UlfiusResponse(uResponse));
+const std::string UlfiusCallbackHandler::getMethod()
+{
+    return mMethod;
+}
 
-    statusCode = handler->mFunction(request, response, handler->mContext);
-    response->setCode(statusCode);
+const std::string UlfiusCallbackHandler::getUrlPrefix()
+{
+    return mUrlPrefix;
+}
 
-    switch (statusCode)
-    {
-    case HTTP_100_CONTINUE:
-        return U_CALLBACK_CONTINUE;
-
-    case HTTP_401_UNAUTHORIZED:
-        return U_CALLBACK_UNAUTHORIZED;
-
-    case HTTP_500_INTERNAL_ERROR:
-        return U_CALLBACK_ERROR;
-
-    default:
-        return U_CALLBACK_COMPLETE;
-    }
+const std::string UlfiusCallbackHandler::getUrlFormat()
+{
+    return mUrlFormat;
 }

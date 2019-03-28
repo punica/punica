@@ -20,12 +20,16 @@
 #ifndef PUNICA_PLUGIN_PLUGIN_HPP
 #define PUNICA_PLUGIN_PLUGIN_HPP
 
+#include <memory>
+
 namespace punica {
 namespace plugin {
 
 class Plugin
 {
 public:
+    typedef std::shared_ptr<Plugin> ptr;
+
     virtual ~Plugin() { }
 };
 

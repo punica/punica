@@ -20,13 +20,22 @@
 #ifndef PUNICA_PLUGIN_MANAGER_BASIC_CORE_H
 #define PUNICA_PLUGIN_MANAGER_BASIC_CORE_H
 
-#include "ulfius.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <liblwm2m.h>
+#include <ulfius.h>
 
 struct basic_punica_core_t;
 typedef struct basic_punica_core_t basic_punica_core_t;
 
 basic_punica_core_t *basic_punica_core_new(struct _u_instance *ulfius_instance,
-                                           void *lwm2m_context);
+                                           lwm2m_context_t *lwm2m_context);
 void basic_punica_core_delete(basic_punica_core_t *core);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // PUNICA_PLUGIN_MANAGER_BASIC_CORE_H

@@ -28,8 +28,8 @@
 namespace punica {
 namespace plugin {
 
-typedef Plugin *(*PluginCreate)(Core::ptr core);
-typedef void (*PluginDestroy)(Plugin *plugin);
+typedef Plugin *(PluginCreate)(Core::ptr core);
+typedef void (PluginDestroy)(Plugin *plugin);
 
 typedef struct
 {
@@ -41,8 +41,8 @@ typedef struct
 typedef struct
 {
     PluginVersion version;
-    PluginCreate create;
-    PluginDestroy destroy;
+    PluginCreate *create;
+    PluginDestroy *destroy;
 } PluginApi;
 
 } /* namespace plugin */

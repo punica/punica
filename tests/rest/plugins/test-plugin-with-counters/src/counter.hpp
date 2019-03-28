@@ -17,34 +17,31 @@
  *
  */
 
-#ifndef PUNICA_REST_CALLBACK_HANDLER_HPP
-#define PUNICA_REST_CALLBACK_HANDLER_HPP
-
+#include <map>
 #include <memory>
+#include <string>
 
-#include <punica/rest/request.hpp>
-#include <punica/rest/response.hpp>
+#include <punica/rest/core.hpp>
 
-namespace punica {
-namespace rest {
+punica::rest::CallbackFunction getCounterCallback;
+punica::rest::CallbackFunction incrementCounterCallback;
 
-typedef int(CallbackFunction)(Request::ptr, Response::ptr, void *);
-
-class CallbackHandler
+class Counter
 {
 public:
-    typedef std::unique_ptr<CallbackHandler> ptr;
-    typedef std::vector<CallbackHandler::ptr> vector;
+    typedef std::unique_ptr<Counter> ptr;
+    typedef std::map<std::string, Counter::ptr> map;
 
-    ~CallbackHandler() { }
+    Counter(punica::rest::Core::ptr restCore,
+            std::string prefix,
+            std::string name);
+    ~Counter();
+
+    int get();
+    void increment();
 
 private:
-    CallbackFunction *mFunction;
-    std::string mMethod, mUrlPrefix, mUrlFormat;
-    void *mContext;
+    punica::rest::Core::ptr mRestCore;
+    std::string mPrefix, mName;
+    int mCount;
 };
-
-} /* namespace rest */
-} /* namespace punica */
-
-#endif // PUNICA_REST_CALLBACK_HANDLER_HPP

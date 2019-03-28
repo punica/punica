@@ -20,6 +20,7 @@
 #ifndef PUNICA_PLUGIN_MANAGER_BASIC_CORE_HPP
 #define PUNICA_PLUGIN_MANAGER_BASIC_CORE_HPP
 
+#include <liblwm2m.h>
 #include <punica/core.hpp>
 
 #ifdef __cplusplus
@@ -36,8 +37,9 @@ class BasicCore: public punica::Core
 {
 public:
     BasicCore(struct _u_instance *ulfiusInstance,
-              void *restContext);
+              lwm2m_context_t *lwm2mContext);
     ~BasicCore();
+
     punica::rest::Core::ptr getRestCore();
     punica::lwm2m::Core::ptr getLwm2mCore();
 

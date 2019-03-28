@@ -20,19 +20,20 @@
 #ifndef PUNICA_PLUGIN_MANAGER_BASIC_PLUGIN_MANAGER_HPP
 #define PUNICA_PLUGIN_MANAGER_BASIC_PLUGIN_MANAGER_HPP
 
-#include "plugin_manager.hpp"
+#include "basic_plugin_wrapper.hpp"
 
-class BasicPluginManager: public PluginManager
+class BasicPluginManager
 {
 public:
     BasicPluginManager(punica::Core::ptr core);
     ~BasicPluginManager();
+
     bool loadPlugin(std::string name, std::string path);
     bool unloadPlugin(std::string name);
 
 private:
     punica::Core::ptr mCore;
-    std::map<std::string, std::pair<punica::plugin::Plugin *, punica::plugin::PluginApi *> > mPlugins;
+    BasicPluginWrapper::map mPlugins;
 };
 
 #endif // PUNICA_PLUGIN_MANAGER_BASIC_PLUGIN_MANAGER_HPP 

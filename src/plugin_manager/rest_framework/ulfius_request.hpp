@@ -20,6 +20,8 @@
 #ifndef PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REQUEST_HPP
 #define PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REQUEST_HPP
 
+#include <map>
+
 #include <punica/rest/request.hpp>
 
 class UlfiusRequest: public punica::rest::Request

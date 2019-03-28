@@ -36,10 +36,6 @@ public:
 
     virtual punica::rest::Core::ptr getRestCore() = 0;
     virtual punica::lwm2m::Core::ptr getLwm2mCore() = 0;
-
-protected:
-    punica::rest::Core::ptr mRestCore;
-    punica::lwm2m::Core::ptr mLwm2mCore;
 };
 
 } /* namespace punica */

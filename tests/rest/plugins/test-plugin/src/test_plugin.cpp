@@ -85,6 +85,8 @@ int stampCallback(punica::rest::Request::ptr request,
         {
             stringResponseBody = stamp + stringRequestBody;
         }
+
+        statusCode = HTTP_201_CREATED;
     }
     else
     {

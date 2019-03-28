@@ -20,7 +20,7 @@
 #ifndef PUNICA_PLUGIN_MANAGER_REST_ULFIUS_CALLBACK_HANDLER_HPP
 #define PUNICA_PLUGIN_MANAGER_REST_ULFIUS_CALLBACK_HANDLER_HPP
 
-#include <punica/rest/callback_handler.hpp>
+#include <punica/rest/core.hpp>
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,9 +32,12 @@ extern "C" {
 }
 #endif
 
-class UlfiusCallbackHandler: public punica::rest::CallbackHandler
+class UlfiusCallbackHandler
 {
 public:
+    typedef std::unique_ptr<UlfiusCallbackHandler> ptr;
+    typedef std::vector<UlfiusCallbackHandler::ptr> vector;
+
     UlfiusCallbackHandler(struct _u_instance *uInstance,
                           const std::string method,
                           const std::string prefix,
@@ -44,15 +47,17 @@ public:
                           void *handlerContext);
     ~UlfiusCallbackHandler();
 
+    int callFunction(punica::rest::Request::ptr request,
+                     punica::rest::Response::ptr response);
+    const std::string getMethod();
+    const std::string getUrlPrefix();
+    const std::string getUrlFormat();
+
 private:
     struct _u_instance *mUlfiusInstance;
     std::string mMethod, mUrlPrefix, mUrlFormat;
     punica::rest::CallbackFunction *mFunction;
     void *mContext;
-
-    static int ulfiusCallback(const struct _u_request *uRequest,
-                              struct _u_response *uResponse,
-                              void *handlerContext);
 };
 
 #endif // PUNICA_PLUGIN_MANAGER_REST_ULFIUS_CALLBACK_HANDLER_HPP

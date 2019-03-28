@@ -39,18 +39,44 @@ UlfiusRestCore::~UlfiusRestCore()
     mCallbackHandlers.clear();
 }
 
-void UlfiusRestCore::addCallbackHandler(const std::string method,
+bool UlfiusRestCore::addCallbackHandler(const std::string method,
                                         const std::string urlPrefix,
                                         const std::string urlFormat,
                                         unsigned int priority,
                                         punica::rest::CallbackFunction *handlerFunction,
                                         void *handlerContext)
 {
-    UlfiusCallbackHandler *rawHandler =
-        new UlfiusCallbackHandler(mUlfiusInstance, method, urlPrefix,
-                                  urlFormat, priority,
-                                  handlerFunction, handlerContext);
-    punica::rest::CallbackHandler::ptr handler(rawHandler);
+    UlfiusCallbackHandler::ptr callbackHandler(
+        new UlfiusCallbackHandler(mUlfiusInstance,
+                                  method, urlPrefix, urlFormat,
+                                  priority, handlerFunction, handlerContext));
 
-    mCallbackHandlers.push_back(std::move(handler));
+    removeCallbackHandler(method, urlPrefix, urlFormat);
+
+    mCallbackHandlers.push_back(std::move(callbackHandler));
+
+    return true;
+}
+
+bool UlfiusRestCore::removeCallbackHandler(const std::string method,
+                                           const std::string urlPrefix,
+                                           const std::string urlFormat)
+{
+    UlfiusCallbackHandler::vector::iterator callbackIterator =
+        mCallbackHandlers.begin();
+
+    while (callbackIterator != mCallbackHandlers.end())
+    {
+        if (((*callbackIterator)->getMethod() == method)
+            && ((*callbackIterator)->getUrlPrefix() == urlPrefix)
+            && ((*callbackIterator)->getUrlFormat() == urlFormat))
+        {
+            mCallbackHandlers.erase(callbackIterator);
+            return true;
+        }
+
+        ++callbackIterator;
+    }
+
+    return false;
 }

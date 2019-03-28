@@ -23,10 +23,13 @@
 #include <memory>
 #include <string>
 
-#include <punica/rest/callback_handler.hpp>
+#include <punica/rest/request.hpp>
+#include <punica/rest/response.hpp>
 
 namespace punica {
 namespace rest {
+
+typedef int(CallbackFunction)(Request::ptr, Response::ptr, void *);
 
 class Core
 {
@@ -35,15 +38,16 @@ public:
 
     virtual ~Core() { }
 
-    virtual void addCallbackHandler(const std::string method,
+    virtual bool addCallbackHandler(const std::string method,
                                     const std::string urlPrefix,
                                     const std::string urlFormat,
                                     unsigned int priority,
                                     CallbackFunction *handlerFunction,
                                     void *handlerContext) = 0;
 
-private:
-    CallbackHandler::vector mCallbackHandlers;
+    virtual bool removeCallbackHandler(const std::string method,
+                                       const std::string urlPrefix,
+                                       const std::string urlFormat) = 0;
 };
 
 } /* namespace rest */

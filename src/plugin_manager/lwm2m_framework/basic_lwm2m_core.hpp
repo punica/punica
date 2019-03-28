@@ -20,18 +20,19 @@
 #ifndef PUNICA_PLUGIN_MANAGER_LWM2M_BASIC_LWM2M_CORE_HPP
 #define PUNICA_PLUGIN_MANAGER_LWM2M_BASIC_LWM2M_CORE_HPP
 
+#include <liblwm2m.h>
 #include <punica/lwm2m/core.hpp>
 
 class BasicLwm2mCore: public punica::lwm2m::Core
 {
 public:
-    BasicLwm2mCore(void *lwm2m_context);
+    BasicLwm2mCore(lwm2m_context_t *lwm2mContext);
     ~BasicLwm2mCore();
 
-    void *getContext();
+    lwm2m_context_t *getContext();
 
 private:
-    void *context;
+    lwm2m_context_t *mContext;
 };
 
 #endif // PUNICA_PLUGIN_MANAGER_LWM2M_BASIC_LWM2M_CORE_HPP

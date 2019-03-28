@@ -20,8 +20,10 @@
 #ifndef PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REST_CORE_HPP
 #define PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REST_CORE_HPP
 
+#include <map>
 #include <punica/rest/core.hpp>
-#include <punica/rest/callback_handler.hpp>
+
+#include "ulfius_callback_handler.hpp"
 
 std::map<std::string, std::string> ulfiusToStdMap(struct _u_map *ulfius_map);
 
@@ -31,15 +33,18 @@ public:
     UlfiusRestCore(struct _u_instance *instance);
     ~UlfiusRestCore();
 
-    void addCallbackHandler(const std::string method,
+    bool addCallbackHandler(const std::string method,
                             const std::string urlPrefix,
                             const std::string urlFormat,
                             unsigned int priority,
                             punica::rest::CallbackFunction *handler_function,
                             void *handler_context);
+    bool removeCallbackHandler(const std::string method,
+                               const std::string urlPrefix,
+                               const std::string urlFormat);
 
 private:
-    punica::rest::CallbackHandler::vector mCallbackHandlers;
+    UlfiusCallbackHandler::vector mCallbackHandlers;
     struct _u_instance *mUlfiusInstance;
 };
 

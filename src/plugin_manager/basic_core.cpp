@@ -20,15 +20,10 @@
 #include "rest_framework/ulfius_rest_core.hpp"
 #include "lwm2m_framework/basic_lwm2m_core.hpp"
 #include "basic_core.hpp"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "basic_core.h"
 
 basic_punica_core_t *basic_punica_core_new(struct _u_instance *ulfius_instance,
-                                           void *lwm2m_context)
+                                           lwm2m_context_t *lwm2m_context)
 {
     return reinterpret_cast<basic_punica_core_t *>(
                new BasicCore(ulfius_instance, lwm2m_context));
@@ -39,21 +34,14 @@ void basic_punica_core_delete(basic_punica_core_t *core)
     delete reinterpret_cast<BasicCore *>(core);
 }
 
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
 BasicCore::BasicCore(struct _u_instance *ulfiusInstance,
-                     void *restContext):
+                     lwm2m_context_t *lwm2mContext):
     mRestCore(new UlfiusRestCore(ulfiusInstance)),
-    mLwm2mCore(new BasicLwm2mCore(restContext))
+    mLwm2mCore(new BasicLwm2mCore(lwm2mContext))
 { }
 
 BasicCore::~BasicCore()
-{
-    // delete mRestCore;
-    // delete mLwm2mCore;
-}
+{ }
 
 punica::rest::Core::ptr BasicCore::getRestCore()
 {

@@ -20,6 +20,10 @@
 #ifndef PUNICA_PLUGIN_MANAGER_BASIC_PLUGIN_MANAGER_H
 #define PUNICA_PLUGIN_MANAGER_BASIC_PLUGIN_MANAGER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "basic_core.h"
 
 enum
@@ -39,5 +43,9 @@ int basic_plugin_manager_load_plugin(basic_plugin_manager_t *c_manager,
                                      const char *c_name);
 int basic_plugin_manager_unload_plugin(basic_plugin_manager_t *c_manager,
                                        const char *c_name);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // PUNICA_PLUGIN_MANAGER_BASIC_PLUGIN_MANAGER_H

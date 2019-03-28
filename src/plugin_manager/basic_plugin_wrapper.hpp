@@ -17,27 +17,38 @@
  *
  */
 
-#ifndef PUNICA_PLUGIN_MANAGER_PLUGIN_MANAGER_HPP
-#define PUNICA_PLUGIN_MANAGER_PLUGIN_MANAGER_HPP
+#ifndef PUNICA_PLUGIN_MANAGER_BASIC_PLUGIN_WRAPPER_HPP
+#define PUNICA_PLUGIN_MANAGER_BASIC_PLUGIN_WRAPPER_HPP
 
+#include <map>
 #include <memory>
-#include <string>
 
 #include <punica/core.hpp>
-#include <punica/plugin/plugin_api.hpp>
 #include <punica/plugin/plugin.hpp>
+#include <punica/plugin/plugin_api.hpp>
 
-typedef std::pair<punica::plugin::Plugin::ptr,
-        std::shared_ptr<punica::plugin::PluginApi>> PluginPair;
-typedef std::map<std::string, PluginPair> PluginMap;
-
-class PluginManager
+class BasicPluginWrapper
 {
 public:
-    virtual ~PluginManager() { }
+    typedef std::unique_ptr<BasicPluginWrapper> ptr;
+    typedef std::map<std::string, BasicPluginWrapper::ptr> map;
 
-    virtual bool loadPlugin(std::string name, std::string path) = 0;
-    virtual bool unloadPlugin(std::string name) = 0;
+    BasicPluginWrapper(std::string path,
+                       std::string name);
+    ~BasicPluginWrapper();
+
+    bool loadPlugin(punica::Core::ptr core);
+    bool unloadPlugin();
+
+private:
+    void *mDLL;
+    std::string mPath, mName;
+    punica::plugin::Plugin *mPlugin;
+    punica::plugin::PluginApi *mPluginApi;
+
+    bool loadDLL();
+    bool unloadDLL();
+    bool loadPluginApi();
 };
 
-#endif // PUNICA_PLUGIN_MANAGER_PLUGIN_MANAGER_HPP 
+#endif /* PUNICA_PLUGIN_MANAGER_BASIC_PLUGIN_WRAPPER_HPP */
