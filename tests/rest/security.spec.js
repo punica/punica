@@ -8,6 +8,7 @@ const should = chai.should();
 chai.use(chai_http);
 
 const version_regex = /^0\.\d+\.\d+$/
+const key_dir = './keys';
 
 describe('Secure connection', function () {
   before(function (done) {
@@ -25,7 +26,7 @@ describe('Secure connection', function () {
         port: '8889',
         path: '/version',
         ca: [
-          fs.readFileSync('keys/certificate.pem'),
+          fs.readFileSync(key_dir + '/certificate.pem'),
         ],
       };
 
@@ -52,7 +53,7 @@ describe('Secure connection', function () {
         port: '8889',
         path: '/version',
         ca: [
-          fs.readFileSync('keys/other_certificate.pem'),
+          fs.readFileSync(key_dir + '/other_certificate.pem'),
         ],
       };
 
@@ -79,7 +80,7 @@ describe('Secure connection', function () {
         port: '8889',
         path: '/authenticate',
         ca: [
-          fs.readFileSync('keys/certificate.pem'),
+          fs.readFileSync(key_dir + '/certificate.pem'),
         ],
         method: 'POST',
         headers: {
@@ -148,7 +149,7 @@ describe('Secure connection', function () {
         port: '8889',
         path: '/authenticate',
         ca: [
-          fs.readFileSync('keys/certificate.pem'),
+          fs.readFileSync(key_dir + '/certificate.pem'),
         ],
         method: 'POST',
         headers: {
@@ -191,7 +192,7 @@ describe('Secure connection', function () {
         port: '8889',
         path: '/authenticate',
         ca: [
-          fs.readFileSync('keys/certificate.pem'),
+          fs.readFileSync(key_dir + '/certificate.pem'),
         ],
         method: 'POST',
         headers: {
@@ -234,7 +235,7 @@ describe('Secure connection', function () {
         port: '8889',
         path: '/authenticate',
         ca: [
-          fs.readFileSync('keys/certificate.pem'),
+          fs.readFileSync(key_dir + '/certificate.pem'),
         ],
         method: 'POST',
         headers: {
@@ -275,7 +276,7 @@ describe('Secure connection', function () {
         port: '8889',
         path: '/authenticate',
         ca: [
-          fs.readFileSync('keys/certificate.pem'),
+          fs.readFileSync(key_dir + '/certificate.pem'),
         ],
         method: 'POST',
         headers: {
@@ -318,7 +319,7 @@ describe('Secure connection', function () {
         host: 'localhost',
         port: '8889',
         ca: [
-          fs.readFileSync('keys/certificate.pem'),
+          fs.readFileSync(key_dir + '/certificate.pem'),
         ],
       };
 
@@ -378,7 +379,7 @@ describe('Secure connection', function () {
         host: 'localhost',
         port: '8889',
         ca: [
-          fs.readFileSync('keys/certificate.pem'),
+          fs.readFileSync(key_dir + '/certificate.pem'),
         ],
       };
 
@@ -428,7 +429,7 @@ describe('Secure connection', function () {
         host: 'localhost',
         port: '8889',
         ca: [
-          fs.readFileSync('keys/certificate.pem'),
+          fs.readFileSync(key_dir + '/certificate.pem'),
         ],
       };
 
@@ -476,7 +477,7 @@ describe('Secure connection', function () {
         host: 'localhost',
         port: '8889',
         ca: [
-          fs.readFileSync('keys/certificate.pem'),
+          fs.readFileSync(key_dir + '/certificate.pem'),
         ],
       };
 
@@ -499,7 +500,7 @@ describe('Secure connection', function () {
         host: 'localhost',
         port: '8889',
         ca: [
-          fs.readFileSync('keys/certificate.pem'),
+          fs.readFileSync(key_dir + '/certificate.pem'),
         ],
       };
 
@@ -525,7 +526,7 @@ describe('Secure connection', function () {
         host: 'localhost',
         port: '8889',
         ca: [
-          fs.readFileSync('keys/certificate.pem'),
+          fs.readFileSync(key_dir + '/certificate.pem'),
         ],
       };
 
@@ -551,7 +552,7 @@ describe('Secure connection', function () {
         host: 'localhost',
         port: '8889',
         ca: [
-          fs.readFileSync('keys/certificate.pem'),
+          fs.readFileSync(key_dir + '/certificate.pem'),
         ],
       };
 
@@ -577,7 +578,7 @@ describe('Secure connection', function () {
         host: 'localhost',
         port: '8889',
         ca: [
-          fs.readFileSync('keys/certificate.pem'),
+          fs.readFileSync(key_dir + '/certificate.pem'),
         ],
       };
 
@@ -603,7 +604,7 @@ describe('Secure connection', function () {
         host: 'localhost',
         port: '8889',
         ca: [
-          fs.readFileSync('keys/certificate.pem'),
+          fs.readFileSync(key_dir + '/certificate.pem'),
         ],
       };
 
