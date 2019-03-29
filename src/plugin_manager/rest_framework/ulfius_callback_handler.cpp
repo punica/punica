@@ -26,16 +26,16 @@
 #include "ulfius_request.hpp"
 #include "ulfius_response.hpp"
 
-static int ulfiusCallback(const struct _u_request *uRequest,
-                          struct _u_response *uResponse,
+static int ulfiusCallback(const struct _u_request *ulfiusRequest,
+                          struct _u_response *ulfiusResponse,
                           void *handlerContext)
 {
     UlfiusCallbackHandler *handler =
         static_cast<UlfiusCallbackHandler *>(handlerContext);
     int statusCode;
 
-    punica::rest::Request::ptr request(new UlfiusRequest(uRequest));
-    punica::rest::Response::ptr response(new UlfiusResponse(uResponse));
+    punica::rest::Request::ptr request(new UlfiusRequest(ulfiusRequest));
+    punica::rest::Response::ptr response(new UlfiusResponse(ulfiusResponse));
 
     statusCode = handler->callFunction(request, response);
     response->setCode(statusCode);
