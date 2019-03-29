@@ -28,13 +28,9 @@ int destroyCounterCallback(punica::rest::Request::ptr request,
                            punica::rest::Response::ptr response,
                            void *context)
 {
-    std::string name;
     TestPluginWithCounters* plugin =
         reinterpret_cast<TestPluginWithCounters *>(context);
-    std::vector<uint8_t> requestBody = request->getBody();
-    
-    requestBody.push_back('\0');
-    name = std::string(reinterpret_cast<char *>(requestBody.data()));
+    std::string name = request->getUrlFormat("name");
 
     if (plugin->destroyCounter(name) == false)
     {
@@ -73,7 +69,8 @@ TestPluginWithCounters::TestPluginWithCounters(punica::rest::Core::ptr core):
                                   "/test_plugin_with_counters/counter", "", 11,
                                   &createCounterCallback, pluginContext);
     mRestCore->addCallbackHandler("DELETE",
-                                  "/test_plugin_with_counters/counter", "", 11,
+                                  "/test_plugin_with_counters/counter",
+                                  ":name", 11,
                                   &destroyCounterCallback, pluginContext);
 }
 

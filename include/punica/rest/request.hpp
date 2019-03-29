@@ -39,6 +39,7 @@ public:
     virtual std::string getPath() = 0;
     virtual std::string getMethod() = 0;
     virtual std::string getHeader(const std::string header) = 0;
+    virtual std::string getUrlFormat(const std::string name) = 0;
     virtual std::vector<uint8_t> getBody() = 0;
 };
 

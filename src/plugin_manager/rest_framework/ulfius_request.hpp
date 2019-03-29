@@ -33,12 +33,14 @@ public:
     std::string getPath();
     std::string getMethod();
     std::string getHeader(const std::string header);
+    std::string getUrlFormat(const std::string name);
     std::vector<uint8_t> getBody();
 
 private:
     std::string mPath;
     std::string mMethod;
     std::map<std::string, std::string> mHeaders;
+    std::map<std::string, std::string> mUrlFormat;
     std::vector<uint8_t> mBody;
 };
 

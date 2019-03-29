@@ -72,6 +72,7 @@ UlfiusRequest::UlfiusRequest(const struct _u_request *uRequest)
     mPath = tmpPath;
     mMethod = tmpMethod;
     mHeaders = ulfiusToStdMap(uRequest->map_header);
+    mUrlFormat = ulfiusToStdMap(uRequest->map_url);
     mBody = vector_body;
 }
 
@@ -88,16 +89,28 @@ std::string UlfiusRequest::getMethod()
 
 std::string UlfiusRequest::getHeader(const std::string header)
 {
-    std::string headerValue;
     std::map<std::string, std::string>::iterator headersIterator;
 
     headersIterator = mHeaders.find(header);
 
     if (headersIterator != mHeaders.end())
     {
-        headerValue = headersIterator->second;
+        return headersIterator->second;
     }
-    return headerValue;
+    return "";
+}
+
+std::string UlfiusRequest::getUrlFormat(const std::string name)
+{
+    std::map<std::string, std::string>::iterator urlFormatIterator;
+
+    urlFormatIterator = mUrlFormat.find(name);
+
+    if (urlFormatIterator != mUrlFormat.end())
+    {
+        return urlFormatIterator->second;
+    }
+    return "";
 }
 
 std::vector<uint8_t> UlfiusRequest::getBody()

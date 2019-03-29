@@ -191,11 +191,10 @@ describe('Plugins interface', function () {
     });
   });
 
-  describe('DELETE /{plugin_api}/counter', function () {
+  describe('DELETE /{plugin_api}/counter/{counter_name}', function () {
     it('should delete counter', function(done) {
       chai.request(server)
-        .delete('/' + PLUGIN_WITH_COUNTERS_NAME + '/counter')
-        .send(COUNTER_NAME)
+        .delete('/' + PLUGIN_WITH_COUNTERS_NAME + '/counter/' + COUNTER_NAME)
         .end(function (err, res) {
           should.not.exist(err);
           res.should.have.status(204);
@@ -207,7 +206,7 @@ describe('Plugins interface', function () {
     it('shouldn\'t delete non-existing counter', function(done) {
 
       chai.request(server)
-        .delete('/' + PLUGIN_WITH_COUNTERS_NAME + '/counter')
+        .delete('/' + PLUGIN_WITH_COUNTERS_NAME + '/counter/' + COUNTER_NAME)
         .send(COUNTER_NAME)
         .end(function (err, res) {
           res.should.have.status(404);
