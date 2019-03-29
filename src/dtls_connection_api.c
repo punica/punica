@@ -559,6 +559,7 @@ static device_connection_t *dtls_connection_find(linked_list_t *connection_list,
     }
 
     return NULL;
+}
 
 static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size,
                                    void **connection, struct timeval *tv)
@@ -568,7 +569,7 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
     int ret, sock;
     device_connection_t *conn;
     gnutls_dtls_prestate_st prestate;
-    session_ciphersuite_t ciphersuite;
+    credentials_mode_t ciphersuite;
     const char *err_str;
 
 //  to reduce code redundancy
@@ -636,7 +637,7 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
                     {
                         ciphersuite = get_session_ciphersuite(conn->session);
 
-                        if (dtls_connection_store_identifier(conn, ciphersuite))
+                        if (dtls_connection_handshake_done(conn, ciphersuite))
                         {
                             log_message(LOG_LEVEL_WARN, "Failed to store connection identifier\n");
                             dtls_connection_close(context, conn);
