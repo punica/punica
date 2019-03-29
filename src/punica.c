@@ -37,13 +37,6 @@
 #include "rest/rest_authentication.h"
 #include "linked_list.h"
 
-//TODO: won't be needed after issue #67
-typedef struct
-{
-    connection_api_t *api;
-    linked_list_t *device_list;
-} callback_data_t;
-
 static volatile int punica_quit;
 static void sigint_handler(int signo)
 {
@@ -370,7 +363,6 @@ int main(int argc, char *argv[])
     connection_api_t *conn_api;
     uint8_t buffer[1500];
     void *connection;
-    callback_data_t callback_data;
 
     static settings_t settings =
     {

@@ -182,23 +182,6 @@ typedef int (*f_psk_cb_t)(const char *name, void *callback_data, uint8_t **psk, 
 typedef int (*f_handshake_done_cb_t)(void *connection, void *public_data, size_t public_data_length,
                                      void *callback_data);
 
-/*
- * Called by connection api after finished handshake
- *
- * Parameters:
- *      connection - server/client connection context for upper communications layers,
- *      public_data - pointer to data that is used to find an identifier,
- *      public_data_length - length of public_data,
- *      data - pointer to database storing client credentials
- *      api - workaround, will be fixed in issue #67
- *
- * Returns:
- *      pointer to identifier on success,
- *      NULL on failure
-*/
-typedef int (*f_handshake_done_cb_t)(void *connection, void *public_data, size_t public_data_length,
-                                     void *data, void *api);
-
 typedef struct _u_request ulfius_req_t;
 typedef struct _u_response ulfius_resp_t;
 
