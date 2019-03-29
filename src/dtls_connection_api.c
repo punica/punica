@@ -53,7 +53,7 @@ typedef struct secure_connection_context_t
     gnutls_priority_t priority_cache;
     gnutls_datum_t cookie_key;
     gnutls_psk_server_credentials_t server_psk;
-    void *callback_data;
+    void *data;
     f_psk_cb_t psk_cb;
     f_handshake_done_cb_t handshake_done_cb;
 } secure_connection_context_t;
@@ -177,7 +177,7 @@ static int dtls_connection_handshake_done(device_connection_t *conn,
         return -1;
     }
 
-    ret = context->handshake_done_cb(conn, public_data, public_data_size, context->callback_data);
+    ret = context->handshake_done_cb(conn, public_data, public_data_size, context->data);
 
     if (ciphersuite == DEVICE_CREDENTIALS_CERT)
     {
@@ -300,7 +300,7 @@ static int dtls_connection_psk_callback(gnutls_session_t session, const char *na
 
     context = gnutls_session_get_ptr(session);
 
-    if (context->psk_cb(name, context->callback_data, &psk_buff, &psk_len))
+    if (context->psk_cb(name, context->data, &psk_buff, &psk_len))
     {
         return -1;
     }
@@ -340,7 +340,7 @@ static device_connection_t *dtls_connection_new_listen(secure_connection_context
 connection_api_t *dtls_connection_api_init(int port, int address_family,
                                            const char *certificate_file,
                                            const char *private_key_file,
-                                           void *callback_data, f_psk_cb_t psk_cb,
+                                           void *data, f_psk_cb_t psk_cb,
                                            f_handshake_done_cb_t handshake_done_cb)
 {
     secure_connection_context_t *context;
@@ -354,7 +354,7 @@ connection_api_t *dtls_connection_api_init(int port, int address_family,
     context->address_family = address_family;
     context->certificate_file = certificate_file;
     context->private_key_file = private_key_file;
-    context->callback_data = callback_data;
+    context->data = data;
     context->psk_cb = psk_cb;
     context->handshake_done_cb = handshake_done_cb;
 

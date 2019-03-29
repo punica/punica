@@ -91,7 +91,7 @@ static void init_signals(void)
     }
 }
 
-static connection_api_t *api_init(coap_settings_t *coap, void *callback_data, f_psk_cb_t psk_cb,
+static connection_api_t *api_init(coap_settings_t *coap, void *data, f_psk_cb_t psk_cb,
                                   f_handshake_done_cb_t handshake_done_cb)
 {
     if (coap->security_mode == PUNICA_COAP_MODE_INSECURE)
@@ -101,7 +101,7 @@ static connection_api_t *api_init(coap_settings_t *coap, void *callback_data, f_
     else if (coap->security_mode == PUNICA_COAP_MODE_SECURE)
     {
         return dtls_connection_api_init(coap->port, AF_INET6, coap->certificate_file,
-                                        coap->private_key_file, callback_data, psk_cb, handshake_done_cb);
+                                        coap->private_key_file, data, psk_cb, handshake_done_cb);
     }
     else
     {
@@ -144,7 +144,7 @@ const char *binding_to_string(lwm2m_binding_t bind)
 }
 
 
-int rest_version_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *callback_data)
+int rest_version_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *context)
 {
     ulfius_set_string_body_response(resp, 200, PUNICA_VERSION);
 
@@ -153,9 +153,9 @@ int rest_version_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *callback
 
 void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
                        lwm2m_media_type_t format, uint8_t *data, int dataLength,
-                       void *callback_data)
+                       void *userData)
 {
-    rest_context_t *rest = (rest_context_t *)callback_data;
+    rest_context_t *rest = (rest_context_t *)userData;
     lwm2m_context_t *lwm2m = rest->lwm2m;
     lwm2m_client_t *client;
     lwm2m_client_object_t *obj;
@@ -245,9 +245,9 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
 }
 
 int identifier_find_callback(void *connection, void *public_data, size_t public_data_length,
-                             void *callback_data)
+                             void *data)
 {
-    rest_context_t *rest = (rest_context_t *)callback_data;
+    rest_context_t *rest = (rest_context_t *)data;
     database_entry_t *device_data;
     linked_list_entry_t *device_entry;
     linked_list_t *device_list = rest->devicesList;
@@ -273,11 +273,11 @@ int identifier_find_callback(void *connection, void *public_data, size_t public_
     return -1;
 }
 
-int psk_find_callback(const char *name, void *callback_data, uint8_t **psk_buffer, size_t *psk_len)
+int psk_find_callback(const char *name, void *data, uint8_t **psk_buffer, size_t *psk_len)
 {
     database_entry_t *device_data;
     linked_list_entry_t *device_entry;
-    rest_context_t *rest = (rest_context_t *)callback_data;
+    rest_context_t *rest = (rest_context_t *)data;
     linked_list_t *device_list = rest->devicesList;
 
     if (device_list == NULL)
@@ -302,9 +302,9 @@ int psk_find_callback(const char *name, void *callback_data, uint8_t **psk_buffe
     return -1;
 }
 
-uint8_t lwm2m_buffer_send(void *session, uint8_t *buffer, size_t length, void *callback_data)
+uint8_t lwm2m_buffer_send(void *session, uint8_t *buffer, size_t length, void *user_data)
 {
-    rest_context_t *rest = (rest_context_t *)callback_data;
+    rest_context_t *rest = (rest_context_t *)user_data;
     connection_api_t *conn_api = rest->connection_api;
 
     if (session == NULL)
@@ -322,14 +322,14 @@ uint8_t lwm2m_buffer_send(void *session, uint8_t *buffer, size_t length, void *c
     return COAP_NO_ERROR;
 }
 
-bool lwm2m_session_is_equal(void *session1, void *session2, void *callback_data)
+bool lwm2m_session_is_equal(void *session1, void *session2, void *userData)
 {
     return (session1 == session2);
 }
 
-bool lwm2m_name_is_valid(const char *name, void *session, void *callback_data)
+bool lwm2m_name_is_valid(const char *name, void *session, void *user_data)
 {
-    rest_context_t *rest = (rest_context_t *)callback_data;
+    rest_context_t *rest = (rest_context_t *)user_data;
     connection_api_t *conn_api = rest->connection_api;
     linked_list_t *device_list = rest->devicesList;
     database_entry_t *device_entry;

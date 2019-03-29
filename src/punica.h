@@ -156,7 +156,7 @@ typedef struct connection_api_t
  *
  * Parameters:
  *      name - DTLS client name,
- *      callback_data - pointer to data later provided to callback
+ *      data - pointer to data later provided to callback
  *      psk - pointer to psk buffer,
  *      psk_len - psk buffer length
  *
@@ -164,7 +164,7 @@ typedef struct connection_api_t
  *      0 on success,
  *      negative value on error or not found
 */
-typedef int (*f_psk_cb_t)(const char *name, void *callback_data, uint8_t **psk, size_t *psk_len);
+typedef int (*f_psk_cb_t)(const char *name, void *data, uint8_t **psk, size_t *psk_len);
 
 /*
  * Called by connection api after finished handshake
@@ -173,14 +173,14 @@ typedef int (*f_psk_cb_t)(const char *name, void *callback_data, uint8_t **psk, 
  *      connection - server/client connection context for upper communications layers,
  *      public_data - pointer to data that is used to find an identifier,
  *      public_data_length - length of public_data,
- *      callback_data - pointer to data later provided to callback
+ *      data - pointer to data later provided to callback
  *
  * Returns:
  *      pointer to identifier on success,
  *      NULL on failure
 */
 typedef int (*f_handshake_done_cb_t)(void *connection, void *public_data, size_t public_data_length,
-                                     void *callback_data);
+                                     void *data);
 
 typedef struct _u_request ulfius_req_t;
 typedef struct _u_response ulfius_resp_t;
