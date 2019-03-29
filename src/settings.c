@@ -50,6 +50,7 @@ static void set_coap_settings(json_t *j_section, coap_settings_t *settings)
 {
     const char *key;
     const char *section_name = "coap";
+    const char *string_value;
     json_t *j_value;
 
     json_object_foreach(j_section, key, j_value)
@@ -82,7 +83,14 @@ static void set_coap_settings(json_t *j_section, coap_settings_t *settings)
         {
             if (json_is_string(j_value))
             {
-                settings->private_key_file = (char *) json_string_value(j_value);
+                string_value = json_string_value(j_value);
+
+                settings->private_key_file = strdup(string_value);
+                if (settings->private_key_file == NULL)
+                {
+                    fprintf(stderr, "fatal error while parsing value at key %s:%s",
+                            section_name, key);
+                }
             }
             else
             {
@@ -94,7 +102,14 @@ static void set_coap_settings(json_t *j_section, coap_settings_t *settings)
         {
             if (json_is_string(j_value))
             {
-                settings->certificate_file = (char *) json_string_value(j_value);
+                string_value = json_string_value(j_value);
+
+                settings->certificate_file = strdup(string_value);
+                if (settings->certificate_file == NULL)
+                {
+                    fprintf(stderr, "fatal error while parsing value at key %s:%s",
+                            section_name, key);
+                }
             }
             else
             {
@@ -106,7 +121,14 @@ static void set_coap_settings(json_t *j_section, coap_settings_t *settings)
         {
             if (json_is_string(j_value))
             {
-                settings->database_file = (char *) json_string_value(j_value);
+                string_value = json_string_value(j_value);
+
+                settings->database_file = strdup(string_value);
+                if (settings->database_file == NULL)
+                {
+                    fprintf(stderr, "fatal error while parsing value at key %s:%s",
+                            section_name, key);
+                }
             }
             else
             {
@@ -296,17 +318,32 @@ static void set_http_security_settings(json_t *j_section, http_security_settings
 {
     const char *key;
     const char *section_name = "http.security";
+    const char *string_value;
     json_t *j_value;
 
     json_object_foreach(j_section, key, j_value)
     {
         if (strcasecmp(key, "private_key") == 0)
         {
-            settings->private_key = (char *) json_string_value(j_value);
+            string_value = json_string_value(j_value);
+
+            settings->private_key = strdup(string_value);
+            if (settings->private_key == NULL)
+            {
+                fprintf(stderr, "fatal error while parsing value at key %s:%s",
+                        section_name, key);
+            }
         }
         else if (strcasecmp(key, "certificate") == 0)
         {
-            settings->certificate = (char *) json_string_value(j_value);
+            string_value = json_string_value(j_value);
+
+            settings->certificate = strdup(string_value);
+            if (settings->certificate == NULL)
+            {
+                fprintf(stderr, "fatal error while parsing value at key %s:%s",
+                        section_name, key);
+            }
         }
         else if (strcasecmp(key, "jwt") == 0)
         {
@@ -524,6 +561,7 @@ static int read_config(char *config_name, settings_t *settings)
         }
     }
 
+    json_decref(settings_json);
     return 0;
 }
 
@@ -546,12 +584,7 @@ error_t parse_opt(int key, char *arg, struct argp_state *state)
         break;
 
     case 'd':
-        settings->coap.database_file = strdup(arg);
-        if (settings->coap.database_file == NULL)
-        {
-            argp_usage(state);
-            return 1;
-        }
+        settings->coap.database_file = arg;
         break;
 
     case 'C':
