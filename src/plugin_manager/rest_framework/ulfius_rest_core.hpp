@@ -27,7 +27,7 @@
 class UlfiusRestCore: public punica::rest::Core
 {
 public:
-    UlfiusRestCore(struct _u_instance *instance);
+    UlfiusRestCore(struct _u_instance *ulfius);
     ~UlfiusRestCore();
 
     bool addCallbackHandler(const std::string method,
@@ -42,7 +42,7 @@ public:
 
 private:
     UlfiusCallbackHandler::vector mCallbackHandlers;
-    struct _u_instance *mUlfiusInstance;
+    struct _u_instance *mUlfius;
 };
 
 #endif // PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REST_CORE_HPP

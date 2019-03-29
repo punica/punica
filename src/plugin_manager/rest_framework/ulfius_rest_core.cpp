@@ -30,8 +30,8 @@ extern "C" {
 } // extern "C"
 #endif
 
-UlfiusRestCore::UlfiusRestCore(struct _u_instance *instance):
-    mUlfiusInstance(instance)
+UlfiusRestCore::UlfiusRestCore(struct _u_instance *ulfius):
+    mUlfius(ulfius)
 { }
 
 UlfiusRestCore::~UlfiusRestCore()
@@ -47,8 +47,7 @@ bool UlfiusRestCore::addCallbackHandler(const std::string method,
                                         void *handlerContext)
 {
     UlfiusCallbackHandler::ptr callbackHandler(
-        new UlfiusCallbackHandler(mUlfiusInstance,
-                                  method, urlPrefix, urlFormat,
+        new UlfiusCallbackHandler(mUlfius, method, urlPrefix, urlFormat,
                                   priority, handlerFunction, handlerContext));
 
     removeCallbackHandler(method, urlPrefix, urlFormat);
