@@ -49,11 +49,21 @@ static void generate_serial(uint8_t *buffer, size_t *length)
 {
     int ret;
 
+<<<<<<< HEAD
     do
     {
         ret = rest_get_random(buffer, 20);
     } while ((buffer[0] >> 7) == 1); // Serial number must be positive
 
+=======
+    ret = rest_get_random(buffer, 20);
+
+    if ((buffer[0] >> 7) == 1) // Serial number must be positive
+    {
+        buffer[0] &= 0x7f;
+    }
+
+>>>>>>> master
     *length = ret;
 }
 
@@ -231,6 +241,7 @@ int coap_to_http_status(int status)
     case COAP_204_CHANGED:
     case COAP_205_CONTENT:
         return HTTP_200_OK;
+<<<<<<< HEAD
 
     case COAP_404_NOT_FOUND:
         return HTTP_404_NOT_FOUND;
@@ -250,10 +261,34 @@ int utils_load_certificate(uint8_t *buffer, size_t *length, const char *cert_fil
     }
 
     if (*length < cert_buffer.size)
+=======
+
+    case COAP_404_NOT_FOUND:
+        return HTTP_404_NOT_FOUND;
+
+    default:
+        return -(((status >> 5) & 0x7) * 100 + (status & 0x1F));
+    }
+}
+
+int utils_load_certificate(uint8_t *buffer, size_t *length, const char *cert_file)
+{
+    gnutls_datum_t cert_buffer = {NULL, 0};
+
+    if (gnutls_load_file(cert_file, &cert_buffer) != 0)
+>>>>>>> master
     {
         return -1;
     }
 
+<<<<<<< HEAD
+=======
+    if (*length < cert_buffer.size)
+    {
+        return -1;
+    }
+
+>>>>>>> master
     memcpy(buffer, cert_buffer.data, cert_buffer.size);
     *length = cert_buffer.size;
 
