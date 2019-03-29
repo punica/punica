@@ -141,7 +141,7 @@ static void plugins_unload(plugins_settings_t *plugins_settings)
         plugin = entry->data;
         free(plugin);
     }
-    free(plugins_settings->plugins_list);
+    linked_list_delete(plugins_settings->plugins_list);
 }
 
 static connection_api_t *api_init(coap_settings_t *coap, void *data, f_psk_cb_t psk_cb,
