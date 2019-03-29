@@ -17,6 +17,7 @@
   "dependencies": {
     "jsonwebtoken": "^8.3.0",
     "restserver-api": "git+https://github.com/8devices/restserver-api.git#test-stable-branch-with-ssl",
-    "node-mbedtls": "git+https://github.com/GiedriusM/node-mbedtls.git"
+    "node-mbedtls": "git+https://github.com/GiedriusM/node-mbedtls.git",
+    "punica": "git+https://github.com/punica/punica.js.git"
   }
 }

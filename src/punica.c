@@ -26,6 +26,7 @@
 #include <liblwm2m.h>
 #include <ulfius.h>
 
+#include "database.h"
 #include "punica.h"
 #include "udp_connection_api.h"
 #include "dtls_connection_api.h"
@@ -37,6 +38,13 @@
 #include "linked_list.h"
 #include "plugin_manager/basic_plugin_manager.h"
 #include "plugin_manager/basic_core.h"
+
+//TODO: won't be needed after issue #67
+typedef struct
+{
+    connection_api_t *api;
+    linked_list_t *device_list;
+} callback_data_t;
 
 static volatile int punica_quit;
 static void sigint_handler(int signo)
@@ -136,7 +144,8 @@ static void plugins_unload(plugins_settings_t *plugins_settings)
     free(plugins_settings->plugins_list);
 }
 
-static connection_api_t *api_init(coap_settings_t *coap, void *data, f_psk_cb_t psk_cb)
+static connection_api_t *api_init(coap_settings_t *coap, void *data, f_psk_cb_t psk_cb,
+                                  f_handshake_done_cb_t handshake_done_cb)
 {
     if (coap->security_mode == PUNICA_COAP_MODE_INSECURE)
     {
@@ -145,7 +154,7 @@ static connection_api_t *api_init(coap_settings_t *coap, void *data, f_psk_cb_t 
     else if (coap->security_mode == PUNICA_COAP_MODE_SECURE)
     {
         return dtls_connection_api_init(coap->port, AF_INET6, coap->certificate_file,
-                                        coap->private_key_file, data, psk_cb);
+                                        coap->private_key_file, data, psk_cb, handshake_done_cb);
     }
     else
     {
@@ -288,6 +297,35 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
     }
 }
 
+//TODO: 'void *api' is a temporary workaround and will be fixed when issue #67 is addressed
+int identifier_find_callback(void *connection, void *public_data, size_t public_data_length,
+                             void *data, void *api)
+{
+    database_entry_t *device_data;
+    linked_list_entry_t *device_entry;
+    linked_list_t *device_list = (linked_list_t *)data;
+    connection_api_t *conn_api = api;
+
+    if (device_list == NULL)
+    {
+        return -1;
+    }
+
+    for (device_entry = device_list->head; device_entry != NULL; device_entry = device_entry->next)
+    {
+        device_data = (database_entry_t *)device_entry->data;
+
+        if (public_data_length == device_data->public_key_len
+            && memcmp(public_data, device_data->public_key, device_data->public_key_len) == 0)
+        {
+            conn_api->f_set_identifier(connection, device_data->uuid);
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
 int psk_find_callback(const char *name, void *data, uint8_t **psk_buffer, size_t *psk_len)
 {
     database_entry_t *device_data;
@@ -303,10 +341,12 @@ int psk_find_callback(const char *name, void *data, uint8_t **psk_buffer, size_t
     {
         device_data = (database_entry_t *)device_entry->data;
 
-        if (memcmp(name, device_data->psk_id, device_data->psk_id_len) == 0)
+        if (device_data->mode == DEVICE_CREDENTIALS_PSK
+            && device_data->public_key_len == strlen(name)
+            && memcmp(name, device_data->public_key, device_data->public_key_len) == 0)
         {
-            *psk_buffer = device_data->psk;
-            *psk_len = device_data->psk_len;
+            *psk_buffer = device_data->secret_key;
+            *psk_len = device_data->secret_key_len;
             return 0;
         }
     }
@@ -316,7 +356,8 @@ int psk_find_callback(const char *name, void *data, uint8_t **psk_buffer, size_t
 
 uint8_t lwm2m_buffer_send(void *session, uint8_t *buffer, size_t length, void *user_data)
 {
-    connection_api_t *conn_api = (connection_api_t *)user_data;
+    callback_data_t *callback_data = (callback_data_t *)user_data;
+    connection_api_t *conn_api = callback_data->api;
 
     if (session == NULL)
     {
@@ -338,16 +379,32 @@ bool lwm2m_session_is_equal(void *session1, void *session2, void *userData)
     return (session1 == session2);
 }
 
-int lwm2m_client_validate(char *name, void *session, void *user_data)
+bool lwm2m_name_is_valid(const char *name, void *session, void *user_data)
 {
-    connection_api_t *api = (connection_api_t *)user_data;
+    callback_data_t *callback_data = (callback_data_t *)user_data;
+    connection_api_t *api = callback_data->api;
+    linked_list_t *device_list = callback_data->device_list;
+    database_entry_t *device_entry;
+    const char *uuid;
 
-    if (api->f_validate == NULL)
+    if (api->f_get_identifier == NULL)
     {
-        return 0;
+        return true;
     }
 
-    return api->f_validate(name, session);
+    uuid = api->f_get_identifier(session);
+    if (uuid == NULL)
+    {
+        return false;
+    }
+
+    device_entry = database_get_entry_by_uuid(device_list, uuid);
+    if (device_entry == NULL)
+    {
+        return false;
+    }
+
+    return strcmp(name, device_entry->name) == 0;
 }
 
 int main(int argc, char *argv[])
@@ -360,6 +417,7 @@ int main(int argc, char *argv[])
     void *connection;
     basic_punica_core_t *punica_core;
     basic_plugin_manager_t *plugin_manager;
+    callback_data_t callback_data;
 
     static settings_t settings =
     {
@@ -413,7 +471,8 @@ int main(int argc, char *argv[])
 
     rest_init(&rest, &settings);
 
-    conn_api = api_init(&settings.coap, (void *)rest.devicesList, psk_find_callback);
+    conn_api = api_init(&settings.coap, (void *)rest.devicesList, psk_find_callback,
+                        identifier_find_callback);
     if (conn_api == NULL)
     {
         return -1;
@@ -437,7 +496,9 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    rest.lwm2m->userData = conn_api;
+    callback_data.api = conn_api;
+    callback_data.device_list = rest.devicesList;
+    rest.lwm2m->userData = &callback_data;
 
     lwm2m_set_monitoring_callback(rest.lwm2m, client_monitor_cb, &rest);
 
