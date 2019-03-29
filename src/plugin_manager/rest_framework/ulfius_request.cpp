@@ -31,9 +31,10 @@ extern "C" {
 } // extern "C"
 #endif
 
-std::map<std::string, std::string> ulfiusToStdMap(struct _u_map *ulfiusMap)
+static std::map<std::string, std::string> ulfiusToStdMap(
+    struct _u_map *ulfiusMap)
 {
-    int header_iterator;
+    int headerIterator = 0;
     std::map<std::string, std::string> stdMap;
     std::string key, value;
 
@@ -42,18 +43,19 @@ std::map<std::string, std::string> ulfiusToStdMap(struct _u_map *ulfiusMap)
         return stdMap;
     }
 
-    for (header_iterator = 0; ulfiusMap->keys[header_iterator] != NULL; header_iterator++)
+    while (ulfiusMap->keys[headerIterator] != NULL)
     {
-        key = ulfiusMap->keys[header_iterator];
-        if (ulfiusMap->lengths[header_iterator] > 0)
+        key = ulfiusMap->keys[headerIterator];
+        if (ulfiusMap->lengths[headerIterator] > 0)
         {
-            value = ulfiusMap->values[header_iterator];
+            value = ulfiusMap->values[headerIterator];
         }
         else
         {
             value = "";
         }
         stdMap.insert(std::make_pair(key, value));
+        ++headerIterator;
     }
 
     return stdMap;

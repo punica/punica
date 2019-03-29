@@ -20,12 +20,9 @@
 #ifndef PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REST_CORE_HPP
 #define PUNICA_PLUGIN_MANAGER_REST_ULFIUS_REST_CORE_HPP
 
-#include <map>
 #include <punica/rest/core.hpp>
 
 #include "ulfius_callback_handler.hpp"
-
-std::map<std::string, std::string> ulfiusToStdMap(struct _u_map *ulfius_map);
 
 class UlfiusRestCore: public punica::rest::Core
 {
