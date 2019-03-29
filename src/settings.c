@@ -445,7 +445,7 @@ static int set_plugin_settings(json_t *j_plugin_settings,
     if (plugin_name_length == 0
         || plugin_name_length == J_MAX_LENGTH_PLUGIN_NAME)
     {
-        fprintf(stdout, "Plugin name length is invalid\n");
+        fprintf(stdout, "Plugin name length is invalid.\n");
         return 1;
     }
 
@@ -459,14 +459,14 @@ static int set_plugin_settings(json_t *j_plugin_settings,
     if (plugin_path_length == 0
         || plugin_path_length == J_MAX_LENGTH_PLUGIN_PATH)
     {
-        fprintf(stdout, "Plugin path length is invalid\n");
+        fprintf(stdout, "Plugin path length is invalid.\n");
         return 1;
     }
 
     plugin = malloc(sizeof(plugin_settings_t));
 
-    plugin->name = json_string_value(j_name);
-    plugin->path = json_string_value(j_path);
+    plugin->name = strdup(json_string_value(j_name));
+    plugin->path = strdup(json_string_value(j_path));
 
     for (entry = plugins_list->head; entry != NULL; entry = entry->next)
     {
