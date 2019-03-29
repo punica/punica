@@ -76,7 +76,9 @@ UlfiusRequest::UlfiusRequest(const struct _u_request *uRequest)
     mBody = vector_body;
 }
 
-UlfiusRequest::~UlfiusRequest() { }
+UlfiusRequest::~UlfiusRequest()
+{ }
+
 std::string UlfiusRequest::getPath()
 {
     return mPath;
