@@ -330,17 +330,17 @@ bool lwm2m_session_is_equal(void *session1, void *session2, void *userData)
 bool lwm2m_name_is_valid(const char *name, void *session, void *user_data)
 {
     rest_context_t *rest = (rest_context_t *)user_data;
-    connection_api_t *conn_api = rest->connection_api;
+    connection_api_t *api = rest->connection_api;
     linked_list_t *device_list = rest->devicesList;
     database_entry_t *device_entry;
     const char *uuid;
 
-    if (conn_api->f_get_identifier == NULL)
+    if (api->f_get_identifier == NULL)
     {
         return true;
     }
 
-    uuid = conn_api->f_get_identifier(session);
+    uuid = api->f_get_identifier(session);
     if (uuid == NULL)
     {
         return false;
