@@ -28,7 +28,8 @@ string(REPLACE "v" "" PUNICA_VERSION ${PUNICA_VERSION})
 
 set(PUNICA_FULL_VERSION "${PROJECT_NAME} ${PUNICA_VERSION}")
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/version.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/punica/version.h.in
+               ${CMAKE_CURRENT_SOURCE_DIR}/include/punica/version.h)
 
 list(APPEND CMAKE_MODULE_PATH ${ULFIUS_CMAKE_MODULES_DIR})
 
