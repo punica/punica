@@ -33,6 +33,8 @@
 #define DATABASE_ALL_NEW_KEYS_SET   0x06
 #define DATABASE_ALL_KEYS_SET       0x3F
 
+#define DATABASE_CREDENTIALS_MAX_SIZE 1024
+
 static credentials_mode_t credentials_type_from_string(const char *string)
 {
     if (strcasecmp(string, "psk") == 0)
@@ -240,7 +242,7 @@ int database_validate_entry(json_t *j_device_object)
     int key_check = 0;
     const char *key, *value_string;
     json_t *j_value;
-    uint8_t buffer[512];
+    uint8_t buffer[DATABASE_CREDENTIALS_MAX_SIZE];
     size_t buffer_len = sizeof(buffer);
     int ret;
 
@@ -394,7 +396,7 @@ database_entry_t *database_create_new_entry(json_t *j_device_object, linked_list
                                             const char *certificate, const char *private_key)
 {
     uuid_t b_uuid;
-    char *uuid = NULL;
+    char uuid[64];
     int status = -1;
     database_entry_t *device_entry = NULL;
 
@@ -423,15 +425,8 @@ database_entry_t *database_create_new_entry(json_t *j_device_object, linked_list
 
     uuid_generate_random(b_uuid);
 
-    uuid = malloc(37);
-    if (uuid == NULL)
-    {
-        goto exit;
-    }
-
     uuid_unparse(b_uuid, uuid);
     device_entry->uuid = strdup(uuid);
-    free(uuid);
 
     if (device_entry->uuid == NULL)
     {
@@ -458,9 +453,9 @@ int database_list_to_json_array(linked_list_t *device_list, json_t *j_array)
     linked_list_entry_t *list_entry;
     database_entry_t *device_entry;
     json_t *j_entry;
-    char base64_secret_key[1024];
-    char base64_public_key[1024];
-    char base64_serial[64];
+    char base64_secret_key[DATABASE_CREDENTIALS_MAX_SIZE];
+    char base64_public_key[DATABASE_CREDENTIALS_MAX_SIZE];
+    char base64_serial[DATABASE_CREDENTIALS_MAX_SIZE];
     size_t base64_length;
     const char *mode_string;
 

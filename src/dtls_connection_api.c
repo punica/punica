@@ -31,13 +31,6 @@
 
 #define BUFFER_SIZE 1024
 
-typedef enum
-{
-    CIPHERSUITE_PSK,
-    CIPHERSUITE_CERT,
-    CIPHERSUITE_UNDEFINED,
-} session_ciphersuite_t;
-
 typedef struct _device_connection_t
 {
     int sock;
@@ -62,7 +55,7 @@ typedef struct secure_connection_context_t
     gnutls_psk_server_credentials_t server_psk;
     void *data;
     f_psk_cb_t psk_cb;
-    f_identifier_cb_t identifier_cb;
+    f_handshake_done_cb_t handshake_done_cb;
 } secure_connection_context_t;
 
 static int dtls_connection_start(void *context_p);
@@ -72,7 +65,7 @@ static int dtls_connection_send(void *context_p, void *connection, uint8_t *buff
 static int dtls_connection_close(void *context_p, void *connection);
 static int dtls_connection_stop(void *context_p);
 
-static session_ciphersuite_t get_session_ciphersuite(gnutls_session_t session)
+static credentials_mode_t get_session_ciphersuite(gnutls_session_t session)
 {
     gnutls_cipher_algorithm_t cipher;
     gnutls_kx_algorithm_t key_ex;
@@ -84,21 +77,21 @@ static session_ciphersuite_t get_session_ciphersuite(gnutls_session_t session)
         && (cipher == GNUTLS_CIPHER_AES_128_CCM_8
             || cipher == GNUTLS_CIPHER_AES_128_CBC))
     {
-        return CIPHERSUITE_CERT;
+        return DEVICE_CREDENTIALS_CERT;
     }
     else if (key_ex == GNUTLS_KX_PSK
              && (cipher == GNUTLS_CIPHER_AES_128_CCM_8
                  || cipher == GNUTLS_CIPHER_AES_128_CBC))
     {
-        return CIPHERSUITE_PSK;
+        return DEVICE_CREDENTIALS_PSK;
     }
     else
     {
-        return CIPHERSUITE_UNDEFINED;
+        return DEVICE_CREDENTIALS_UNDEFINED;
     }
 }
 
-static void *dtls_connection_retrieve_identifier(void *connection)
+static const void *dtls_connection_get_identifier(void *connection)
 {
     device_connection_t *conn = (device_connection_t *)connection;
 
@@ -110,26 +103,42 @@ static void *dtls_connection_retrieve_identifier(void *connection)
     return conn->device_identifier;
 }
 
-static int dtls_connection_store_identifier(device_connection_t *conn,
-                                            session_ciphersuite_t ciphersuite)
+static int dtls_connection_set_identifier(void *connection, void *identifier)
+{
+    device_connection_t *conn = (device_connection_t *)connection;
+
+    if (conn == NULL)
+    {
+        return -1;
+    }
+
+    conn->device_identifier = identifier;
+    return 0;
+}
+
+static int dtls_connection_handshake_done(device_connection_t *conn,
+                                          credentials_mode_t ciphersuite)
 {
     void *public_data;
     gnutls_x509_crt_t cert;
     const gnutls_datum_t *cert_list;
-    size_t size = 0;
+    size_t public_data_size = 0;
     secure_connection_context_t *context;
+    int ret;
 
     context = gnutls_session_get_ptr(conn->session);
 
-    if (ciphersuite == CIPHERSUITE_PSK)
+    if (ciphersuite == DEVICE_CREDENTIALS_PSK)
     {
         public_data = (void *)gnutls_psk_server_get_username(conn->session);
         if (public_data == NULL)
         {
             return -1;
         }
+
+        public_data_size = strlen(public_data);
     }
-    else if (ciphersuite == CIPHERSUITE_CERT)
+    else if (ciphersuite == DEVICE_CREDENTIALS_CERT)
     {
         cert_list = gnutls_certificate_get_peers(conn->session, NULL);
         if (cert_list == NULL)
@@ -146,15 +155,15 @@ static int dtls_connection_store_identifier(device_connection_t *conn,
             return -1;
         }
 
-        gnutls_x509_crt_export(cert, GNUTLS_X509_FMT_PEM, NULL, &size);
+        gnutls_x509_crt_export(cert, GNUTLS_X509_FMT_PEM, NULL, &public_data_size);
 
-        public_data = malloc(size);
+        public_data = malloc(public_data_size);
         if (public_data == NULL)
         {
             gnutls_x509_crt_deinit(cert);
             return -1;
         }
-        if (gnutls_x509_crt_export(cert, GNUTLS_X509_FMT_PEM, public_data, &size))
+        if (gnutls_x509_crt_export(cert, GNUTLS_X509_FMT_PEM, public_data, &public_data_size))
         {
             free(public_data);
             gnutls_x509_crt_deinit(cert);
@@ -168,19 +177,14 @@ static int dtls_connection_store_identifier(device_connection_t *conn,
         return -1;
     }
 
-    conn->device_identifier = context->identifier_cb(public_data, context->data);
+    ret = context->handshake_done_cb(conn, public_data, public_data_size, context->data, context);
 
-    if (ciphersuite == CIPHERSUITE_CERT)
+    if (ciphersuite == DEVICE_CREDENTIALS_CERT)
     {
         free(public_data);
     }
 
-    if (conn->device_identifier == NULL)
-    {
-        return -1;
-    }
-
-    return 0;
+    return ret;
 }
 
 static ssize_t dtls_connection_net_send(gnutls_transport_ptr_t context, const void *data,
@@ -407,8 +411,10 @@ static device_connection_t *dtls_connection_new_listen(secure_connection_context
 }
 
 connection_api_t *dtls_connection_api_init(int port, int address_family,
-                                           const char *certificate_file, const char *private_key_file, void *data, f_psk_cb_t psk_cb,
-                                           f_identifier_cb_t identifier_cb)
+                                           const char *certificate_file,
+                                           const char *private_key_file,
+                                           void *data, f_psk_cb_t psk_cb,
+                                           f_handshake_done_cb_t handshake_done_cb)
 {
     secure_connection_context_t *context;
     context = calloc(1, sizeof(secure_connection_context_t));
@@ -423,14 +429,15 @@ connection_api_t *dtls_connection_api_init(int port, int address_family,
     context->private_key_file = private_key_file;
     context->data = data;
     context->psk_cb = psk_cb;
-    context->identifier_cb = identifier_cb;
+    context->handshake_done_cb = handshake_done_cb;
 
     context->api.f_start = dtls_connection_start;
     context->api.f_receive = dtls_connection_receive;
     context->api.f_send = dtls_connection_send;
     context->api.f_close = dtls_connection_close;
     context->api.f_stop = dtls_connection_stop;
-    context->api.f_retrieve_identifier = dtls_connection_retrieve_identifier;
+    context->api.f_get_identifier = dtls_connection_get_identifier;
+    context->api.f_set_identifier = dtls_connection_set_identifier;
 
     return &context->api;
 }
@@ -552,7 +559,6 @@ static device_connection_t *dtls_connection_find(linked_list_t *connection_list,
     }
 
     return NULL;
-}
 
 static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size,
                                    void **connection, struct timeval *tv)

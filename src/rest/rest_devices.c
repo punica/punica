@@ -51,7 +51,7 @@ static int rest_devices_save_list_to_file(linked_list_t *device_list, const char
     return 0;
 }
 
-static int rest_devices_update_list(const char *id, linked_list_t *list, const char *name)
+static int rest_devices_update_list(linked_list_t *list, const char *id, const char *name)
 {
     linked_list_entry_t *device_entry;
     database_entry_t *device_data;
@@ -101,7 +101,7 @@ static int rest_devices_remove_list(linked_list_t *list, const char *id)
 
 static int append_server_key(json_t *j_object, const char *certificate_file)
 {
-    uint8_t binary_buffer[1024];
+    uint8_t binary_buffer[1024]; // sufficient size to store certificate
     size_t binary_length;
     static json_t *j_string;
     static bool cert_loaded = false;
@@ -158,7 +158,8 @@ static int json_object_add_string(json_t *j_object, const char *string, const ch
     return 0;
 }
 
-static int json_object_add_binary(json_t *j_object, uint8_t *buffer, const char *key, size_t buffer_length)
+static int json_object_add_binary(json_t *j_object, uint8_t *buffer, const char *key,
+                                  size_t buffer_length)
 {
     json_t *j_binary;
 
@@ -178,7 +179,8 @@ static int json_object_add_binary(json_t *j_object, uint8_t *buffer, const char 
     return 0;
 }
 
-static json_t *rest_devices_entry_to_resp(database_entry_t *device_entry, const char *certificate_file)
+static json_t *rest_devices_entry_to_resp(database_entry_t *device_entry,
+                                          const char *certificate_file)
 {
     json_t *j_resp_obj = NULL;
     char *mode_string;
@@ -196,37 +198,34 @@ static json_t *rest_devices_entry_to_resp(database_entry_t *device_entry, const 
     else if (device_entry->mode == DEVICE_CREDENTIALS_CERT)
     {
         mode_string = "cert";
-
-        if (append_server_key(j_resp_obj, certificate_file))
-        {
-            json_decref(j_resp_obj);
-            return NULL;
-        }
     }
     else if (device_entry->mode == DEVICE_CREDENTIALS_NONE)
     {
         mode_string = "none";
     }
+    else
+    {
+        json_decref(j_resp_obj);
+        return NULL;
+    }
 
-    if (json_object_add_string(j_resp_obj, device_entry->uuid, "uuid"))
+    if (json_object_add_string(j_resp_obj, device_entry->uuid, "uuid")
+        || json_object_add_string(j_resp_obj, device_entry->name, "name")
+        || json_object_add_string(j_resp_obj, mode_string, "mode")
+        || json_object_add_binary(j_resp_obj, device_entry->public_key, "public_key",
+                                  device_entry->public_key_len))
     {
         json_decref(j_resp_obj);
         return NULL;
     }
-    if (json_object_add_string(j_resp_obj, device_entry->name, "name"))
+
+    if (device_entry->mode == DEVICE_CREDENTIALS_CERT)
     {
-        json_decref(j_resp_obj);
-        return NULL;
-    }
-    if (json_object_add_string(j_resp_obj, mode_string, "mode"))
-    {
-        json_decref(j_resp_obj);
-        return NULL;
-    }
-    if (json_object_add_binary(j_resp_obj, device_entry->public_key, "public_key", device_entry->public_key_len))
-    {
-        json_decref(j_resp_obj);
-        return NULL;
+        if (append_server_key(j_resp_obj, certificate_file))
+        {
+            json_decref(j_resp_obj);
+            return NULL;
+        }
     }
 
     return j_resp_obj;
@@ -241,7 +240,8 @@ static int append_client_key(json_t *j_object, database_entry_t *device_entry)
         return -1;
     }
 
-    j_string = json_object_from_binary(device_entry->secret_key, "secret_key", device_entry->secret_key_len);
+    j_string = json_object_from_binary(device_entry->secret_key, "secret_key",
+                                       device_entry->secret_key_len);
     if (j_string == NULL)
     {
         return -1;
@@ -337,53 +337,52 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
 {
     rest_context_t *rest = (rest_context_t *)context;
     const char *ct;
-    json_t *jdevice_list = NULL, *j_post_resp = NULL;
+    json_t *jdevice_list = NULL;
+    json_t *j_post_resp = NULL;
     database_entry_t *device_entry = NULL;
+    int status = -1;
+
+    rest_lock(rest);
 
     ct = u_map_get_case(req->map_header, "Content-Type");
     if (ct == NULL || strcmp(ct, "application/json") != 0)
     {
         ulfius_set_empty_body_response(resp, 415);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
     }
 
     jdevice_list = json_loadb(req->binary_body, req->binary_body_length, 0, NULL);
     if (jdevice_list == NULL)
     {
         ulfius_set_empty_body_response(resp, 400);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
     }
 
     if (database_validate_new_entry(jdevice_list) != 0)
     {
         ulfius_set_empty_body_response(resp, 400);
-        json_decref(jdevice_list);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
     }
 
-    device_entry = database_create_new_entry(jdevice_list, rest->devicesList, rest->settings->coap.certificate_file, rest->settings->coap.private_key_file);
-    json_decref(jdevice_list);
-
+    device_entry = database_create_new_entry(jdevice_list, rest->devicesList,
+                                             rest->settings->coap.certificate_file, rest->settings->coap.private_key_file);
     if (device_entry == NULL)
     {
         ulfius_set_empty_body_response(resp, 500);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
     }
 
     j_post_resp = rest_devices_entry_to_resp(device_entry, rest->settings->coap.certificate_file);
     if (j_post_resp == NULL)
     {
         ulfius_set_empty_body_response(resp, 500);
-        database_free_entry(device_entry);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
     }
 
     if (append_client_key(j_post_resp, device_entry) != 0)
     {
         ulfius_set_empty_body_response(resp, 500);
-        json_decref(j_post_resp);
-        database_free_entry(device_entry);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
     }
 
     if (device_entry->mode == DEVICE_CREDENTIALS_CERT)
@@ -393,21 +392,33 @@ int rest_devices_post_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *con
         device_entry->secret_key_len = 0;
     }
 
-    rest_lock(rest);
-
     linked_list_add(rest->devicesList, device_entry);
-    ulfius_set_json_body_response(resp, 201, j_post_resp);
-    json_decref(j_post_resp);
 
 //  if database file not specified then only save locally
-    if (rest->settings->coap.database_file)
+    if (rest->settings->coap.database_file != NULL
+        && rest_devices_save_list_to_file(rest->devicesList, rest->settings->coap.database_file) != 0)
     {
-        if (rest_devices_save_list_to_file(rest->devicesList, rest->settings->coap.database_file))
-        {
-            log_message(LOG_LEVEL_ERROR, "[DEVICES POST] Failed to write to database file.\n");
-        }
+        log_message(LOG_LEVEL_ERROR, "[DEVICES POST] Failed to write to database file.\n");
     }
 
+    ulfius_set_json_body_response(resp, 201, j_post_resp);
+    status = 0;
+exit:
+    if (jdevice_list != NULL)
+    {
+        json_decref(jdevice_list);
+    }
+    if (j_post_resp != NULL)
+    {
+        json_decref(j_post_resp);
+    }
+    if (status != 0)
+    {
+        if (device_entry != NULL)
+        {
+            database_free_entry(device_entry);
+        }
+    }
     rest_unlock(rest);
 
     return U_CALLBACK_COMPLETE;
@@ -417,14 +428,16 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
 {
     rest_context_t *rest = (rest_context_t *)context;
     json_t *jdevice = NULL;
-    char *name;
+    const char *name;
+
+    rest_lock(rest);
 
     const char *ct;
     ct = u_map_get_case(req->map_header, "Content-Type");
     if (ct == NULL || strcmp(ct, "application/json") != 0)
     {
         ulfius_set_empty_body_response(resp, 415);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
     }
 
     const char *id;
@@ -432,47 +445,42 @@ int rest_devices_put_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *cont
     if (id == NULL)
     {
         ulfius_set_empty_body_response(resp, 400);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
     }
 
     jdevice = json_loadb(req->binary_body, req->binary_body_length, 0, NULL);
     if (!json_is_object(jdevice))
     {
         ulfius_set_empty_body_response(resp, 400);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
     }
 
-    name = string_from_json_object(jdevice, "name");
-    json_decref(jdevice);
-
+    name = json_string_value(json_object_get(jdevice, "name"));
     if (name == NULL)
     {
         ulfius_set_empty_body_response(resp, 400);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
     }
 
-    rest_lock(rest);
-
-    if (rest_devices_update_list(id, rest->devicesList, name))
+    if (rest_devices_update_list(rest->devicesList, id, name))
     {
         ulfius_set_empty_body_response(resp, 400);
-        rest_unlock(rest);
-        free(name);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
+    }
+
+//  if database file does not exist then only save locally
+    if (rest->settings->coap.database_file != NULL
+        && rest_devices_save_list_to_file(rest->devicesList, rest->settings->coap.database_file) != 0)
+    {
+        log_message(LOG_LEVEL_ERROR, "[DEVICES PUT] Failed to write to database file.\n");
     }
 
     ulfius_set_empty_body_response(resp, 201);
-    free(name);
-
-//  if database file does not exist then only save locally
-    if (rest->settings->coap.database_file)
+exit:
+    if (jdevice != NULL)
     {
-        if (rest_devices_save_list_to_file(rest->devicesList, rest->settings->coap.database_file))
-        {
-            log_message(LOG_LEVEL_ERROR, "[DEVICES PUT] Failed to write to database file.\n");
-        }
+        json_decref(jdevice);
     }
-
     rest_unlock(rest);
 
     return U_CALLBACK_COMPLETE;
@@ -482,35 +490,32 @@ int rest_devices_delete_cb(const ulfius_req_t *req, ulfius_resp_t *resp, void *c
 {
     rest_context_t *rest = (rest_context_t *)context;
 
+    rest_lock(rest);
+
     const char *id;
     id = u_map_get(req->map_url, "id");
     if (id == NULL)
     {
         ulfius_set_empty_body_response(resp, 400);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
     }
-
-    rest_lock(rest);
 
     if (rest_devices_remove_list(rest->devicesList, id))
     {
         //  device not found
         ulfius_set_empty_body_response(resp, 404);
-        rest_unlock(rest);
-        return U_CALLBACK_COMPLETE;
+        goto exit;
+    }
+
+//  if database file not specified then only save locally
+    if (rest->settings->coap.database_file != NULL
+        && rest_devices_save_list_to_file(rest->devicesList, rest->settings->coap.database_file) != 0)
+    {
+        log_message(LOG_LEVEL_ERROR, "[DEVICES DELETE] Failed to write to database file.\n");
     }
 
     ulfius_set_empty_body_response(resp, 200);
-
-//  if database file not specified then only save locally
-    if (rest->settings->coap.database_file)
-    {
-        if (rest_devices_save_list_to_file(rest->devicesList, rest->settings->coap.database_file))
-        {
-            log_message(LOG_LEVEL_ERROR, "[DEVICES DELETE] Failed to write to database file.\n");
-        }
-    }
-
+exit:
     rest_unlock(rest);
 
     return U_CALLBACK_COMPLETE;
