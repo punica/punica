@@ -2,7 +2,7 @@ const chai = require('chai');
 const chai_http = require('chai-http');
 const should = chai.should();
 const events = require('events');
-var server = require('./.server-with-plugins');
+var server = require('./server-with-plugins');
 
 chai.use(chai_http);
 
