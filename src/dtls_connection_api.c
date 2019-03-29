@@ -31,13 +31,6 @@
 
 #define BUFFER_SIZE 1024
 
-typedef enum
-{
-    CIPHERSUITE_PSK,
-    CIPHERSUITE_CERT,
-    CIPHERSUITE_UNDEFINED,
-} session_ciphersuite_t;
-
 typedef struct _device_connection_t
 {
     int sock;
@@ -74,7 +67,7 @@ static int dtls_connection_send(void *context_p, session_t connection, uint8_t *
 static int dtls_connection_close(void *context_p, session_t connection);
 static int dtls_connection_stop(void *context_p);
 
-static session_ciphersuite_t get_session_ciphersuite(gnutls_session_t session)
+static credentials_mode_t get_session_ciphersuite(gnutls_session_t session)
 {
     gnutls_cipher_algorithm_t cipher;
     gnutls_kx_algorithm_t key_ex;
@@ -86,17 +79,17 @@ static session_ciphersuite_t get_session_ciphersuite(gnutls_session_t session)
         && (cipher == GNUTLS_CIPHER_AES_128_CCM_8
             || cipher == GNUTLS_CIPHER_AES_128_CBC))
     {
-        return CIPHERSUITE_CERT;
+        return DEVICE_CREDENTIALS_CERT;
     }
     else if (key_ex == GNUTLS_KX_PSK
              && (cipher == GNUTLS_CIPHER_AES_128_CCM_8
                  || cipher == GNUTLS_CIPHER_AES_128_CBC))
     {
-        return CIPHERSUITE_PSK;
+        return DEVICE_CREDENTIALS_PSK;
     }
     else
     {
-        return CIPHERSUITE_UNDEFINED;
+        return DEVICE_CREDENTIALS_UNDEFINED;
     }
 }
 
@@ -126,7 +119,7 @@ static int dtls_connection_set_identifier(session_t connection, void *identifier
 }
 
 static int dtls_connection_handshake_done(device_connection_t *conn,
-                                          session_ciphersuite_t ciphersuite)
+                                          credentials_mode_t ciphersuite)
 {
     void *public_data;
     gnutls_x509_crt_t cert;
@@ -137,7 +130,7 @@ static int dtls_connection_handshake_done(device_connection_t *conn,
 
     context = gnutls_session_get_ptr(conn->session);
 
-    if (ciphersuite == CIPHERSUITE_PSK)
+    if (ciphersuite == DEVICE_CREDENTIALS_PSK)
     {
         public_data = (void *)gnutls_psk_server_get_username(conn->session);
         if (public_data == NULL)
@@ -147,7 +140,7 @@ static int dtls_connection_handshake_done(device_connection_t *conn,
 
         public_data_size = strlen(public_data);
     }
-    else if (ciphersuite == CIPHERSUITE_CERT)
+    else if (ciphersuite == DEVICE_CREDENTIALS_CERT)
     {
         cert_list = gnutls_certificate_get_peers(conn->session, NULL);
         if (cert_list == NULL)
@@ -188,7 +181,7 @@ static int dtls_connection_handshake_done(device_connection_t *conn,
 
     ret = context->handshake_done_cb(conn, public_data, public_data_size, context->data, context);
 
-    if (ciphersuite == CIPHERSUITE_CERT)
+    if (ciphersuite == DEVICE_CREDENTIALS_CERT)
     {
         free(public_data);
     }
@@ -465,7 +458,7 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
     linked_list_entry_t *conn_entry;
     const char *err_str;
     gnutls_dtls_prestate_st prestate;
-    session_ciphersuite_t ciphersuite;
+    credentials_mode_t ciphersuite;
 
 //  to reduce code redundancy
     sock = context->conn_listen->sock;

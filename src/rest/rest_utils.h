@@ -50,7 +50,8 @@ int coap_to_http_status(int status);
 
 int utils_load_certificate(uint8_t *buffer, size_t *length, const char *cert_file);
 
-int device_new_credentials(database_entry_t *device_entry, linked_list_t *device_list, const char *certificate, const char *private_key);
+int device_new_credentials(database_entry_t *device_entry, linked_list_t *device_list,
+                           const char *certificate, const char *private_key);
 
 json_t *json_object_from_string(const char *string, const char *key);
 

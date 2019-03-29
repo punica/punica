@@ -37,6 +37,7 @@
 #include "rest/rest_authentication.h"
 #include "linked_list.h"
 
+//TODO: won't be needed after issue #67
 typedef struct
 {
     connection_api_t *api;
