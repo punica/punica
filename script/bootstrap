@@ -40,7 +40,7 @@ else
 fi
 
 BUILD_TOOLS_APT="git-core cmake build-essential automake libtool gnutls-bin"
-DEPENTANT_LIBRARIES_APT="libssl-dev libgnutls28-dev libmicrohttpd-dev"
+DEPENDANT_LIBRARIES_APT="libssl-dev libgnutls28-dev libmicrohttpd-dev uuid-dev"
 
 JANSSON_DIR="${THIRD_PARTY_DIR}/jansson"
 LIBJWT_DIR="${THIRD_PARTY_DIR}/libjwt"
@@ -129,7 +129,7 @@ install_build_tools () {
 
 install_dependant_libraries_packages () {
     if which apt-get; then
-        eval "sudo apt-get install -yqq ${DEPENTANT_LIBRARIES_APT}"
+        eval "sudo apt-get install -yqq ${DEPENDANT_LIBRARIES_APT}"
     elif which rpm; then
         echo_stderr "RPM is not supported yet!"
         return 1
