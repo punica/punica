@@ -5,11 +5,13 @@ const punica = require('punica');
 const fs = require('fs');
 var ClientInterface = require('./client-secure-if');
 
+const key_dir = './keys';
+
 describe('Secure endpoints interface', () => {
 
   const service_options = {
     host: 'https://localhost:8889',
-    ca: fs.readFileSync('../../certificate.pem'),
+    ca: fs.readFileSync(key_dir + '/certificate.pem'),
     authentication: true,
     username: 'admin',
     password: 'not-same-as-name',
@@ -259,10 +261,22 @@ describe('Secure endpoints interface', () => {
 
     let clientPsk1 = new ClientInterface(pskOptions1);
     let clientCert1 = new ClientInterface(certOptions1);
+    let clientPsk2 = new ClientInterface(pskOptions1);
+    let clientCert2 = new ClientInterface(certOptions1);
+    let clientPsk3 = new ClientInterface(pskOptions2);
+    let clientCert3 = new ClientInterface(certOptions2);
+    let clientPsk4 = new ClientInterface(pskOptions2);
+    let clientCert4 = new ClientInterface(certOptions2);
     let promise1 = connectionPromise(clientPsk1);
     let promise2 = connectionPromise(clientCert1);
+    let promise3 = connectionPromise(clientPsk2);
+    let promise4 = connectionPromise(clientCert2);
+    let promise5 = connectionPromise(clientPsk3);
+    let promise6 = connectionPromise(clientCert3);
+    let promise7 = connectionPromise(clientPsk4);
+    let promise8 = connectionPromise(clientCert4);
 
-    return Promise.all([promise1, promise2]).catch((err) => {
+    return Promise.all([promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8]).catch((err) => {
       should.not.exist(err);
     });
   });

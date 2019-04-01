@@ -21,6 +21,7 @@ set -e
 
 PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
 THIRD_PARTY_DIR="${PROJECT_ROOT_DIR}/third_party"
+DEFAULT_LOG_DIR="${PROJECT_ROOT_DIR}/script/log"
 
 if [ -z "${BUILD_DIR}" ]; then
     BUILD_DIR="${PROJECT_ROOT_DIR}/build"
@@ -34,13 +35,17 @@ SCRIPT_NAME=$(basename -- "$0")
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 
 if [ -z "${LOG_FILE}" ]; then
-    LOG_FILE="${PROJECT_ROOT_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
+    if [ ! -d "${DEFAULT_LOG_DIR}" ]; then
+        eval "mkdir ${DEFAULT_LOG_DIR}"
+    fi
+
+    LOG_FILE="${DEFAULT_LOG_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
 else
     export LOG_FILE
 fi
 
 BUILD_TOOLS_APT="git-core cmake build-essential automake libtool gnutls-bin"
-DEPENTANT_LIBRARIES_APT="libssl-dev libgnutls28-dev libmicrohttpd-dev"
+DEPENDANT_LIBRARIES_APT="libssl-dev libgnutls28-dev libmicrohttpd-dev uuid-dev"
 
 JANSSON_DIR="${THIRD_PARTY_DIR}/jansson"
 LIBJWT_DIR="${THIRD_PARTY_DIR}/libjwt"
@@ -129,7 +134,7 @@ install_build_tools () {
 
 install_dependant_libraries_packages () {
     if which apt-get; then
-        eval "sudo apt-get install -yqq ${DEPENTANT_LIBRARIES_APT}"
+        eval "sudo apt-get install -yqq ${DEPENDANT_LIBRARIES_APT}"
     elif which rpm; then
         echo_stderr "RPM is not supported yet!"
         return 1
@@ -229,10 +234,12 @@ install_ulfius () {
 }
 
 install_wakaama () {
+    cmake_args="${CMAKE_ARGS_BASE} -DCUSTOM_CONNECTION_HANDLING=1"
+
     echo "    - Installing Wakaama..."
 
     {
-        eval "${WAKAAMA_DIR}/script/setup ${CMAKE_ARGS_BASE}" &&
+        eval "${WAKAAMA_DIR}/script/setup ${cmake_args}" &&
         eval "cd ${WAKAAMA_DIR}/build" &&
         eval "make install ${MAKE_ARGS_BASE}" &&
         cd -
