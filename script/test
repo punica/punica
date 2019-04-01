@@ -33,6 +33,8 @@ fi
 
 SCRIPT_NAME=$(basename -- "$0")
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+REGULAR_PUNICA_NAME="regular"
+SECURE_PUNICA_NAME="secure"
 
 if [ -z "${LOG_FILE}" ]; then
     if [ ! -d "${DEFAULT_LOG_DIR}" ]; then
@@ -54,10 +56,6 @@ ECDSA_TEST_PRIVATE_KEY="${KEY_DIR}/ecdsa.key"
 ECDSA_TEST_CERTIFICATE="${KEY_DIR}/ecdsa.pem"
 
 CERTTOOL_BIN="certtool"
-
-TMP_DIR=$(mktemp -d)
-REGULAR_PUNICA_LOG_FILE="${TMP_DIR}/regular_punica.log"
-SECURE_PUNICA_LOG_FILE="${TMP_DIR}/secure_punica.log"
 
 generate_key_and_certificate () {
     if [ "$#" -ne 3 ]; then
@@ -139,12 +137,10 @@ run_punica () {
     initial_punica_arguments=""
     punica_command="${BUILD_DIR}/punica ${initial_punica_arguments}"
 
-    if ! [ -z "$3" ]; then
-        punica_log_file="$3"
-        punica_command="valgrind --leak-check=yes ${punica_command}"
-    fi
-
     if ! [ -z "$1" ]; then
+        punica_log_file="${DEFAULT_LOG_DIR}/$1.log"
+        valgrind_log_file="${DEFAULT_LOG_DIR}/$1_valgrind.log"
+        punica_command="valgrind --leak-check=yes --log-file=${valgrind_log_file} ${punica_command}"
         strip_level="$(get_path_level ${PROJECT_ROOT_DIR})"
         coverage_prefix="GCOV_PREFIX_STRIP=${strip_level} GCOV_PREFIX=$1"
         punica_command="${coverage_prefix} ${punica_command}"
@@ -169,11 +165,6 @@ stop_punica () {
 }
 
 log_leak_check () {
-    if [ -z "$1" ]; then
-        (>&2 echo "Invalid punica leak report log file!")
-        return 1
-    fi
-
     echo "  - checking for leaks in $1" >> ${LOG_FILE} 2>&1
 
     leak_summary=$(eval "tail -n 11 $1")
@@ -190,16 +181,37 @@ log_leak_check () {
     || [ "${reachable_memory}" != "0" ]\
     || [ "${suppressed}" != "0" ];
     then
-        (>&2 echo "Punica memory leaks found!")
-        echo "${leak_summary}" >> ${LOG_FILE} 2>&1
-        (>&2 echo "\n\nRefer to \"${LOG_FILE}\" for more detailed information")
-
         return 1
     fi
 
     return 0
 }
 
+logs_leak_check () {
+    if [ -z "$1" ]; then
+        (>&2 echo "Invalid punica leak report log file!")
+        return 1
+    fi
+
+    logs_status=0
+    for log in $@; do
+        log_leak_check ${log}
+        log_status=$?
+        if [ $logs_status -eq 0 ]; then
+            logs_status=1
+        fi
+    done
+
+    if [ "${logs_status}" != "0" ]; then
+        (>&2 echo "Punica memory leaks found!")
+        echo "${leak_summary}" >> ${LOG_FILE} 2>&1
+        (>&2 echo "\n\nRefer to \"${LOG_FILE}\" for more detailed information")
+    else
+        (echo "No Punica memory leaks found!")
+    fi
+
+    return $logs_status
+}
 echo "==> Checking code style..."
 eval "${SCRIPTS_DIR}/format_style.sh --dry-run" >> ${LOG_FILE} 2>&1
 
@@ -218,8 +230,8 @@ generate_key_and_certificate ${OTHER_TEST_PRIVATE_KEY} ${OTHER_TEST_CERTIFICATE}
 generate_key_and_certificate_ecdsa ${ECDSA_TEST_PRIVATE_KEY} ${ECDSA_TEST_CERTIFICATE}
 
 echo "==> Starting punica(-s)..."
-REGULAR_PUNICA_PID=$(run_punica "regular" "-l 5" "${REGULAR_PUNICA_LOG_FILE}")
-SECURE_PUNICA_PID=$(run_punica "secure" "-c ${PROJECT_ROOT_DIR}/tests/rest/secure.cfg -d ${PROJECT_ROOT_DIR}/tests/rest/database.json" "${SECURE_PUNICA_LOG_FILE}")
+REGULAR_PUNICA_PID=$(run_punica "${REGULAR_PUNICA_NAME}")
+SECURE_PUNICA_PID=$(run_punica "${SECURE_PUNICA_NAME}" "-c ${PROJECT_ROOT_DIR}/tests/rest/secure.cfg -d ${PROJECT_ROOT_DIR}/tests/rest/database.json")
 
 echo "==> Running coverage tests..."
 test_status=1
@@ -236,9 +248,11 @@ stop_punica $SECURE_PUNICA_PID
 if [ ${test_status} -eq 0 ];
 then
     echo "==> Checking for leaks..."
-    log_leak_check "${REGULAR_PUNICA_LOG_FILE}" && log_leak_check "${SECURE_PUNICA_LOG_FILE}" || test_status=1
+    logs_leak_check \
+        "${DEFAULT_LOG_DIR}/${REGULAR_PUNICA_NAME}_valgrind.log" \
+        "${DEFAULT_LOG_DIR}/${SECURE_PUNICA_NAME}_valgrind.log" \
+        || test_status=1
 fi
-eval "rm -r ${TMP_DIR}"
 
 echo "Finished testing!"
 
