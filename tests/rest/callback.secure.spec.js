@@ -12,6 +12,8 @@ chai.use(chai_http);
 const valid_express_server = express();
 const invalid_express_server = express();
 
+const key_dir = './keys';
+
 valid_express_server.use(parser.json());
 valid_express_server.put('/test_callback', (req, resp) => {
   resp.send();
@@ -31,9 +33,9 @@ describe('Secure notifications interface', function () {
     server.start();
 
     const valid_cred_options = {
-      key: fs.readFileSync('../../other_private.key'),
-      cert: fs.readFileSync('../../other_certificate.pem'),
-      ca: fs.readFileSync('../../certificate.pem'),
+      key: fs.readFileSync(key_dir + '/other_private.key'),
+      cert: fs.readFileSync(key_dir + '/other_certificate.pem'),
+      ca: fs.readFileSync(key_dir + '/certificate.pem'),
       requestCert: true,
       rejectUnauthorized: true,
     };
@@ -41,9 +43,9 @@ describe('Secure notifications interface', function () {
     valid_callback_server.listen(9998, 'localhost');
 
     const invalid_cred_options = {
-      key: fs.readFileSync('../../other_private.key'),
-      cert: fs.readFileSync('../../other_certificate.pem'),
-      ca: fs.readFileSync('../../other_certificate.pem'),
+      key: fs.readFileSync(key_dir + '/other_private.key'),
+      cert: fs.readFileSync(key_dir + '/other_certificate.pem'),
+      ca: fs.readFileSync(key_dir + '/other_certificate.pem'),
       requestCert: true,
       rejectUnauthorized: true,
     };
@@ -54,7 +56,7 @@ describe('Secure notifications interface', function () {
       host: 'localhost',
       port: '8889',
       ca: [
-        fs.readFileSync('../../certificate.pem'),
+        fs.readFileSync(key_dir + '/certificate.pem'),
       ],
     };
     
@@ -98,7 +100,7 @@ describe('Secure notifications interface', function () {
         host: 'localhost',
         port: '8889',
         ca: [
-          fs.readFileSync('../../certificate.pem'),
+          fs.readFileSync(key_dir + '/certificate.pem'),
         ],
       };
 
@@ -127,7 +129,7 @@ describe('Secure notifications interface', function () {
         host: 'localhost',
         port: '8889',
         ca: [
-          fs.readFileSync('../../certificate.pem'),
+          fs.readFileSync(key_dir + '/certificate.pem'),
         ],
       };
 
@@ -156,7 +158,7 @@ describe('Secure notifications interface', function () {
         host: 'localhost',
         port: '8889',
         ca: [
-          fs.readFileSync('../../certificate.pem'),
+          fs.readFileSync(key_dir + '/certificate.pem'),
         ],
       };
 

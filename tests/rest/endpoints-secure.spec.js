@@ -5,11 +5,13 @@ const punica = require('punica');
 const fs = require('fs');
 var ClientInterface = require('./client-secure-if');
 
+const key_dir = './keys';
+
 describe('Secure endpoints interface', () => {
 
   const service_options = {
     host: 'https://localhost:8889',
-    ca: fs.readFileSync('../../certificate.pem'),
+    ca: fs.readFileSync(key_dir + '/certificate.pem'),
     authentication: true,
     username: 'admin',
     password: 'not-same-as-name',
