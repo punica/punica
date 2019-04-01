@@ -20,6 +20,20 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
+#include "punica.h"
+
 int database_load_file(rest_context_t *rest);
+
+int database_validate_entry(json_t *j_device_object);
+int database_validate_new_entry(json_t *j_new_device_object);
+
+database_entry_t *database_create_entry(json_t *j_device_object);
+database_entry_t *database_create_new_entry(json_t *j_new_device_object, linked_list_t *device_list,
+                                            const char *certificate, const char *private_key);
+void database_free_entry(database_entry_t *device_entry);
+
+int database_list_to_json_array(linked_list_t *device_list, json_t *j_array);
+
+database_entry_t *database_get_entry_by_uuid(linked_list_t *device_list, const char *uuid);
 
 #endif //DATABASE_H

@@ -22,6 +22,10 @@
 
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum
 {
     LOG_LEVEL_FATAL = 0,
@@ -41,7 +45,11 @@ typedef struct
 
 int logging_init(logging_settings_t *settings);
 
-int log_message(logging_level_t level, char *format, ...);
+int log_message(logging_level_t level, const char *format, ...);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // LOGGING_H
 

@@ -41,7 +41,7 @@ int logging_init(logging_settings_t *settings)
     return 0;
 }
 
-int log_message(logging_level_t level, char *format, ...)
+int log_message(logging_level_t level, const char *format, ...)
 {
     struct timeval time_timeval;
     time_t time_time;
