@@ -5,8 +5,8 @@
 tags
 
 # build directory
-build
+build/
 
 # cibuild script generated directories
-secure
-regular
+secure/
+regular/
