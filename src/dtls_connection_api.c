@@ -530,7 +530,9 @@ static device_connection_t *dtls_connection_new_incoming(secure_connection_conte
         return NULL;
     }
 
-    memcpy(conn, context->conn_listen, sizeof(device_connection_t));
+    conn->sock = context->conn_listen->sock;
+    memcpy(&conn->addr, &context->conn_listen->addr, sizeof(struct sockaddr_storage));
+    memcpy(&conn->addr_size, &context->conn_listen->addr_size, sizeof(socklen_t));
 
     if (dtls_connection_init(context, conn, prestate))
     {
@@ -608,7 +610,7 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
                                             sizeof(context->conn_listen->addr), &prestate, context->conn_listen, dtls_connection_net_send);
                     recvfrom(sock, buffer, size, 0, NULL, NULL);
                 }
-                else if (ret == 0)
+                else if (ret == GNUTLS_E_SUCCESS)
                 {
                     conn = dtls_connection_new_incoming(context, &prestate);
                     if (conn != NULL)
