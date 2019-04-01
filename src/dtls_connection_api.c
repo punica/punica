@@ -521,8 +521,8 @@ exit:
     return ret;
 }
 
-static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size,
-                                   session_t *connection, struct timeval *tv)
+static device_connection_t *dtls_connection_new_incoming(secure_connection_context_t *context,
+                                                         gnutls_dtls_prestate_st *prestate)
 {
     device_connection_t *conn;
 
