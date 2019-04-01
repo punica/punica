@@ -36,11 +36,11 @@ TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 REGULAR_PUNICA_NAME="regular"
 SECURE_PUNICA_NAME="secure"
 
-if [ -z "${LOG_FILE}" ]; then
-    if [ ! -d "${DEFAULT_LOG_DIR}" ]; then
-        eval "mkdir ${DEFAULT_LOG_DIR}"
-    fi
+if [ ! -d "${DEFAULT_LOG_DIR}" ]; then
+    eval "mkdir ${DEFAULT_LOG_DIR}"
+fi
 
+if [ -z "${LOG_FILE}" ]; then
     LOG_FILE="${DEFAULT_LOG_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
 else
     export LOG_FILE
