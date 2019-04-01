@@ -64,6 +64,7 @@ static void sigpipe_handler(int sig)
     log_message(LOG_LEVEL_ERROR, "SIGPIPE occurs: %d times.\n", sigpipe_cnt);
 }
 
+
 /**
  * setup handlers to ignore SIGPIPE, handle SIGINT...
  */
