@@ -170,18 +170,24 @@ Database file is used to store security credentials of devices managed by the se
 Example of database file:
 ```
 [
-  {"psk":"cHNrMQ==","psk_id":"cHNraWQx","uuid":"ABC"},
-  {"psk":"cHNrMg==","psk_id":"cHNraWQy","uuid":"DEF"},
-  {"psk":"cHNrMw==","psk_id":"cHNraWQz","uuid":"GHI"}
+  {"uuid": "002c156d-2b18-4636-8fb0-3d3f371e100c", "name": "test-client-psk-1", "mode": "psk", "secret_key": "5ZjFwEd5QQC6FYABaWyxHg==", "public_key": "OEVEM0FFRTg4NDNC", "serial": ""},
+  {"uuid": "53c5a0a9-8d4a-4acc-8dfd-2322d254944e", "name": "test-client-cert-1", "mode": "cert", "secret_key": "", "public_key": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJSekNCN3FBREFnRUNBaFJ6bldPWGZ0bHFZa0c0emozVkE2L0Z2VWhJTVRBSkJnY3Foa2pPUFFRQk1CUXgKRWpBUUJnTlZCQU1NQ1d4dlkyRnNhRzl6ZERBZUZ3MHhPVEF6TVRNd09EVTRORFJhRncweE9UQXpNVE13T1RVNApORFJhTUFBd1dUQVRCZ2NxaGtqT1BRSUJCZ2dxaGtqT1BRTUJCd05DQUFSMUkzQTVqdEFGVzhxWFlUQVlteFg2CjdZRllqZHVJU2IxNWFSUDlpemYxVzBHaUFxMXZ3TkRZeVZTWTdURVViNFJPUHVEMjJWbVlBb3lpcXZsWXBBdDgKb3pNd01UQXZCZ05WSFJFRUtEQW1naVExTTJNMVlUQmhPUzA0WkRSaExUUmhZMk10T0dSbVpDMHlNekl5WkRJMQpORGswTkdVd0NRWUhLb1pJemowRUFRTkpBREJHQWlFQXByWm5ZZTBFVnlVMEdVa0hVYkFUMjBSZzFHb05Ecld5ClB2Qjk1U1FRNm5vQ0lRQ3BndnRjVnlXSkZ3NUpaaEdITXNPYm5Ld01hdnZtM0kzSlJaV0REalRyOEE9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==", "serial": "c51jl37ZamJBuM491QOvxb1ISDE="},
+  {"uuid": "698dc282-31d4-4b3c-9c0d-6bcca2526d81", "name": "test-client-none-1", "mode": "none", "secret_key": "", "public_key": "", "serial": ""}
 ]
 ```
 
 The file consists of a json array of device entries, each specifying the following keys:
 
-- **`psk`** - pre-shared key known only by the server and the device. Used to authorize a device. Must be encoded in base64.
+- **`uuid`** - a unique identifier used to specify a device entry.
 
-- **`psk_id`** - pre-shared key id used to map a device to it's pre-shared key. Must be encoded in base64.
+- **`name`** - client name used in the CoAP/LWM2M layer.
+  
+- **`mode`** - device security credentials mode. `psk`, `cert` or `none`.
 
-- **`uuid`** - universaly unique identifier. Device name used in the application layer.
+- **`secret_key`** - device pre-shared key or x509 private key. Base64 encoded.
+
+- **`public_key`** - device pre-shared key id or x509 certificate. Base64 encoded.
+
+- **`serial`** - client certificate serial number. Base64 encoded.
 
 If an error exists in one of the entries, such as a wrong key type, invalid base64 string etc., the said entry will be ignored, but others will be used. The database file **MUST NOT** be edited during runtime.

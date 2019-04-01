@@ -25,26 +25,41 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+typedef enum
+{
+    DEVICE_CREDENTIALS_UNDEFINED = 0,
+    DEVICE_CREDENTIALS_PSK = 1,
+    DEVICE_CREDENTIALS_CERT = 2,
+    DEVICE_CREDENTIALS_NONE = 3,
+} credentials_mode_t;
+
 typedef struct
 {
     char *uuid;
-    uint8_t *psk;
-    size_t psk_len;
-    uint8_t *psk_id;
-    size_t psk_id_len;
+    char *name;
+    uint8_t *public_key;
+    size_t public_key_len;
+    uint8_t *secret_key;
+    size_t secret_key_len;
+    uint8_t *serial;
+    size_t serial_len;
+    credentials_mode_t mode;
 } database_entry_t;
 
 int coap_to_http_status(int status);
 
-void database_free_entry(database_entry_t *device_entry);
+int utils_load_certificate(uint8_t *buffer, size_t *length, const char *cert_file);
 
-int database_validate_new_entry(json_t *j_new_device_object);
-int database_validate_entry(json_t *j_device_object);
+int device_new_credentials(database_entry_t *device_entry, linked_list_t *device_list,
+                           const char *certificate, const char *private_key);
 
-int database_populate_entry(json_t *j_device_object, database_entry_t *device_entry);
-int database_populate_new_entry(json_t *j_new_device_object, database_entry_t *device_entry);
+json_t *json_object_from_string(const char *string, const char *key);
 
-int database_prepare_array(json_t *j_array, linked_list_t *device_list);
+json_t *json_object_from_binary(uint8_t *buffer, const char *key, size_t buffer_length);
+
+char *string_from_json_object(json_t *j_object, const char *key);
+
+uint8_t *binary_from_json_object(json_t *j_object, const char *key, size_t *buffer_length);
 
 #endif // REST_UTILS_H
 

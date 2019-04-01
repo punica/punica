@@ -17,17 +17,214 @@
  *
  */
 #include <string.h>
-#include <uuid/uuid.h>
 
 #include "rest_utils.h"
 
 #include "../punica.h"
 
-#define DATABASE_UUID_KEY_BIT       0x1
-#define DATABASE_PSK_KEY_BIT        0x2
-#define DATABASE_PSK_ID_KEY_BIT     0x4
-#define DATABASE_ALL_NEW_KEYS_SET   0x6
-#define DATABASE_ALL_KEYS_SET       0x7
+#define PSK_ID_BUFFER_LENGTH      12
+#define PSK_BUFFER_LENGTH         16
+
+static int find_existing_serial(uint8_t *serial, size_t length, linked_list_t *list)
+{
+    linked_list_entry_t *device_entry;
+    database_entry_t *device_data;
+
+    for (device_entry = list->head; device_entry != NULL; device_entry = device_entry->next)
+    {
+        device_data = (database_entry_t *)device_entry->data;
+
+        if (device_data
+            && device_data->serial_len == length
+            && memcmp(device_data->serial, serial, length) == 0)
+        {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+static void generate_serial(uint8_t *buffer, size_t *length)
+{
+    int ret;
+
+    ret = rest_get_random(buffer, 20);
+
+    if ((buffer[0] >> 7) == 1) // Serial number must be positive
+    {
+        buffer[0] &= 0x7f;
+    }
+
+    *length = ret;
+}
+
+static int device_new_psk(database_entry_t *device_entry)
+{
+    size_t ret = 0;
+    uint8_t binary_buffer[PSK_ID_BUFFER_LENGTH / 2];
+    const char hex_table[16] = {"0123456789ABCDEF"};
+    uint8_t nibble;
+
+    device_entry->public_key = malloc(PSK_ID_BUFFER_LENGTH);
+    device_entry->secret_key = malloc(PSK_BUFFER_LENGTH);
+
+    if (device_entry->public_key == NULL
+        || device_entry->secret_key == NULL)
+    {
+        return -1;
+    }
+
+    ret = rest_get_random(binary_buffer, sizeof(binary_buffer));
+    if (ret <= 0)
+    {
+        return -1;
+    }
+
+    // PSK ID is a string of random hexadecimal characters
+    for (int i = 0; i < sizeof(binary_buffer); i++)
+    {
+        nibble = (binary_buffer[i] >> 4) & 0x0F;
+        device_entry->public_key[i * 2] = hex_table[nibble];
+
+        nibble = (binary_buffer[i]) & 0x0F;
+        device_entry->public_key[(i * 2) + 1] = hex_table[nibble];
+    }
+    device_entry->public_key_len = PSK_ID_BUFFER_LENGTH;
+
+    ret = rest_get_random(device_entry->secret_key, PSK_BUFFER_LENGTH);
+    if (ret <= 0)
+    {
+        return -1;
+    }
+    device_entry->secret_key_len = PSK_BUFFER_LENGTH;
+
+    return 0;
+}
+
+static int device_new_certificate(database_entry_t *device_entry, linked_list_t *device_list,
+                                  const char *certificate, const char *private_key)
+{
+    gnutls_x509_crt_t device_cert = NULL;
+    gnutls_x509_privkey_t device_key = NULL;
+    gnutls_x509_crt_t ca_cert = NULL;
+    gnutls_x509_privkey_t ca_key = NULL;
+    gnutls_datum_t ca_key_buffer = {NULL, 0};
+    gnutls_datum_t ca_cert_buffer = {NULL, 0};
+    time_t activation_time;
+    int ret = -1;
+
+    if (gnutls_x509_crt_init(&device_cert)
+        || gnutls_x509_privkey_init(&device_key)
+        || gnutls_x509_crt_init(&ca_cert)
+        || gnutls_x509_privkey_init(&ca_key))
+    {
+        goto exit;
+    }
+
+    if (gnutls_load_file(certificate, &ca_cert_buffer)
+        || gnutls_load_file(private_key, &ca_key_buffer))
+    {
+        goto exit;
+    }
+
+    if (gnutls_x509_crt_import(ca_cert, &ca_cert_buffer, GNUTLS_X509_FMT_PEM)
+        || gnutls_x509_privkey_import(ca_key, &ca_key_buffer, GNUTLS_X509_FMT_PEM))
+    {
+        goto exit;
+    }
+
+    if (gnutls_x509_privkey_generate(device_key, GNUTLS_PK_EC,
+                                     GNUTLS_CURVE_TO_BITS(GNUTLS_ECC_CURVE_SECP256R1), 0))
+    {
+        goto exit;
+    }
+
+    device_entry->serial = malloc(20);
+    if (device_entry->serial == NULL)
+    {
+        goto exit;
+    }
+
+    do
+    {
+        generate_serial(device_entry->serial, &device_entry->serial_len);
+    } while (find_existing_serial(device_entry->serial, device_entry->serial_len, device_list));
+
+    activation_time = time(NULL);
+
+    if (gnutls_x509_crt_set_version(device_cert, 3)
+        || gnutls_x509_crt_set_serial(device_cert, device_entry->serial, device_entry->serial_len)
+        || gnutls_x509_crt_set_activation_time(device_cert, activation_time)
+        || gnutls_x509_crt_set_expiration_time(device_cert, activation_time + 60 * 60)
+        || gnutls_x509_crt_set_key(device_cert, device_key))
+    {
+        goto exit;
+    }
+
+    if (gnutls_x509_crt_set_subject_alt_name(device_cert, GNUTLS_SAN_DNSNAME, device_entry->uuid,
+                                             strlen(device_entry->uuid) + 1, GNUTLS_FSAN_SET))
+    {
+        goto exit;
+    }
+
+    if (gnutls_x509_crt_sign(device_cert, ca_cert, ca_key))
+    {
+        goto exit;
+    }
+
+    gnutls_x509_crt_export(device_cert, GNUTLS_X509_FMT_PEM, NULL, &device_entry->public_key_len);
+    gnutls_x509_privkey_export(device_key, GNUTLS_X509_FMT_PEM, NULL, &device_entry->secret_key_len);
+
+    device_entry->public_key = malloc(device_entry->public_key_len);
+    device_entry->secret_key = malloc(device_entry->secret_key_len);
+
+    if (device_entry->public_key == NULL
+        || device_entry->secret_key == NULL)
+    {
+        goto exit;
+    }
+
+    if (gnutls_x509_crt_export(device_cert, GNUTLS_X509_FMT_PEM, device_entry->public_key,
+                               &device_entry->public_key_len)
+        || gnutls_x509_privkey_export(device_key, GNUTLS_X509_FMT_PEM, device_entry->secret_key,
+                                      &device_entry->secret_key_len))
+    {
+        goto exit;
+    }
+
+    ret = 0;
+exit:
+    gnutls_free(ca_cert_buffer.data);
+    gnutls_free(ca_key_buffer.data);
+    gnutls_x509_crt_deinit(device_cert);
+    gnutls_x509_privkey_deinit(device_key);
+    gnutls_x509_crt_deinit(ca_cert);
+    gnutls_x509_privkey_deinit(ca_key);
+
+    return ret;
+}
+
+int device_new_credentials(database_entry_t *device_entry, linked_list_t *device_list,
+                           const char *certificate, const char *private_key)
+{
+    if (device_entry->mode == DEVICE_CREDENTIALS_PSK)
+    {
+        return device_new_psk(device_entry);
+    }
+    else if (device_entry->mode == DEVICE_CREDENTIALS_CERT)
+    {
+        return device_new_certificate(device_entry, device_list, certificate, private_key);
+    }
+    else if (device_entry->mode == DEVICE_CREDENTIALS_NONE)
+    {
+        return 0;
+    }
+    else
+    {
+        return -1;
+    }
+}
 
 int coap_to_http_status(int status)
 {
@@ -45,248 +242,124 @@ int coap_to_http_status(int status)
     }
 }
 
-void database_free_entry(database_entry_t *device_entry)
+int utils_load_certificate(uint8_t *buffer, size_t *length, const char *cert_file)
 {
+    gnutls_datum_t cert_buffer = {NULL, 0};
 
-    if (device_entry)
-    {
-        if (device_entry->uuid)
-        {
-            free(device_entry->uuid);
-        }
-        if (device_entry->psk)
-        {
-            free(device_entry->psk);
-        }
-        if (device_entry->psk_id)
-        {
-            free(device_entry->psk_id);
-        }
-
-        free(device_entry);
-    }
-}
-
-int database_validate_new_entry(json_t *j_new_device_object)
-{
-    int key_check = 0;
-    const char *key;
-    json_t *j_value;
-    uint8_t buffer[512];
-    size_t buffer_len = sizeof(buffer);
-
-    if (!json_is_object(j_new_device_object))
+    if (gnutls_load_file(cert_file, &cert_buffer) != 0)
     {
         return -1;
     }
 
-    json_object_foreach(j_new_device_object, key, j_value)
-    {
-        if (!json_is_string(j_value))
-        {
-            return -1;
-        }
-
-        if (strcasecmp(key, "psk") == 0)
-        {
-            if (base64_decode(json_string_value(j_value), buffer, &buffer_len))
-            {
-                return -1;
-            }
-
-            key_check |= DATABASE_PSK_KEY_BIT;
-        }
-        else if (strcasecmp(key, "psk_id") == 0)
-        {
-            if (base64_decode(json_string_value(j_value), buffer, &buffer_len))
-            {
-                return -1;
-            }
-
-            key_check |= DATABASE_PSK_ID_KEY_BIT;
-        }
-    }
-
-    if (key_check != DATABASE_ALL_NEW_KEYS_SET)
+    if (*length < cert_buffer.size)
     {
         return -1;
     }
+
+    memcpy(buffer, cert_buffer.data, cert_buffer.size);
+    *length = cert_buffer.size;
 
     return 0;
 }
 
-int database_validate_entry(json_t *j_device_object)
+json_t *json_object_from_string(const char *string, const char *key)
 {
-    int key_check = 0;
-    const char *key;
-    json_t *j_value;
-    uint8_t buffer[512];
-    size_t buffer_len = sizeof(buffer);
+    json_t *j_object, *j_string;
 
-    if (!json_is_object(j_device_object))
+    j_object = json_object();
+    if (j_object == NULL)
     {
-        return -1;
+        return NULL;
     }
 
-    json_object_foreach(j_device_object, key, j_value)
+    j_string = json_string(string);
+    if (j_string == NULL)
     {
-        if (!json_is_string(j_value))
-        {
-            return -1;
-        }
-        if (strcasecmp(key, "uuid") == 0)
-        {
-            key_check |= DATABASE_UUID_KEY_BIT;
-        }
-        else if (strcasecmp(key, "psk") == 0)
-        {
-            if (base64_decode(json_string_value(j_value), buffer, &buffer_len))
-            {
-                return -1;
-            }
-            key_check |= DATABASE_PSK_KEY_BIT;
-        }
-        else if (strcasecmp(key, "psk_id") == 0)
-        {
-            if (base64_decode(json_string_value(j_value), buffer, &buffer_len))
-            {
-                return -1;
-            }
-            key_check |= DATABASE_PSK_ID_KEY_BIT;
-        }
+        return NULL;
     }
 
-//  function does not check for duplicate keys
-    if (key_check != DATABASE_ALL_KEYS_SET)
+    if (json_object_set_new(j_object, key, j_string) != 0)
     {
-        return -1;
+        json_decref(j_string);
+        return NULL;
     }
 
-    return 0;
+    return j_object;
 }
 
-int database_populate_entry(json_t *j_device_object, database_entry_t *device_entry)
+json_t *json_object_from_binary(uint8_t *buffer, const char *key, size_t buffer_length)
+{
+    char base64_string[1024] = {0}; // provide sufficient size
+    size_t base64_length = sizeof(base64_string);
+    json_t *j_object;
+
+    if (base64_encode(buffer, buffer_length, base64_string, &base64_length) != 0)
+    {
+        return NULL;
+    }
+
+    j_object = json_object_from_string(base64_string, key);
+    if (j_object == NULL)
+    {
+        return NULL;
+    }
+
+    return j_object;
+}
+
+char *string_from_json_object(json_t *j_object, const char *key)
 {
     json_t *j_value;
-    const char *json_string;
+    const char *string;
 
-    if (j_device_object == NULL || device_entry == NULL)
+    j_value = json_object_get(j_object, key);
+    if (j_value == NULL)
     {
-        return -1;
+        return NULL;
     }
 
-    j_value = json_object_get(j_device_object, "uuid");
-    json_string = json_string_value(j_value);
-
-    device_entry->uuid = strdup(json_string);
-    if (device_entry->uuid == NULL)
+    string = json_string_value(j_value);
+    if (string == NULL)
     {
-        return -1;
+        return NULL;
     }
 
-
-    j_value = json_object_get(j_device_object, "psk");
-    json_string = json_string_value(j_value);
-
-    base64_decode(json_string, NULL, &device_entry->psk_len);
-
-    device_entry->psk = (uint8_t *)malloc(device_entry->psk_len);
-    if (device_entry->psk == NULL)
-    {
-        return -1;
-    }
-    base64_decode(json_string, device_entry->psk, &device_entry->psk_len);
-
-
-    j_value = json_object_get(j_device_object, "psk_id");
-    json_string = json_string_value(j_value);
-
-    base64_decode(json_string, NULL, &device_entry->psk_id_len);
-
-    device_entry->psk_id = (uint8_t *)malloc(device_entry->psk_id_len);
-    if (device_entry->psk_id == NULL)
-    {
-        return -1;
-    }
-    base64_decode(json_string, device_entry->psk_id, &device_entry->psk_id_len);
-
-    return 0;
+    return strdup(string);
 }
 
-int database_populate_new_entry(json_t *j_new_device_object, database_entry_t *device_entry)
+uint8_t *binary_from_json_object(json_t *j_object, const char *key, size_t *buffer_length)
 {
-    uuid_t b_uuid;
-    char *uuid = NULL;
-    int return_code;
-    json_t *j_device_object = json_deep_copy(j_new_device_object);
+    uint8_t *binary_buffer;
+    int status;
+    char *base64_string;
 
-    if (j_device_object == NULL || device_entry == NULL)
+    base64_string = string_from_json_object(j_object, key);
+    if (base64_string == NULL)
     {
-        return -1;
+        return NULL;
     }
 
-    uuid_generate_random(b_uuid);
-
-    uuid = malloc(37);
-    if (uuid == NULL)
+    if (base64_decode(base64_string, NULL, buffer_length) != 0)
     {
-        return -1;
+        free(base64_string);
+        return NULL;
     }
 
-    uuid_unparse(b_uuid, uuid);
-
-    if (json_object_set_new(
-            j_device_object, "uuid", json_stringn(uuid, 37)) != 0)
+    binary_buffer = malloc(*buffer_length);
+    if (binary_buffer == NULL)
     {
-        return_code = -1;
-        goto exit;
+        free(base64_string);
+        return NULL;
     }
 
-    return_code = database_populate_entry(j_device_object, device_entry);
+    status = base64_decode(base64_string, binary_buffer, buffer_length);
+    free(base64_string);
 
-exit:
-    free(uuid);
-    json_decref(j_device_object);
-    return return_code;
-}
-
-int database_prepare_array(json_t *j_array, linked_list_t *device_list)
-{
-    linked_list_entry_t *list_entry;
-    database_entry_t *device_entry;
-    json_t *j_entry;
-    char psk_string[256];
-    char psk_id_string[256];
-    size_t psk_string_len;
-    size_t psk_id_string_len;
-
-    if (device_list == NULL || !json_is_array(j_array))
+    if (status != 0)
     {
-        return -1;
+        free(binary_buffer);
+        return NULL;
     }
 
-    for (list_entry = device_list->head; list_entry != NULL; list_entry = list_entry->next)
-    {
-        psk_string_len = sizeof(psk_string);
-        psk_id_string_len = sizeof(psk_id_string);
-
-        device_entry = (database_entry_t *)list_entry->data;
-
-        base64_encode(device_entry->psk, device_entry->psk_len, psk_string, &psk_string_len);
-        base64_encode(device_entry->psk_id, device_entry->psk_id_len, psk_id_string, &psk_id_string_len);
-
-        j_entry = json_pack("{s:s, s:s, s:s}", "uuid", device_entry->uuid, "psk", psk_string, "psk_id",
-                            psk_id_string);
-        if (j_entry == NULL)
-        {
-            return -1;
-        }
-
-        if (json_array_append_new(j_array, j_entry))
-        {
-            return -1;
-        }
-    }
-
-    return 0;
+    return binary_buffer;
 }
