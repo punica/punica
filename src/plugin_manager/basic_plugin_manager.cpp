@@ -41,10 +41,8 @@ int basic_plugin_manager_load_plugin(basic_plugin_manager_t *c_manager,
 {
     BasicPluginManager *manager =
         reinterpret_cast<BasicPluginManager *>(c_manager);
-    const std::string path(c_path);
-    const std::string name(c_name);
 
-    return static_cast<int>(manager->loadPlugin(path, name));
+    return static_cast<int>(manager->loadPlugin(c_path, c_name));
 }
 
 int basic_plugin_manager_unload_plugin(basic_plugin_manager_t *c_manager,
@@ -52,15 +50,15 @@ int basic_plugin_manager_unload_plugin(basic_plugin_manager_t *c_manager,
 {
     BasicPluginManager *manager =
         reinterpret_cast<BasicPluginManager *>(c_manager);
-    const std::string name(c_name);
 
-    return static_cast<int>(manager->unloadPlugin(name));
+    return static_cast<int>(manager->unloadPlugin(c_name));
 }
 
 BasicPluginManager::BasicPluginManager(punica::Core::ptr core):
     mCore(core),
     mPlugins()
-{ }
+{
+}
 
 BasicPluginManager::~BasicPluginManager()
 {

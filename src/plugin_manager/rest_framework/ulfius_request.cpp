@@ -77,7 +77,8 @@ UlfiusRequest::UlfiusRequest(const struct _u_request *uRequest)
 }
 
 UlfiusRequest::~UlfiusRequest()
-{ }
+{
+}
 
 std::string UlfiusRequest::getPath()
 {

@@ -21,10 +21,12 @@
 
 BasicLwm2mCore::BasicLwm2mCore(lwm2m_context_t *lwm2mContext):
     mContext(lwm2mContext)
-{ }
+{
+}
 
 BasicLwm2mCore::~BasicLwm2mCore()
-{ }
+{
+}
 
 lwm2m_context_t *BasicLwm2mCore::getContext()
 {

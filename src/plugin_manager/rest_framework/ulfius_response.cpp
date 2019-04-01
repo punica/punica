@@ -36,9 +36,13 @@ extern "C" {
 static const char *loggingSection = "[REST API]";
 
 UlfiusResponse::UlfiusResponse(struct _u_response *uResponse):
-    mUlfiusResponse(uResponse) { }
+    mUlfiusResponse(uResponse)
+{
+}
 
-UlfiusResponse::~UlfiusResponse() { }
+UlfiusResponse::~UlfiusResponse()
+{
+}
 
 void UlfiusResponse::setBody(std::vector<uint8_t> binaryData)
 {

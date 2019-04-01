@@ -32,7 +32,8 @@ extern "C" {
 
 UlfiusRestCore::UlfiusRestCore(struct _u_instance *ulfius):
     mUlfius(ulfius)
-{ }
+{
+}
 
 UlfiusRestCore::~UlfiusRestCore()
 {

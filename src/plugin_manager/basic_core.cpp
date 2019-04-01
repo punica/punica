@@ -38,10 +38,12 @@ BasicCore::BasicCore(struct _u_instance *ulfiusInstance,
                      lwm2m_context_t *lwm2mContext):
     mRestCore(new UlfiusRestCore(ulfiusInstance)),
     mLwm2mCore(new BasicLwm2mCore(lwm2mContext))
-{ }
+{
+}
 
 BasicCore::~BasicCore()
-{ }
+{
+}
 
 punica::rest::Core::ptr BasicCore::getRestCore()
 {
