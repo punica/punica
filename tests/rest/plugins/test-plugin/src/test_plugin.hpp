@@ -23,6 +23,7 @@
 #include <punica/plugin/plugin.hpp>
 #include <punica/plugin/plugin_api.hpp>
 #include <punica/rest/core.hpp>
+#include <punica/version.h>
 
 class TestPlugin: public punica::plugin::Plugin
 {
@@ -44,7 +45,7 @@ static void deleteTestPlugin(punica::plugin::Plugin *plugin);
 
 extern "C" const punica::plugin::PluginApi PLUGIN_API =
 {
-    .version = { 0, 0, 0},
+    .version = PUNICA_VERSION,
     .create = newTestPlugin,
     .destroy = deleteTestPlugin,
 };

@@ -22,20 +22,22 @@
 #include <punica/core.hpp>
 #include <punica/plugin/plugin.hpp>
 #include <punica/plugin/plugin_api.hpp>
+#include <punica/rest/core.hpp>
 #include <punica/version.h>
 
-class PluginWithoutDestroy: public punica::plugin::Plugin
+class TestPlugin: public punica::plugin::Plugin
 {
 public:
-    PluginWithoutDestroy() { }
-    ~PluginWithoutDestroy() { }
+    TestPlugin() { }
+    ~TestPlugin() { }
 };
 
-static punica::plugin::Plugin *newPluginWithoutDestroy(punica::Core::ptr core);
+static punica::plugin::Plugin *newTestPlugin(punica::Core::ptr core);
+static void deleteTestPlugin(punica::plugin::Plugin *plugin);
 
 extern "C" const punica::plugin::PluginApi PLUGIN_API =
 {
-    .version = PUNICA_VERSION,
-    .create = newPluginWithoutDestroy,
-    .destroy = NULL,
+    .version = "0.0.0",
+    .create = newTestPlugin,
+    .destroy = deleteTestPlugin,
 };

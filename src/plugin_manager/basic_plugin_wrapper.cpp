@@ -17,15 +17,24 @@
  *
  */
 
+#include <cstring>
 #include <dlfcn.h>
-#include <iostream>
+#include <string.h>
+
+#include <punica/version.h>
 
 #include "basic_plugin_wrapper.hpp"
 
-BasicPluginWrapper::BasicPluginWrapper(std::string path, std::string name):
+#include "../logging.h"
+
+static const char loggingSection[] = "[PLUGINS]";
+
+BasicPluginWrapper::BasicPluginWrapper(std::string path,
+                                       std::string name):
     mDLL(nullptr),
     mPath(path),
     mName(name),
+    mCName(strdup(name.c_str())),
     mPlugin(nullptr),
     mPluginApi(nullptr)
 {
@@ -52,7 +61,9 @@ bool BasicPluginWrapper::loadDLL()
 
     if (mDLL == NULL)
     {
-        std::cerr << dlerror() << std::endl;
+        log_message(LOG_LEVEL_ERROR,
+                    "%s Failed to load plugin \"%s\" DLL.\n\t%s\n",
+                    loggingSection, mCName, dlerror());
         return false;
     }
     dlerror(); /* Clear any existing error */
@@ -75,6 +86,7 @@ bool BasicPluginWrapper::unloadDLL()
 
 bool BasicPluginWrapper::loadPluginApi()
 {
+    const char *pluginApiError, *punicaVersion = PUNICA_VERSION;
     if (mDLL == NULL)
     {
         return false;
@@ -85,26 +97,41 @@ bool BasicPluginWrapper::loadPluginApi()
 
     if (mPluginApi == NULL)
     {
-        std::cerr << "Failed to load plugin from '" << mPath << "\"!";
-        std::cerr << dlerror() << std::endl;
+        log_message(LOG_LEVEL_ERROR,
+                    "%s Failed to load plugin \"%s\" API.\n\t%s\n",
+                    loggingSection, mCName, dlerror());
         return false;
     }
     dlerror(); /* Clear any existing error */
 
     if (mPluginApi->create == NULL)
     {
-        std::cerr << "Failed to load plugin from '" << mPath << "\"!";
-        std::cerr << std::endl << "PLUGIN_API.create is NULL" << std::endl;
-        return false;
+        pluginApiError = "PLUGIN_API.create is NULL!";
     }
-    if (mPluginApi->destroy == NULL)
+    else if (mPluginApi->destroy == NULL)
     {
-        std::cerr << "Failed to load plugin from '" << mPath << "\"!";
-        std::cerr << std::endl << "PLUGIN_API.destroy is NULL" << std::endl;
-        return false;
+        pluginApiError = "PLUGIN_API.destroy is NULL!";
+    }
+    else if (mPluginApi->version == NULL)
+    {
+        pluginApiError = "PLUGIN_API.version is NULL!";
+    }
+    else if (strcmp(mPluginApi->version, punicaVersion) != 0)
+    {
+        pluginApiError = "Punica and PLUGIN_API.version mismatch!";
+    }
+    else
+    {
+        log_message(LOG_LEVEL_TRACE,
+                    "\t Successfully loaded plugin \"%s\" API.\n",
+                    loggingSection, mCName);
+        return true;
     }
 
-    return true;
+    log_message(LOG_LEVEL_ERROR,
+                "%s Failed to load plugin \"%s\" API.\n%s\n",
+                loggingSection, mCName, pluginApiError);
+    return false;
 }
 
 bool BasicPluginWrapper::loadPlugin(punica::Core::ptr core)
@@ -119,10 +146,17 @@ bool BasicPluginWrapper::loadPlugin(punica::Core::ptr core)
     mPlugin = mPluginApi->create(core);
     if (mPlugin == NULL)
     {
-        std::cerr << "Failed to load plugin from '" << mPath << "\"!";
-        std::cerr << std::endl << "PLUGIN_API->create() is NULL" << std::endl;
+        log_message(LOG_LEVEL_ERROR,
+                    "%s Failed to load plugin \"%s\".\n\t%s\n",
+                    loggingSection, mCName,
+                    "PLUGIN_API.create() returned NULL");
+
         return false;
     }
+
+    log_message(LOG_LEVEL_INFO,
+                "\t Successfully loaded plugin \"%s\".\n",
+                loggingSection, mCName);
     return true;
 }
 
@@ -132,9 +166,15 @@ bool BasicPluginWrapper::unloadPlugin()
         || (mPluginApi == NULL)
         || (mPluginApi->destroy == NULL))
     {
+        log_message(LOG_LEVEL_WARN,
+                    "\t Failed to unload plugin \"%s\".\n",
+                    loggingSection, mCName);
         return false;
     }
 
     mPluginApi->destroy(mPlugin);
+    log_message(LOG_LEVEL_INFO,
+                "\t Successfully unloaded plugin \"%s\".\n",
+                loggingSection, mCName);
     return true;
 }

@@ -18,9 +18,10 @@
  */
 
 #include <cstring>
-#include <iostream>
 
 #include "ulfius_response.hpp"
+
+#include "../../logging.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,6 +32,8 @@ extern "C" {
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+static const char *loggingSection = "[REST API]";
 
 UlfiusResponse::UlfiusResponse(struct _u_response *uResponse):
     mUlfiusResponse(uResponse) { }
@@ -48,11 +51,14 @@ void UlfiusResponse::setBody(std::vector<uint8_t> binaryData)
     if (mUlfiusResponse->binary_body != NULL)
     {
         mUlfiusResponse->binary_body_length = binaryData.size();
-        std::memcpy(mUlfiusResponse->binary_body, binaryData.data(), binaryData.size());
+        std::memcpy(mUlfiusResponse->binary_body,
+                    binaryData.data(), binaryData.size());
     }
     else
     {
-        std::cerr << "Failed to allocate outgoing message body" << std::endl;
+        log_message(LOG_LEVEL_ERROR,
+                    "%s Failed to allocate outgoing message body!\n",
+                    loggingSection);
     }
 }
 
@@ -61,7 +67,8 @@ void UlfiusResponse::setCode(const int code)
     mUlfiusResponse->status = static_cast<int>(code);
 }
 
-void UlfiusResponse::setHeader(const std::string header, const std::string value)
+void UlfiusResponse::setHeader(const std::string header,
+                               const std::string value)
 {
     const char *cHeader = header.c_str();
     const char *cValue = value.c_str();

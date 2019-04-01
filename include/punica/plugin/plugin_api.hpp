@@ -33,14 +33,7 @@ typedef void (PluginDestroy)(Plugin *plugin);
 
 typedef struct
 {
-    uint32_t major: 8,
-             minor: 8,
-             revision: 16;
-} PluginVersion;
-
-typedef struct
-{
-    PluginVersion version;
+    const char *version;
     PluginCreate *create;
     PluginDestroy *destroy;
 } PluginApi;

@@ -23,6 +23,7 @@
 #include <punica/plugin/plugin.hpp>
 #include <punica/plugin/plugin_api.hpp>
 #include <punica/rest/core.hpp>
+#include <punica/version.h>
 
 #include "counter.hpp"
 
@@ -48,7 +49,7 @@ static punica::plugin::PluginDestroy deleteTestPlugin;
 
 extern "C" const punica::plugin::PluginApi PLUGIN_API =
 {
-    .version = { 0, 0, 0},
+    .version = PUNICA_VERSION,
     .create = &newTestPlugin,
     .destroy = &deleteTestPlugin,
 };

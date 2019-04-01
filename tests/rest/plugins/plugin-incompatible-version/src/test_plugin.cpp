@@ -17,25 +17,14 @@
  *
  */
 
-#include <string>
+#include "test_plugin.hpp"
 
-#include <punica/core.hpp>
-#include <punica/plugin/plugin.hpp>
-#include <punica/plugin/plugin_api.hpp>
-#include <punica/version.h>
-
-class PluginWithoutDestroy: public punica::plugin::Plugin
+static punica::plugin::Plugin *newTestPlugin(punica::Core::ptr core)
 {
-public:
-    PluginWithoutDestroy() { }
-    ~PluginWithoutDestroy() { }
-};
+    return new TestPlugin();
+}
 
-static punica::plugin::Plugin *newPluginWithoutDestroy(punica::Core::ptr core);
-
-extern "C" const punica::plugin::PluginApi PLUGIN_API =
+static void deleteTestPlugin(punica::plugin::Plugin *plugin)
 {
-    .version = PUNICA_VERSION,
-    .create = newPluginWithoutDestroy,
-    .destroy = NULL,
-};
+    delete static_cast<TestPlugin *>(plugin);
+}

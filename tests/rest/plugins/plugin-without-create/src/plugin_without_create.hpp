@@ -22,6 +22,7 @@
 #include <punica/core.hpp>
 #include <punica/plugin/plugin.hpp>
 #include <punica/plugin/plugin_api.hpp>
+#include <punica/version.h>
 
 class PluginWithoutCreate: public punica::plugin::Plugin
 {
@@ -34,7 +35,7 @@ static void deletePluginWithoutCreate(punica::plugin::Plugin *plugin);
 
 extern "C" const punica::plugin::PluginApi PLUGIN_API =
 {
-    .version = { 0, 0, 0},
+    .version = PUNICA_VERSION,
     .create = NULL,
     .destroy = deletePluginWithoutCreate,
 };

@@ -26,13 +26,13 @@
 #include <liblwm2m.h>
 #include <ulfius.h>
 
+#include <punica/version.h>
 #include "database.h"
 #include "punica.h"
 #include "udp_connection_api.h"
 #include "dtls_connection_api.h"
 #include "logging.h"
 #include "settings.h"
-#include "version.h"
 #include "security.h"
 #include "rest/rest_authentication.h"
 #include "linked_list.h"

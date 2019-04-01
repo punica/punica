@@ -21,9 +21,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <punica/version.h>
 #include "linked_list.h"
 #include "settings.h"
-#include "version.h"
 #include "security.h"
 #include "rest/rest_core_types.h"
 
