@@ -197,14 +197,14 @@ logs_leak_check () {
     for log in $@; do
         log_leak_check ${log}
         log_status=$?
-        if [ $logs_status -eq 0 ]; then
+        if [ ! $log_status -eq 0 ]; then
             logs_status=1
+            echo "${leak_summary}" >> ${LOG_FILE} 2>&1
         fi
     done
 
     if [ "${logs_status}" != "0" ]; then
         (>&2 echo "Punica memory leaks found!")
-        echo "${leak_summary}" >> ${LOG_FILE} 2>&1
         (>&2 echo "\n\nRefer to \"${LOG_FILE}\" for more detailed information")
     else
         (echo "No Punica memory leaks found!")
