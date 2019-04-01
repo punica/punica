@@ -177,7 +177,7 @@ static int dtls_connection_handshake_done(device_connection_t *conn,
         return -1;
     }
 
-    ret = context->handshake_done_cb(conn, public_data, public_data_size, context->data, context);
+    ret = context->handshake_done_cb(conn, public_data, public_data_size, context->data);
 
     if (ciphersuite == DEVICE_CREDENTIALS_CERT)
     {

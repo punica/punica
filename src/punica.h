@@ -156,7 +156,7 @@ typedef struct connection_api_t
  *
  * Parameters:
  *      name - DTLS client name,
- *      data - pointer to database storing client credentials,
+ *      data - pointer to data later provided to callback
  *      psk - pointer to psk buffer,
  *      psk_len - psk buffer length
  *
@@ -173,15 +173,14 @@ typedef int (*f_psk_cb_t)(const char *name, void *data, uint8_t **psk, size_t *p
  *      connection - server/client connection context for upper communications layers,
  *      public_data - pointer to data that is used to find an identifier,
  *      public_data_length - length of public_data,
- *      data - pointer to database storing client credentials
- *      api - workaround, will be fixed in issue #67
+ *      data - pointer to data later provided to callback
  *
  * Returns:
  *      pointer to identifier on success,
  *      NULL on failure
 */
 typedef int (*f_handshake_done_cb_t)(void *connection, void *public_data, size_t public_data_length,
-                                     void *data, void *api);
+                                     void *data);
 
 typedef struct _u_request ulfius_req_t;
 typedef struct _u_response ulfius_resp_t;
@@ -212,6 +211,8 @@ typedef struct
     linked_list_t *devicesList;
 
     settings_t *settings;
+
+    connection_api_t *connection_api;
 } rest_context_t;
 
 lwm2m_client_t *rest_endpoints_find_client(lwm2m_client_t *list, const char *name);
