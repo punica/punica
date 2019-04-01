@@ -234,10 +234,12 @@ install_ulfius () {
 }
 
 install_wakaama () {
+    cmake_args="${CMAKE_ARGS_BASE} -DCUSTOM_CONNECTION_HANDLING=1"
+
     echo "    - Installing Wakaama..."
 
     {
-        eval "${WAKAAMA_DIR}/script/setup ${CMAKE_ARGS_BASE}" &&
+        eval "${WAKAAMA_DIR}/script/setup ${cmake_args}" &&
         eval "cd ${WAKAAMA_DIR}/build" &&
         eval "make install ${MAKE_ARGS_BASE}" &&
         cd -
