@@ -37,13 +37,6 @@
 #include "rest/rest_authentication.h"
 #include "linked_list.h"
 
-//TODO: won't be needed after issue #67
-typedef struct
-{
-    connection_api_t *api;
-    linked_list_t *device_list;
-} callback_data_t;
-
 static volatile int punica_quit;
 static void sigint_handler(int signo)
 {
@@ -251,14 +244,14 @@ void client_monitor_cb(uint16_t clientID, lwm2m_uri_t *uriP, int status,
     }
 }
 
-//TODO: 'void *api' is a temporary workaround and will be fixed when issue #67 is addressed
 int identifier_find_callback(session_t connection, void *public_data, size_t public_data_length,
-                             void *data, void *api)
+                             void *data)
 {
+    rest_context_t *rest = (rest_context_t *)data;
     database_entry_t *device_data;
     linked_list_entry_t *device_entry;
-    linked_list_t *device_list = (linked_list_t *)data;
-    connection_api_t *conn_api = api;
+    linked_list_t *device_list = rest->devicesList;
+    connection_api_t *conn_api = rest->connection_api;
 
     if (device_list == NULL)
     {
@@ -284,7 +277,8 @@ int psk_find_callback(const char *name, void *data, uint8_t **psk_buffer, size_t
 {
     database_entry_t *device_data;
     linked_list_entry_t *device_entry;
-    linked_list_t *device_list = (linked_list_t *)data;
+    rest_context_t *rest = (rest_context_t *)data;
+    linked_list_t *device_list = rest->devicesList;
 
     if (device_list == NULL)
     {
@@ -310,8 +304,8 @@ int psk_find_callback(const char *name, void *data, uint8_t **psk_buffer, size_t
 
 uint8_t lwm2m_buffer_send(session_t session, uint8_t *buffer, size_t length, void *user_data)
 {
-    callback_data_t *callback_data = (callback_data_t *)user_data;
-    connection_api_t *conn_api = callback_data->api;
+    rest_context_t *rest = (rest_context_t *)user_data;
+    connection_api_t *conn_api = rest->connection_api;
 
     if (session == NULL)
     {
@@ -335,9 +329,9 @@ bool lwm2m_session_is_equal(session_t session1, session_t session2, void *userDa
 
 bool lwm2m_name_is_valid(const char *name, session_t session, void *user_data)
 {
-    callback_data_t *callback_data = (callback_data_t *)user_data;
-    connection_api_t *api = callback_data->api;
-    linked_list_t *device_list = callback_data->device_list;
+    rest_context_t *rest = (rest_context_t *)user_data;
+    connection_api_t *api = rest->connection_api;
+    linked_list_t *device_list = rest->devicesList;
     database_entry_t *device_entry;
     const char *uuid;
 
@@ -369,7 +363,6 @@ int main(int argc, char *argv[])
     connection_api_t *conn_api;
     uint8_t buffer[1500];
     session_t connection;
-    callback_data_t callback_data;
 
     static settings_t settings =
     {
@@ -421,12 +414,13 @@ int main(int argc, char *argv[])
 
     rest_init(&rest, &settings);
 
-    conn_api = api_init(&settings.coap, (void *)rest.devicesList, psk_find_callback,
-                        identifier_find_callback);
+    conn_api = api_init(&settings.coap, &rest, psk_find_callback, identifier_find_callback);
     if (conn_api == NULL)
     {
         return -1;
     }
+
+    rest.connection_api = conn_api;
 
     /* Socket section */
     log_message(LOG_LEVEL_INFO, "Creating coap socket on port %d\n", settings.coap.port);
@@ -446,9 +440,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    callback_data.api = conn_api;
-    callback_data.device_list = rest.devicesList;
-    rest.lwm2m->userData = &callback_data;
+    rest.lwm2m->userData = &rest;
 
     lwm2m_set_monitoring_callback(rest.lwm2m, client_monitor_cb, &rest);
 
