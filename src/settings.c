@@ -425,8 +425,8 @@ static void set_logging_settings(json_t *j_section, logging_settings_t *settings
     }
 }
 
-static int set_plugin_settings(json_t *j_plugin_settings,
-                               linked_list_t *plugins_list)
+static int set_plugin_entry_settings(json_t *j_plugin_settings,
+                                     linked_list_t *plugins_list)
 {
     linked_list_entry_t *entry;
     plugin_settings_t *plugin, *plugin_entry;
@@ -515,8 +515,9 @@ static int set_plugins_settings(json_t *j_section,
             plugins_status = 1;
         }
 
-        plugin_status = set_plugin_settings(j_plugin_settings,
-                                            plugins_settings->plugins_list);
+        plugin_status =
+            set_plugin_entry_settings(j_plugin_settings,
+                                      plugins_settings->plugins_list);
         if (plugin_status != 0)
         {
             plugins_status = plugin_status;
