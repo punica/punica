@@ -30,12 +30,10 @@ namespace punica {
 class Core
 {
 public:
-    typedef std::shared_ptr<Core> ptr;
-
     virtual ~Core() { }
 
-    virtual punica::rest::Core::ptr getRestCore() = 0;
-    virtual punica::lwm2m::Core::ptr getLwm2mCore() = 0;
+    virtual punica::rest::Core *getRestCore() = 0;
+    virtual punica::lwm2m::Core *getLwm2mCore() = 0;
 };
 
 } /* namespace punica */

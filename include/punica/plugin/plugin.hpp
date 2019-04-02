@@ -28,8 +28,6 @@ namespace plugin {
 class Plugin
 {
 public:
-    typedef std::shared_ptr<Plugin> ptr;
-
     virtual ~Plugin() { }
 };
 

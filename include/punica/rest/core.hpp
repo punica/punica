@@ -29,13 +29,11 @@
 namespace punica {
 namespace rest {
 
-typedef int(CallbackFunction)(Request::ptr, Response::ptr, void *);
+typedef int(CallbackFunction)(Request *, Response *, void *);
 
 class Core
 {
 public:
-    typedef std::shared_ptr<Core> ptr;
-
     virtual ~Core() { }
 
     virtual bool addCallbackHandler(const std::string method,

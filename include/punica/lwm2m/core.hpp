@@ -28,8 +28,6 @@ namespace lwm2m {
 class Core
 {
 public:
-    typedef std::shared_ptr<Core> ptr;
-
     virtual ~Core() { }
 };
 

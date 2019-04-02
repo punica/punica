@@ -32,8 +32,6 @@ namespace rest {
 class Response
 {
 public:
-    typedef std::shared_ptr<Response> ptr;
-
     virtual ~Response() { }
 
     virtual void setBody(std::vector<uint8_t> binary_data) = 0;
