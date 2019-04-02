@@ -54,17 +54,6 @@ typedef struct
 
 typedef struct
 {
-    const char *name;
-    const char *path;
-} plugin_settings_t;
-
-typedef struct
-{
-    linked_list_t *plugins_list;
-} plugins_settings_t;
-
-typedef struct
-{
     http_settings_t http;
     coap_settings_t coap;
     logging_settings_t logging;

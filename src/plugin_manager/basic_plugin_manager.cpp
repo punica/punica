@@ -22,12 +22,10 @@
 
 #include "basic_core.hpp"
 
-basic_plugin_manager_t *basic_plugin_manager_new(basic_punica_core_t *c_core)
+basic_plugin_manager_t *basic_plugin_manager_new(basic_punica_core_t *core)
 {
-    punica::Core *core(reinterpret_cast<BasicCore *>(c_core));
-
     return reinterpret_cast<basic_plugin_manager_t *>(
-               new BasicPluginManager(core));
+               new BasicPluginManager(reinterpret_cast<BasicCore *>(core)));
 }
 
 void basic_plugin_manager_delete(basic_plugin_manager_t *c_manager)
@@ -36,22 +34,74 @@ void basic_plugin_manager_delete(basic_plugin_manager_t *c_manager)
 }
 
 int basic_plugin_manager_load_plugin(basic_plugin_manager_t *c_manager,
-                                     const char *c_path,
-                                     const char *c_name)
+                                     const char *path,
+                                     const char *name)
 {
     BasicPluginManager *manager =
         reinterpret_cast<BasicPluginManager *>(c_manager);
 
-    return static_cast<int>(manager->loadPlugin(c_path, c_name));
+    return static_cast<int>(manager->loadPlugin(path, name));
 }
 
 int basic_plugin_manager_unload_plugin(basic_plugin_manager_t *c_manager,
-                                       const char *c_name)
+                                       const char *name)
 {
     BasicPluginManager *manager =
         reinterpret_cast<BasicPluginManager *>(c_manager);
 
-    return static_cast<int>(manager->unloadPlugin(c_name));
+    return static_cast<int>(manager->unloadPlugin(name));
+}
+
+int basic_plugin_manager_load_plugins(basic_plugin_manager_t *plugin_manager,
+                                      plugins_settings_t *plugins_settings)
+{
+    linked_list_entry_t *entry;
+    plugin_settings_t *plugin;
+    int plugins_loaded = 0;
+
+    for (entry = plugins_settings->plugins_list->head;
+         entry != NULL; entry = entry->next)
+    {
+        plugin = (plugin_settings_t *) entry->data;
+        if (basic_plugin_manager_load_plugin(plugin_manager,
+                                             plugin->path,
+                                             plugin->name))
+        {
+            ++plugins_loaded;
+        }
+    }
+
+    return plugins_loaded;
+}
+
+static void plugin_entry_settings_free(plugin_settings_t *plugin)
+{
+    free((void *) plugin->path);
+    free((void *) plugin->name);
+    free(plugin);
+}
+
+int basic_plugin_manager_unload_plugins(basic_plugin_manager_t *plugin_manager,
+                                        plugins_settings_t *plugins_settings)
+{
+    linked_list_entry_t *entry;
+    plugin_settings_t *plugin;
+    int plugins_unloaded = 0;
+
+    for (entry = plugins_settings->plugins_list->head;
+         entry != NULL; entry = entry->next)
+    {
+        plugin = (plugin_settings_t *) entry->data;
+        if (basic_plugin_manager_unload_plugin(plugin_manager,
+                                               plugin->name))
+        {
+            ++plugins_unloaded;
+        }
+        plugin_entry_settings_free(plugin);
+    }
+    linked_list_delete(plugins_settings->plugins_list);
+
+    return plugins_unloaded;
 }
 
 BasicPluginManager::BasicPluginManager(punica::Core *core):

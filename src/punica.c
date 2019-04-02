@@ -93,48 +93,6 @@ static void init_signals(void)
     }
 }
 
-static int plugins_load(basic_plugin_manager_t *plugin_manager,
-                        plugins_settings_t *plugins_settings)
-{
-    linked_list_entry_t *entry;
-    plugin_settings_t *plugin;
-
-    for (entry = plugins_settings->plugins_list->head;
-         entry != NULL; entry = entry->next)
-    {
-        plugin = entry->data;
-        basic_plugin_manager_load_plugin(plugin_manager,
-                                         plugin->path,
-                                         plugin->name);
-    }
-
-    return 0;
-}
-
-static void plugin_entry_settings_free(plugin_settings_t *plugin)
-{
-    free((void *) plugin->path);
-    free((void *) plugin->name);
-    free(plugin);
-}
-
-static void plugins_unload(basic_plugin_manager_t *plugin_manager,
-                           plugins_settings_t *plugins_settings)
-{
-    linked_list_entry_t *entry;
-    plugin_settings_t *plugin;
-
-    for (entry = plugins_settings->plugins_list->head;
-         entry != NULL; entry = entry->next)
-    {
-        plugin = entry->data;
-        basic_plugin_manager_unload_plugin(plugin_manager,
-                                           plugin->name);
-        plugin_entry_settings_free(plugin);
-    }
-    linked_list_delete(plugins_settings->plugins_list);
-}
-
 static connection_api_t *api_init(coap_settings_t *coap, void *data, f_psk_cb_t psk_cb,
                                   f_handshake_done_cb_t handshake_done_cb)
 {
@@ -602,7 +560,7 @@ int main(int argc, char *argv[])
     /* Plugin manager initialization and loading of plugins */
     punica_core = basic_punica_core_new(&instance, rest.lwm2m);
     plugin_manager = basic_plugin_manager_new(punica_core);
-    plugins_load(plugin_manager, &settings.plugins);
+    basic_plugin_manager_load_plugins(plugin_manager, &settings.plugins);
 
     /* Main section */
     while (!punica_quit)
@@ -642,7 +600,7 @@ int main(int argc, char *argv[])
     }
 
     /* Unloading of plugins and plugin manager cleanup */
-    plugins_unload(plugin_manager, &settings.plugins);
+    basic_plugin_manager_unload_plugins(plugin_manager, &settings.plugins);
     basic_plugin_manager_delete(plugin_manager);
     basic_punica_core_delete(punica_core);
 

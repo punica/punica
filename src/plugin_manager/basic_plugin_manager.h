@@ -24,25 +24,39 @@
 extern "C" {
 #endif
 
+#include "../linked_list.h"
 #include "basic_core.h"
 
-enum
+static const size_t J_MAX_LENGTH_PLUGIN_NAME = 1024;
+static const size_t J_MAX_LENGTH_PLUGIN_PATH = 1024;
+
+typedef struct
 {
-    J_MAX_LENGTH_PLUGIN_NAME = 1024,
-    J_MAX_LENGTH_PLUGIN_PATH = 1024,
-};
+    const char *name;
+    const char *path;
+} plugin_settings_t;
+
+typedef struct
+{
+    linked_list_t *plugins_list;
+} plugins_settings_t;
 
 struct basic_plugin_manager_t;
 typedef struct basic_plugin_manager_t basic_plugin_manager_t;
 
-basic_plugin_manager_t *basic_plugin_manager_new(basic_punica_core_t *c_core);
+basic_plugin_manager_t *basic_plugin_manager_new(basic_punica_core_t *core);
 void basic_plugin_manager_delete(basic_plugin_manager_t *c_manager);
 
 int basic_plugin_manager_load_plugin(basic_plugin_manager_t *c_manager,
-                                     const char *c_path,
-                                     const char *c_name);
+                                     const char *path,
+                                     const char *name);
 int basic_plugin_manager_unload_plugin(basic_plugin_manager_t *c_manager,
-                                       const char *c_name);
+                                       const char *name);
+
+int basic_plugin_manager_load_plugins(basic_plugin_manager_t *plugin_manager,
+                                      plugins_settings_t *plugins_settings);
+int basic_plugin_manager_unload_plugins(basic_plugin_manager_t *plugin_manager,
+                                        plugins_settings_t *plugins_settings);
 
 #ifdef __cplusplus
 }

@@ -57,28 +57,28 @@ static int ulfiusCallback(const struct _u_request *ulfiusRequest,
     }
 }
 
-UlfiusCallbackHandler::UlfiusCallbackHandler(struct _u_instance *uInstance,
+UlfiusCallbackHandler::UlfiusCallbackHandler(struct _u_instance *ulfius,
                                              const std::string method,
                                              const std::string prefix,
                                              const std::string format,
                                              unsigned int priority,
                                              punica::rest::CallbackFunction *function,
                                              void *context):
-    mUlfiusInstance(uInstance),
+    mUlfius(ulfius),
     mMethod(method),
     mUrlPrefix(prefix),
     mUrlFormat(format),
     mFunction(function),
     mContext(context)
 {
-    ulfius_add_endpoint_by_val(mUlfiusInstance, mMethod.c_str(),
+    ulfius_add_endpoint_by_val(mUlfius, mMethod.c_str(),
                                mUrlPrefix.c_str(), mUrlFormat.c_str(),
                                priority, &ulfiusCallback, this);
 }
 
 UlfiusCallbackHandler::~UlfiusCallbackHandler()
 {
-    ulfius_remove_endpoint_by_val(mUlfiusInstance, mMethod.c_str(),
+    ulfius_remove_endpoint_by_val(mUlfius, mMethod.c_str(),
                                   mUrlPrefix.c_str(), mUrlFormat.c_str());
 }
 

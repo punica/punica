@@ -38,7 +38,7 @@ public:
     typedef std::unique_ptr<UlfiusCallbackHandler> ptr;
     typedef std::vector<UlfiusCallbackHandler::ptr> vector;
 
-    UlfiusCallbackHandler(struct _u_instance *uInstance,
+    UlfiusCallbackHandler(struct _u_instance *ulfius,
                           const std::string method,
                           const std::string prefix,
                           const std::string format,
@@ -54,7 +54,7 @@ public:
     const std::string getUrlFormat();
 
 private:
-    struct _u_instance *mUlfiusInstance;
+    struct _u_instance *mUlfius;
     std::string mMethod, mUrlPrefix, mUrlFormat;
     punica::rest::CallbackFunction *mFunction;
     void *mContext;
