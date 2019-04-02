@@ -7,6 +7,8 @@ var server = require('./server-if');
 
 chai.use(chai_http);
 
+const key_dir = './keys';
+
 describe('Devices interface', () => {
   let cert_uuid = undefined;
   let psk_uuid = undefined;
@@ -16,7 +18,7 @@ describe('Devices interface', () => {
 
   const service_options = {
     host: 'https://localhost:8889',
-    ca: fs.readFileSync('../../certificate.pem'),
+    ca: fs.readFileSync(key_dir + '/certificate.pem'),
     authentication: true,
     username: 'admin',
     password: 'not-same-as-name',

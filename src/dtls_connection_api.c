@@ -177,7 +177,7 @@ static int dtls_connection_handshake_done(device_connection_t *conn,
         return -1;
     }
 
-    ret = context->handshake_done_cb(conn, public_data, public_data_size, context->data, context);
+    ret = context->handshake_done_cb(conn, public_data, public_data_size, context->data);
 
     if (ciphersuite == DEVICE_CREDENTIALS_CERT)
     {
@@ -193,6 +193,74 @@ static ssize_t dtls_connection_net_send(gnutls_transport_ptr_t context, const vo
     device_connection_t *conn = (device_connection_t *)context;
 
     return sendto(conn->sock, data, size, 0, (struct sockaddr *)&conn->addr, conn->addr_size);
+}
+
+static ssize_t dtls_connection_net_recv(gnutls_transport_ptr_t context, void *data, size_t size)
+{
+    device_connection_t *conn = (device_connection_t *)context;
+    int ret;
+    struct sockaddr addr;
+    socklen_t addr_size;
+
+    addr_size = sizeof(addr);
+    ret = recvfrom(conn->sock, data, size, 0, &addr, &addr_size);
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    if (addr_size == conn->addr_size
+        && memcmp(&addr, &conn->addr, sizeof(addr)) == 0)
+    {
+        return ret;
+    }
+
+    gnutls_transport_set_errno(conn->session, EAGAIN);
+
+    return -1;
+}
+
+static int dtls_connection_net_recv_timeout(gnutls_transport_ptr_t context, unsigned int ms)
+{
+    device_connection_t *conn = (device_connection_t *)context;
+    struct timeval tv;
+    fd_set fd;
+    int ret;
+    uint8_t buffer[1024];
+    size_t buffer_length;
+    struct sockaddr addr;
+    socklen_t addr_size;
+
+    tv.tv_sec = ms / 1000;
+    tv.tv_usec = (ms % 1000) * 1000;
+
+    FD_ZERO(&fd);
+    FD_SET(conn->sock, &fd);
+
+    ret = select(conn->sock + 1, &fd, NULL, NULL, &tv);
+    if (ret <= 0)
+    {
+        return ret;
+    }
+
+    buffer_length = sizeof(buffer);
+    addr_size = sizeof(addr);
+
+    ret = recvfrom(conn->sock, buffer, buffer_length, MSG_PEEK, &addr, &addr_size);
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    if (addr_size == conn->addr_size
+        && memcmp(&addr, &conn->addr, sizeof(addr)) == 0)
+    {
+        return ret;
+    }
+
+    gnutls_transport_set_errno(conn->session, EAGAIN);
+
+    return -1;
 }
 
 static int dtls_connection_new_socket(secure_connection_context_t *context)
@@ -279,7 +347,12 @@ static int dtls_connection_init(secure_connection_context_t *context,
 
     gnutls_certificate_server_set_request(connection->session, GNUTLS_CERT_REQUIRE);
     gnutls_dtls_prestate_set(connection->session, prestate);
-    gnutls_transport_set_ptr(connection->session, (void *)((intptr_t)connection->sock));
+
+    gnutls_transport_set_ptr(connection->session, connection);
+    gnutls_transport_set_push_function(connection->session, dtls_connection_net_send);
+    gnutls_transport_set_pull_function(connection->session, dtls_connection_net_recv);
+    gnutls_transport_set_pull_timeout_function(connection->session, dtls_connection_net_recv_timeout);
+
     gnutls_session_set_ptr(connection->session, context);
 
     ret = 0;
@@ -446,159 +519,167 @@ exit:
     return ret;
 }
 
+static device_connection_t *dtls_connection_new_incoming(secure_connection_context_t *context,
+                                                         gnutls_dtls_prestate_st *prestate)
+{
+    device_connection_t *conn;
+
+    conn = calloc(1, sizeof(device_connection_t));
+    if (conn == NULL)
+    {
+        return NULL;
+    }
+
+    conn->sock = context->conn_listen->sock;
+    memcpy(&conn->addr, &context->conn_listen->addr, sizeof(struct sockaddr_storage));
+    memcpy(&conn->addr_size, &context->conn_listen->addr_size, sizeof(socklen_t));
+
+    if (dtls_connection_init(context, conn, prestate))
+    {
+        free(conn);
+        return NULL;
+    }
+
+    return conn;
+}
+
+static device_connection_t *dtls_connection_find(linked_list_t *connection_list,
+                                                 const struct sockaddr_storage *addr, const socklen_t addr_size)
+{
+    device_connection_t *conn;
+    linked_list_entry_t *conn_entry;
+
+    for (conn_entry = connection_list->head; conn_entry != NULL; conn_entry = conn_entry->next)
+    {
+        conn = (device_connection_t *)conn_entry->data;
+
+        if (conn->addr_size == addr_size
+            && memcmp(&conn->addr, addr, addr_size) == 0)
+        {
+            return conn;
+        }
+    }
+
+    return NULL;
+}
+
 static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size,
                                    void **connection, struct timeval *tv)
 {
     secure_connection_context_t *context = (secure_connection_context_t *)context_p;
-    int ret, sock, nfds = 0;
     fd_set read_fds;
+    int ret, sock;
     device_connection_t *conn;
-    linked_list_entry_t *conn_entry;
-    const char *err_str;
     gnutls_dtls_prestate_st prestate;
     credentials_mode_t ciphersuite;
+    const char *err_str;
 
 //  to reduce code redundancy
     sock = context->conn_listen->sock;
-//  set active file descriptors and calculate required nfds
+
     FD_ZERO(&read_fds);
-
-    for (conn_entry = context->connection_list->head; conn_entry != NULL; conn_entry = conn_entry->next)
-    {
-        conn = (device_connection_t *)conn_entry->data;
-
-        FD_SET(conn->sock, &read_fds);
-        if (conn->sock >= nfds)
-        {
-            nfds = conn->sock + 1;
-        }
-    }
-
     FD_SET(sock, &read_fds);
-    if (sock >= nfds)
-    {
-        nfds = sock + 1;
-    }
 
-    ret = select(nfds, &read_fds, NULL, NULL, tv);
+    ret = select(sock + 1, &read_fds, NULL, NULL, tv);
     if (ret <= 0)
     {
         return ret;
     }
 
-//  manage client connections
-    for (conn_entry = context->connection_list->head; conn_entry != NULL; conn_entry = conn_entry->next)
-    {
-        conn = (device_connection_t *)conn_entry->data;
-
-        if (FD_ISSET(conn->sock, &read_fds))
-        {
-            if (gnutls_session_get_desc(conn->session) == NULL)
-            {
-                ret = gnutls_handshake(conn->session);
-
-                //handshake continues until success
-                if (ret == GNUTLS_E_SUCCESS)
-                {
-                    ciphersuite = get_session_ciphersuite(conn->session);
-
-                    if (dtls_connection_handshake_done(conn, ciphersuite))
-                    {
-                        log_message(LOG_LEVEL_WARN, "Failed to store connection identifier\n");
-                        dtls_connection_close(context, conn);
-                        return 0;
-                    }
-                }
-                else if (ret != GNUTLS_E_AGAIN)
-                {
-                    err_str = gnutls_strerror(ret);
-                    log_message(LOG_LEVEL_WARN, "Handshake failed with message: '%s'\n", err_str);
-
-                    dtls_connection_close(context, conn);
-                    return 0;
-                }
-            }
-            else
-            {
-                conn->addr_size = sizeof(conn->addr);
-
-                ret = recvfrom(conn->sock, buffer, size, MSG_PEEK,
-                               (struct sockaddr *)&conn->addr, &conn->addr_size);
-                ret = gnutls_record_recv(conn->session, buffer, ret);
-
-                if (ret <= 0)
-                {
-                    dtls_connection_close(context, conn);
-                }
-
-                *connection = conn;
-                return ret;
-            }
-        }
-    }
-
-//  expecting a new client connection
     if (FD_ISSET(sock, &read_fds))
     {
         context->conn_listen->addr_size = sizeof(context->conn_listen->addr);
 
-//      only peek here so that if connection is successful, socket is still active when passing to handshake
-        ret = recvfrom(sock, buffer, size, MSG_PEEK,
-                       (struct sockaddr *)&context->conn_listen->addr, &context->conn_listen->addr_size);
+        ret = recvfrom(sock, buffer, size, MSG_PEEK, (struct sockaddr *)&context->conn_listen->addr,
+                       &context->conn_listen->addr_size);
         if (ret > 0)
         {
-            memset(&prestate, 0, sizeof(gnutls_dtls_prestate_st));
+            conn = dtls_connection_find(context->connection_list, &context->conn_listen->addr,
+                                        context->conn_listen->addr_size);
 
-            ret = gnutls_dtls_cookie_verify(&context->cookie_key, &context->conn_listen->addr,
-                                            sizeof(context->conn_listen->addr), buffer, ret, &prestate);
-            if (ret == GNUTLS_E_BAD_COOKIE)
+            if (conn == NULL)
             {
-                gnutls_dtls_cookie_send(&context->cookie_key, &context->conn_listen->addr,
-                                        sizeof(context->conn_listen->addr), &prestate, context->conn_listen, dtls_connection_net_send);
-            }
-            else if (ret == 0)
-            {
-                ret = -1;
-                conn = context->conn_listen;
+                memset(&prestate, 0, sizeof(gnutls_dtls_prestate_st));
 
-                context->conn_listen = dtls_connection_new_listen(context);
-                if (context->conn_listen == NULL)
+                ret = gnutls_dtls_cookie_verify(&context->cookie_key, &context->conn_listen->addr,
+                                                sizeof(context->conn_listen->addr), buffer, ret, &prestate);
+
+                if (ret == GNUTLS_E_BAD_COOKIE)
                 {
-                    context->conn_listen = conn;
-                    goto connect_fail;
+                    gnutls_dtls_cookie_send(&context->cookie_key, &context->conn_listen->addr,
+                                            sizeof(context->conn_listen->addr), &prestate, context->conn_listen, dtls_connection_net_send);
+                    recvfrom(sock, buffer, size, 0, NULL, NULL);
                 }
-
-//              the current socket will be taken over by the client connection
-                if (connect(conn->sock, (struct sockaddr *)&conn->addr, sizeof(conn->addr)))
+                else if (ret == GNUTLS_E_SUCCESS)
                 {
-                    close(conn->sock);
-                    free(conn);
-                    goto connect_fail;
-                }
-
-                if (dtls_connection_init(context, conn, &prestate))
-                {
-                    close(conn->sock);
-                    free(conn);
-                    goto connect_fail;
-                }
-
-                ret = 0;
-connect_fail:
-                if (ret)
-                {
-                    log_message(LOG_LEVEL_ERROR, "Failed to connect with new device\n");
+                    conn = dtls_connection_new_incoming(context, &prestate);
+                    if (conn != NULL)
+                    {
+                        linked_list_add(context->connection_list, conn);
+                    }
+                    else
+                    {
+                        log_message(LOG_LEVEL_ERROR, "Failed to connect with new device\n");
+                    }
                 }
                 else
                 {
-                    linked_list_add(context->connection_list, conn);
+                    recvfrom(sock, buffer, size, 0, NULL, NULL);
                 }
-
-                return 0;
             }
-//          clear socket
-            recvfrom(sock, buffer, size, 0, (struct sockaddr *)&context->conn_listen->addr,
-                     &context->conn_listen->addr_size);
+
+            if (conn != NULL)
+            {
+                if (gnutls_session_get_desc(conn->session) == NULL)
+                {
+                    ret = gnutls_handshake(conn->session);
+
+                    //handshake continues until success
+                    if (ret == GNUTLS_E_SUCCESS)
+                    {
+                        ciphersuite = get_session_ciphersuite(conn->session);
+
+                        if (dtls_connection_handshake_done(conn, ciphersuite))
+                        {
+                            log_message(LOG_LEVEL_WARN, "Failed to store connection identifier\n");
+                            dtls_connection_close(context, conn);
+                        }
+
+                        return 0;
+                    }
+                    else if (ret != GNUTLS_E_AGAIN)
+                    {
+                        err_str = gnutls_strerror(ret);
+                        log_message(LOG_LEVEL_WARN, "Handshake failed with message: '%s'\n", err_str);
+
+                        dtls_connection_close(context, conn);
+                        return 0;
+                    }
+                }
+                else
+                {
+                    conn->addr_size = sizeof(conn->addr);
+
+                    do
+                    {
+                        ret = recvfrom(conn->sock, buffer, size, MSG_PEEK, (struct sockaddr *)&conn->addr,
+                                       &conn->addr_size);
+                        ret = gnutls_record_recv(conn->session, buffer, ret);
+                    } while (ret == GNUTLS_E_AGAIN);
+
+                    if (ret < 0)
+                    {
+                        dtls_connection_close(context, conn);
+                        ret = 0;
+                    }
+                    else
+                    {
+                        *connection = conn;
+                    }
+
+                    return ret;
+                }
+            }
         }
     }
 
@@ -622,7 +703,7 @@ static int dtls_connection_close(void *context_p, void *connection)
     {
         do
         {
-            ret = gnutls_bye(conn->session, GNUTLS_SHUT_RDWR);
+            ret = gnutls_bye(conn->session, GNUTLS_SHUT_WR);
         } while (ret == GNUTLS_E_AGAIN);
 
         if (ret != GNUTLS_E_SUCCESS)
@@ -632,7 +713,6 @@ static int dtls_connection_close(void *context_p, void *connection)
         gnutls_deinit(conn->session);
     }
 
-    close(conn->sock);
     free(conn);
     return 0;
 }

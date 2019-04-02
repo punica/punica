@@ -5,7 +5,8 @@ set -e
 TMP_BUILD_DIR="$(mktemp -d)"
 PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
 
-ASTYLE="${PROJECT_ROOT_DIR}/astyle"
+ASTYLE_EXEC_DIR="${PROJECT_ROOT_DIR}/script/astyle"
+ASTYLE="${ASTYLE_EXEC_DIR}/astyle"
 ASTYLE_OPTS="--options=${PROJECT_ROOT_DIR}/.astyle.conf $@"
 ASTYLE_FILES="$(find ${PROJECT_ROOT_DIR}/{src,include} -regextype posix-basic -regex '^.*\.[ch]\(pp\)\{0,1\}$' | xargs echo)"
 ASTYLE_URL="https://sourceforge.net/projects/astyle/files/astyle/astyle%203.1/astyle_3.1_linux.tar.gz"
@@ -20,6 +21,10 @@ get_astyle () {
     eval "mv ${ASTYLE_DIR}/build/gcc/bin/astyle ${ASTYLE}"
     cd -
 }
+
+if [ ! -d "${ASTYLE_EXEC_DIR}" ]; then
+    eval "mkdir ${ASTYLE_EXEC_DIR}"
+fi
 
 if [ ! -x ${ASTYLE} ]; then
     get_astyle || (rm -rf ${TMP_BUILD_DIR}; exit 1)
