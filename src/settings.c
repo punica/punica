@@ -568,9 +568,7 @@ static int read_config(char *config_name, settings_t *settings)
         }
         else
         {
-            fprintf(stdout,
-                    "Unrecognised configuration file section: %s\n",
-                    section);
+            fprintf(stdout, "Unrecognised configuration file section: %s\n", section);
         }
     }
 
