@@ -21,8 +21,8 @@
 
 #include "counter.hpp"
 
-int getCounterCallback(punica::rest::Request::ptr request,
-                       punica::rest::Response::ptr response,
+int getCounterCallback(punica::rest::Request *request,
+                       punica::rest::Response *response,
                        void *context)
 {
     Counter *counter = reinterpret_cast<Counter *>(context);
@@ -34,8 +34,8 @@ int getCounterCallback(punica::rest::Request::ptr request,
     return HTTP_200_OK;
 }
 
-int incrementCounterCallback(punica::rest::Request::ptr request,
-                             punica::rest::Response::ptr response,
+int incrementCounterCallback(punica::rest::Request *request,
+                             punica::rest::Response *response,
                              void *context)
 {
     Counter *counter = reinterpret_cast<Counter *>(context);
@@ -44,7 +44,7 @@ int incrementCounterCallback(punica::rest::Request::ptr request,
     return HTTP_204_NO_CONTENT;
 }
 
-Counter::Counter(punica::rest::Core::ptr restCore,
+Counter::Counter(punica::rest::Core *restCore,
                  std::string prefix,
                  std::string name):
     mRestCore(restCore),

@@ -24,7 +24,7 @@
 
 basic_plugin_manager_t *basic_plugin_manager_new(basic_punica_core_t *c_core)
 {
-    punica::Core::ptr core(reinterpret_cast<BasicCore *>(c_core));
+    punica::Core *core(reinterpret_cast<BasicCore *>(c_core));
 
     return reinterpret_cast<basic_plugin_manager_t *>(
                new BasicPluginManager(core));
@@ -54,7 +54,7 @@ int basic_plugin_manager_unload_plugin(basic_plugin_manager_t *c_manager,
     return static_cast<int>(manager->unloadPlugin(c_name));
 }
 
-BasicPluginManager::BasicPluginManager(punica::Core::ptr core):
+BasicPluginManager::BasicPluginManager(punica::Core *core):
     mCore(core),
     mPlugins()
 {

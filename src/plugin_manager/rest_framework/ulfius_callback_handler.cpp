@@ -32,13 +32,13 @@ static int ulfiusCallback(const struct _u_request *ulfiusRequest,
 {
     UlfiusCallbackHandler *handler =
         static_cast<UlfiusCallbackHandler *>(handlerContext);
+    UlfiusRequest request(ulfiusRequest);
+    UlfiusResponse response(ulfiusResponse);
     int statusCode;
 
-    punica::rest::Request::ptr request(new UlfiusRequest(ulfiusRequest));
-    punica::rest::Response::ptr response(new UlfiusResponse(ulfiusResponse));
+    statusCode = handler->callFunction(&request, &response);
+    response.setCode(statusCode);
 
-    statusCode = handler->callFunction(request, response);
-    response->setCode(statusCode);
     return U_CALLBACK_COMPLETE;
 
     switch (statusCode)
@@ -82,8 +82,8 @@ UlfiusCallbackHandler::~UlfiusCallbackHandler()
                                   mUrlPrefix.c_str(), mUrlFormat.c_str());
 }
 
-int UlfiusCallbackHandler::callFunction(punica::rest::Request::ptr request,
-                                        punica::rest::Response::ptr response)
+int UlfiusCallbackHandler::callFunction(punica::rest::Request *request,
+                                        punica::rest::Response *response)
 {
     return mFunction(request, response, mContext);
 }

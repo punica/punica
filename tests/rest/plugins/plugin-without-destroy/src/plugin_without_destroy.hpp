@@ -31,11 +31,11 @@ public:
     ~PluginWithoutDestroy() { }
 };
 
-static punica::plugin::Plugin *newPluginWithoutDestroy(punica::Core::ptr core);
+punica::plugin::PluginCreate newPluginWithoutDestroy;
 
 extern "C" const punica::plugin::PluginApi PLUGIN_API =
 {
     .version = PUNICA_VERSION,
-    .create = newPluginWithoutDestroy,
+    .create = &newPluginWithoutDestroy,
     .destroy = NULL,
 };

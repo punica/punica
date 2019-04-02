@@ -105,33 +105,28 @@ static int plugins_load(basic_plugin_manager_t *plugin_manager,
 {
     linked_list_entry_t *entry;
     plugin_settings_t *plugin;
-    int load_is_successful;
 
     for (entry = plugins_settings->plugins_list->head;
          entry != NULL; entry = entry->next)
     {
         plugin = entry->data;
-        load_is_successful = basic_plugin_manager_load_plugin(plugin_manager,
-                                                              plugin->path,
-                                                              plugin->name);
-
-        if (load_is_successful)
-        {
-            log_message(LOG_LEVEL_INFO,
-                        "[PLUGINS] Successfuly loaded plugin: \"%s\"\n",
-                        plugin->name);
-        }
-        else
-        {
-            log_message(LOG_LEVEL_ERROR,
-                        "[PLUGINS] Failed to load plugin: \"%s\"\n", plugin->name);
-        }
+        basic_plugin_manager_load_plugin(plugin_manager,
+                                         plugin->path,
+                                         plugin->name);
     }
 
     return 0;
 }
 
-static void plugins_unload(plugins_settings_t *plugins_settings)
+static void plugin_entry_settings_free(plugin_settings_t *plugin)
+{
+    free((void *) plugin->path);
+    free((void *) plugin->name);
+    free(plugin);
+}
+
+static void plugins_unload(basic_plugin_manager_t *plugin_manager,
+                           plugins_settings_t *plugins_settings)
 {
     linked_list_entry_t *entry;
     plugin_settings_t *plugin;
@@ -140,7 +135,9 @@ static void plugins_unload(plugins_settings_t *plugins_settings)
          entry != NULL; entry = entry->next)
     {
         plugin = entry->data;
-        free(plugin);
+        basic_plugin_manager_unload_plugin(plugin_manager,
+                                           plugin->name);
+        plugin_entry_settings_free(plugin);
     }
     linked_list_delete(plugins_settings->plugins_list);
 }
@@ -652,8 +649,10 @@ int main(int argc, char *argv[])
         }
     }
 
+    /* Unloading of plugins and plugin manager cleanup */
+    plugins_unload(plugin_manager, &settings.plugins);
     basic_plugin_manager_delete(plugin_manager);
-    plugins_unload(&settings.plugins);
+    basic_punica_core_delete(punica_core);
 
     ulfius_stop_framework(&instance);
     ulfius_clean_instance(&instance);

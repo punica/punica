@@ -47,8 +47,8 @@ public:
                           void *handlerContext);
     ~UlfiusCallbackHandler();
 
-    int callFunction(punica::rest::Request::ptr request,
-                     punica::rest::Response::ptr response);
+    int callFunction(punica::rest::Request *request,
+                     punica::rest::Response *response);
     const std::string getMethod();
     const std::string getUrlPrefix();
     const std::string getUrlFormat();

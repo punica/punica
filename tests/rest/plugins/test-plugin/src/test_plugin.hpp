@@ -40,12 +40,12 @@ private:
 
 punica::rest::CallbackFunction stampCallback;
 
-static punica::plugin::Plugin *newTestPlugin(punica::Core::ptr core);
-static void deleteTestPlugin(punica::plugin::Plugin *plugin);
+punica::plugin::PluginCreate newTestPlugin;
+punica::plugin::PluginDestroy deleteTestPlugin;
 
 extern "C" const punica::plugin::PluginApi PLUGIN_API =
 {
     .version = PUNICA_VERSION,
-    .create = newTestPlugin,
-    .destroy = deleteTestPlugin,
+    .create = &newTestPlugin,
+    .destroy = &deleteTestPlugin,
 };

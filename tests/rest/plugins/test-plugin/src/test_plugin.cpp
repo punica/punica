@@ -34,9 +34,9 @@ void TestPlugin::setStamp(std::string newStamp)
     mStamp = newStamp;
 }
 
-int stampCallback(punica::rest::Request::ptr request,
-                                       punica::rest::Response::ptr response,
-                                       void *context)
+int stampCallback(punica::rest::Request *request,
+                  punica::rest::Response *response,
+                  void *context)
 {
     TestPlugin* plugin = reinterpret_cast<TestPlugin *>(context);
     std::string stamp;
@@ -102,10 +102,10 @@ int stampCallback(punica::rest::Request::ptr request,
     return statusCode;
 }
 
-static punica::plugin::Plugin *newTestPlugin(punica::Core::ptr core)
+punica::plugin::Plugin *newTestPlugin(punica::Core *core)
 {
     TestPlugin *plugin = new TestPlugin("Test Plugin Stamp");
-    punica::rest::Core::ptr restCore = core->getRestCore();
+    punica::rest::Core *restCore = core->getRestCore();
     void *pluginContext = reinterpret_cast<void *>(plugin);
 
     restCore->addCallbackHandler("*", "/test_plugin/stamp", "", 10,
@@ -114,7 +114,7 @@ static punica::plugin::Plugin *newTestPlugin(punica::Core::ptr core)
     return plugin;
 }
 
-static void deleteTestPlugin(punica::plugin::Plugin *plugin)
+void deleteTestPlugin(punica::plugin::Plugin *plugin)
 {
     delete static_cast<TestPlugin *>(plugin);
 }

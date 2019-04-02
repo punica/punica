@@ -19,12 +19,12 @@
 
 #include "test_plugin.hpp"
 
-static punica::plugin::Plugin *newTestPlugin(punica::Core::ptr core)
+punica::plugin::Plugin *newTestPlugin(punica::Core *core)
 {
     return new TestPlugin();
 }
 
-static void deleteTestPlugin(punica::plugin::Plugin *plugin)
+void deleteTestPlugin(punica::plugin::Plugin *plugin)
 {
     delete static_cast<TestPlugin *>(plugin);
 }

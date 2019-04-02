@@ -24,8 +24,8 @@
 
 #include "test_plugin_with_counters.hpp"
 
-int destroyCounterCallback(punica::rest::Request::ptr request,
-                           punica::rest::Response::ptr response,
+int destroyCounterCallback(punica::rest::Request *request,
+                           punica::rest::Response *response,
                            void *context)
 {
     TestPluginWithCounters* plugin =
@@ -40,8 +40,8 @@ int destroyCounterCallback(punica::rest::Request::ptr request,
     return HTTP_204_NO_CONTENT;
 }
 
-int createCounterCallback(punica::rest::Request::ptr request,
-                          punica::rest::Response::ptr response,
+int createCounterCallback(punica::rest::Request *request,
+                          punica::rest::Response *response,
                           void *context)
 {
     std::string name;
@@ -60,7 +60,7 @@ int createCounterCallback(punica::rest::Request::ptr request,
     return HTTP_201_CREATED;
 }
 
-TestPluginWithCounters::TestPluginWithCounters(punica::rest::Core::ptr core):
+TestPluginWithCounters::TestPluginWithCounters(punica::rest::Core *core):
     mRestCore(core)
 {
     void *pluginContext = reinterpret_cast<void *>(this);
@@ -110,15 +110,15 @@ bool TestPluginWithCounters::destroyCounter(std::string name)
     return true;
 }
 
-static punica::plugin::Plugin *newTestPlugin(punica::Core::ptr core)
+punica::plugin::Plugin *newTestPlugin(punica::Core *core)
 {
-    punica::rest::Core::ptr restCore = core->getRestCore();
+    punica::rest::Core *restCore = core->getRestCore();
     TestPluginWithCounters *plugin = new TestPluginWithCounters(restCore);
 
     return plugin;
 }
 
-static void deleteTestPlugin(punica::plugin::Plugin *plugin)
+void deleteTestPlugin(punica::plugin::Plugin *plugin)
 {
     delete static_cast<TestPluginWithCounters *>(plugin);
 }

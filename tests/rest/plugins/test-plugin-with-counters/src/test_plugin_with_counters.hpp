@@ -30,22 +30,22 @@
 class TestPluginWithCounters: public punica::plugin::Plugin
 {
 public:
-    TestPluginWithCounters(punica::rest::Core::ptr core);
+    TestPluginWithCounters(punica::rest::Core *core);
     ~TestPluginWithCounters();
 
     bool createCounter(std::string name);
     bool destroyCounter(std::string name);
 
 private:
-    punica::rest::Core::ptr mRestCore;
+    punica::rest::Core *mRestCore;
     Counter::map mCounters;
 };
 
 punica::rest::CallbackFunction createCounterCallback;
 punica::rest::CallbackFunction destroyCounterCallback;
 
-static punica::plugin::PluginCreate newTestPlugin;
-static punica::plugin::PluginDestroy deleteTestPlugin;
+punica::plugin::PluginCreate newTestPlugin;
+punica::plugin::PluginDestroy deleteTestPlugin;
 
 extern "C" const punica::plugin::PluginApi PLUGIN_API =
 {

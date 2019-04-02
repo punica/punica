@@ -23,6 +23,9 @@
 #include <liblwm2m.h>
 #include <punica/core.hpp>
 
+#include "rest_framework/ulfius_rest_core.hpp"
+#include "lwm2m_framework/basic_lwm2m_core.hpp"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,12 +43,12 @@ public:
               lwm2m_context_t *lwm2mContext);
     ~BasicCore();
 
-    punica::rest::Core::ptr getRestCore();
-    punica::lwm2m::Core::ptr getLwm2mCore();
+    punica::rest::Core *getRestCore();
+    punica::lwm2m::Core *getLwm2mCore();
 
 private:
-    punica::rest::Core::ptr mRestCore;
-    punica::lwm2m::Core::ptr mLwm2mCore;
+    UlfiusRestCore mRestCore;
+    BasicLwm2mCore mLwm2mCore;
 };
 
 #endif // PUNICA_PLUGIN_MANAGER_BASIC_CORE_HPP

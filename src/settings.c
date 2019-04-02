@@ -33,6 +33,7 @@
 #define DATABASE_ALL_KEYS_SET       0x7
 
 const char *argp_program_version = PUNICA_FULL_VERSION;
+static const char *logging_section = "[SETTINGS]";
 
 static char doc[] = "Punica - REST interface to LwM2M server and all clients connected to it";
 
@@ -431,13 +432,16 @@ static int set_plugin_settings(json_t *j_plugin_settings,
     plugin_settings_t *plugin, *plugin_entry;
     size_t plugin_name_length, plugin_path_length;
     json_t *j_name, *j_path;
+    const char *name;
 
     j_name = json_object_get(j_plugin_settings, "name");
     j_path = json_object_get(j_plugin_settings, "path");
 
     if (!json_is_string(j_name))
     {
-        fprintf(stdout, "Plugin configured without name.\n");
+        fprintf(stdout,
+                "%s Plugin configured without name.\n",
+                logging_section);
         return 1;
     }
     plugin_name_length = strnlen(json_string_value(j_name),
@@ -445,13 +449,17 @@ static int set_plugin_settings(json_t *j_plugin_settings,
     if (plugin_name_length == 0
         || plugin_name_length == J_MAX_LENGTH_PLUGIN_NAME)
     {
-        fprintf(stdout, "Plugin name length is invalid.\n");
+        fprintf(stdout,
+                "%s Plugin name length is invalid.\n",
+                logging_section);
         return 1;
     }
 
     if (!json_is_string(j_path))
     {
-        fprintf(stdout, "Plugin configured without path.\n");
+        fprintf(stdout,
+                "%s Plugin configured without path.\n",
+                logging_section);
         return 1;
     }
     plugin_path_length = strnlen(json_string_value(j_path),
@@ -459,29 +467,30 @@ static int set_plugin_settings(json_t *j_plugin_settings,
     if (plugin_path_length == 0
         || plugin_path_length == J_MAX_LENGTH_PLUGIN_PATH)
     {
-        fprintf(stdout, "Plugin path length is invalid.\n");
+        fprintf(stdout,
+                "%s Plugin path length is invalid.\n",
+                logging_section);
         return 1;
+    }
+
+    name = json_string_value(j_name);
+    for (entry = plugins_list->head; entry != NULL; entry = entry->next)
+    {
+        plugin_entry = entry->data;
+        if (strncmp(plugin_entry->name, name, J_MAX_LENGTH_PLUGIN_NAME) == 0)
+        {
+            fprintf(stdout,
+                    "%s Duplicate plugin name \"%s\" entry found.\n",
+                    logging_section, name);
+
+            return 1;
+        }
     }
 
     plugin = malloc(sizeof(plugin_settings_t));
 
-    plugin->name = strdup(json_string_value(j_name));
+    plugin->name = strdup(name);
     plugin->path = strdup(json_string_value(j_path));
-
-    for (entry = plugins_list->head; entry != NULL; entry = entry->next)
-    {
-        plugin_entry = entry->data;
-        if (strncmp(plugin_entry->name, plugin->name,
-                    J_MAX_LENGTH_PLUGIN_NAME) == 0)
-        {
-            fprintf(stdout,
-                    "Duplicate plugin name \"%s\" entry found.\n",
-                    plugin->name);
-
-            free(plugin);
-            return 1;
-        }
-    }
 
     linked_list_add(plugins_list, plugin);
 
@@ -500,7 +509,9 @@ static int set_plugins_settings(json_t *j_section,
     {
         if (!json_is_object(j_plugin_settings))
         {
-            fprintf(stdout, "\"%s\" section contains invalid type value\n", section_name);
+            fprintf(stdout,
+                    "%s \"%s\" section contains invalid type value\n",
+                    logging_section, section_name);
             plugins_status = 1;
         }
 
@@ -514,7 +525,9 @@ static int set_plugins_settings(json_t *j_section,
 
     if (plugins_status != 0)
     {
-        fprintf(stdout, "Not all entries in \"%s\" section were configured corretly!\n", section_name);
+        fprintf(stdout,
+                "%s Some entries in \"%s\" section aren't configured corretly!\n",
+                logging_section, section_name);
     }
 
     return plugins_status;
