@@ -366,6 +366,7 @@ int main(int argc, char *argv[])
     uint8_t buffer[1500];
     basic_punica_core_t *punica_core;
     basic_plugin_manager_t *plugin_manager;
+    session_t connection;
 
     static settings_t settings =
     {
