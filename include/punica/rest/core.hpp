@@ -20,7 +20,6 @@
 #ifndef PUNICA_REST_CORE_HPP
 #define PUNICA_REST_CORE_HPP
 
-#include <memory>
 #include <string>
 
 #include <punica/rest/request.hpp>

@@ -20,7 +20,6 @@
 #ifndef PUNICA_REST_REQUEST_HPP
 #define PUNICA_REST_REQUEST_HPP
 
-#include <memory>
 #include <string>
 #include <vector>
 

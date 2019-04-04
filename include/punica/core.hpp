@@ -20,8 +20,6 @@
 #ifndef PUNICA_CORE_HPP
 #define PUNICA_CORE_HPP
 
-#include <memory>
-
 #include <punica/rest/core.hpp>
 #include <punica/lwm2m/core.hpp>
 
