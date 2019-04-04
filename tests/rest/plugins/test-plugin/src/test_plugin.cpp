@@ -34,21 +34,21 @@ void TestPlugin::setStamp(std::string newStamp)
     mStamp = newStamp;
 }
 
-int stampCallback(punica::rest::Request *request,
-                  punica::rest::Response *response,
+int stampCallback(punica::rest::Request &request,
+                  punica::rest::Response &response,
                   void *context)
 {
     TestPlugin* plugin = reinterpret_cast<TestPlugin *>(context);
     std::string stamp;
     std::string appendHeaderValue;
-    std::string method = request->getMethod();
+    std::string method = request.getMethod();
     std::string stringRequestBody;
     std::string stringResponseBody;
     std::vector<uint8_t> requestBody;
     std::vector<uint8_t> responseBody;
     int statusCode = HTTP_200_OK;
     
-    response->setHeader("Test-status", "success");
+    response.setHeader("Test-status", "success");
   
     if (method == "GET")
     {
@@ -56,7 +56,7 @@ int stampCallback(punica::rest::Request *request,
     }
     else if (method == "PUT")
     {
-        requestBody = request->getBody();
+        requestBody = request.getBody();
         requestBody.push_back('\0');
         stringRequestBody =
             std::string(reinterpret_cast<char *>(requestBody.data()));
@@ -67,12 +67,12 @@ int stampCallback(punica::rest::Request *request,
     }
     else if (method == "POST")
     {
-        requestBody = request->getBody();
+        requestBody = request.getBody();
         requestBody.push_back('\0');
         stringRequestBody =
             std::string(reinterpret_cast<char *>(requestBody.data()));
 
-        appendHeaderValue = request->getHeader("Append");
+        appendHeaderValue = request.getHeader("Append");
 
         stamp = plugin->getStamp();
         if ((appendHeaderValue == "1")
@@ -90,7 +90,7 @@ int stampCallback(punica::rest::Request *request,
     }
     else
     {
-        response->setHeader("Test-status", "fail");
+        response.setHeader("Test-status", "fail");
 
         statusCode = HTTP_405_METHOD_NOT_ALLOWED;
     }
@@ -98,7 +98,7 @@ int stampCallback(punica::rest::Request *request,
     responseBody = std::vector<uint8_t>(stringResponseBody.begin(),
                                         stringResponseBody.end());
 
-    response->setBody(responseBody);
+    response.setBody(responseBody);
     return statusCode;
 }
 

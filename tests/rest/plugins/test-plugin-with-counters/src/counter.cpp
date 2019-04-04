@@ -21,21 +21,21 @@
 
 #include "counter.hpp"
 
-int getCounterCallback(punica::rest::Request *request,
-                       punica::rest::Response *response,
+int getCounterCallback(punica::rest::Request &request,
+                       punica::rest::Response &response,
                        void *context)
 {
     Counter *counter = reinterpret_cast<Counter *>(context);
     std::string stringCount = std::to_string(counter->get());
 
-    response->setBody(std::vector<uint8_t>(stringCount.begin(),
-                                           stringCount.end()));
+    response.setBody(std::vector<uint8_t>(stringCount.begin(),
+                                          stringCount.end()));
 
     return HTTP_200_OK;
 }
 
-int incrementCounterCallback(punica::rest::Request *request,
-                             punica::rest::Response *response,
+int incrementCounterCallback(punica::rest::Request &request,
+                             punica::rest::Response &response,
                              void *context)
 {
     Counter *counter = reinterpret_cast<Counter *>(context);

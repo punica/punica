@@ -24,13 +24,13 @@
 
 #include "test_plugin_with_counters.hpp"
 
-int destroyCounterCallback(punica::rest::Request *request,
-                           punica::rest::Response *response,
+int destroyCounterCallback(punica::rest::Request &request,
+                           punica::rest::Response &response,
                            void *context)
 {
     TestPluginWithCounters* plugin =
         reinterpret_cast<TestPluginWithCounters *>(context);
-    std::string name = request->getUrlFormat("name");
+    std::string name = request.getUrlFormat("name");
 
     if (plugin->destroyCounter(name) == false)
     {
@@ -40,14 +40,14 @@ int destroyCounterCallback(punica::rest::Request *request,
     return HTTP_204_NO_CONTENT;
 }
 
-int createCounterCallback(punica::rest::Request *request,
-                          punica::rest::Response *response,
+int createCounterCallback(punica::rest::Request &request,
+                          punica::rest::Response &response,
                           void *context)
 {
     std::string name;
     TestPluginWithCounters* plugin =
         reinterpret_cast<TestPluginWithCounters *>(context);
-    std::vector<uint8_t> requestBody = request->getBody();
+    std::vector<uint8_t> requestBody = request.getBody();
     
     requestBody.push_back('\0');
     name = std::string(reinterpret_cast<char *>(requestBody.data()));

@@ -36,7 +36,7 @@ static int ulfiusCallback(const struct _u_request *ulfiusRequest,
     UlfiusResponse response(ulfiusResponse);
     int statusCode;
 
-    statusCode = handler->callFunction(&request, &response);
+    statusCode = handler->callFunction(*(&request), *(&response));
     response.setCode(statusCode);
 
     return U_CALLBACK_COMPLETE;
@@ -82,8 +82,8 @@ UlfiusCallbackHandler::~UlfiusCallbackHandler()
                                   mUrlPrefix.c_str(), mUrlFormat.c_str());
 }
 
-int UlfiusCallbackHandler::callFunction(punica::rest::Request *request,
-                                        punica::rest::Response *response)
+int UlfiusCallbackHandler::callFunction(punica::rest::Request &request,
+                                        punica::rest::Response &response)
 {
     return mFunction(request, response, mContext);
 }

@@ -28,7 +28,7 @@
 namespace punica {
 namespace rest {
 
-typedef int(CallbackFunction)(Request *, Response *, void *);
+typedef int(CallbackFunction)(Request &, Response &, void *);
 
 class Core
 {
