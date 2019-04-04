@@ -19,7 +19,7 @@
 
 #include "plugin_without_destroy.hpp"
 
-punica::plugin::Plugin *newPluginWithoutDestroy(punica::Core *core)
+punica::plugin::Plugin *newPluginWithoutDestroy(punica::Core &core)
 {
     PluginWithoutDestroy *plugin = new PluginWithoutDestroy();
 

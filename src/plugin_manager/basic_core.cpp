@@ -45,12 +45,12 @@ BasicCore::~BasicCore()
 {
 }
 
-punica::rest::Core *BasicCore::getRestCore()
+punica::rest::Core &BasicCore::getRestCore()
 {
-    return &mRestCore;
+    return *(&mRestCore);
 }
 
-punica::lwm2m::Core *BasicCore::getLwm2mCore()
+punica::lwm2m::Core &BasicCore::getLwm2mCore()
 {
-    return &mLwm2mCore;
+    return *(&mLwm2mCore);
 }

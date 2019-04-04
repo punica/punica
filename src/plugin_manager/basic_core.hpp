@@ -37,8 +37,8 @@ public:
               lwm2m_context_t *lwm2mContext);
     ~BasicCore();
 
-    punica::rest::Core *getRestCore();
-    punica::lwm2m::Core *getLwm2mCore();
+    punica::rest::Core &getRestCore();
+    punica::lwm2m::Core &getLwm2mCore();
 
 private:
     UlfiusRestCore mRestCore;

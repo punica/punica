@@ -44,7 +44,7 @@ int incrementCounterCallback(punica::rest::Request *request,
     return HTTP_204_NO_CONTENT;
 }
 
-Counter::Counter(punica::rest::Core *restCore,
+Counter::Counter(punica::rest::Core &restCore,
                  std::string prefix,
                  std::string name):
     mRestCore(restCore),
@@ -52,18 +52,18 @@ Counter::Counter(punica::rest::Core *restCore,
     mName(name),
     mCount(0)
 {
-    mRestCore->addCallbackHandler("GET", mPrefix + mName, "", 21,
-                                  &getCounterCallback,
-                                  reinterpret_cast<void *>(this));
-    mRestCore->addCallbackHandler("POST", mPrefix + mName, "", 21,
-                                  &incrementCounterCallback,
-                                  reinterpret_cast<void *>(this));
+    mRestCore.addCallbackHandler("GET", mPrefix + mName, "", 21,
+                                 &getCounterCallback,
+                                 reinterpret_cast<void *>(this));
+    mRestCore.addCallbackHandler("POST", mPrefix + mName, "", 21,
+                                 &incrementCounterCallback,
+                                 reinterpret_cast<void *>(this));
 }
 
 Counter::~Counter()
 {
-    mRestCore->removeCallbackHandler("GET", mPrefix + mName, "");
-    mRestCore->removeCallbackHandler("POST", mPrefix + mName, "");
+    mRestCore.removeCallbackHandler("GET", mPrefix + mName, "");
+    mRestCore.removeCallbackHandler("POST", mPrefix + mName, "");
 }
 
 int Counter::get()

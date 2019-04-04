@@ -37,7 +37,7 @@ public:
                        std::string name);
     ~BasicPluginWrapper();
 
-    bool loadPlugin(punica::Core *core);
+    bool loadPlugin(punica::Core &core);
     bool unloadPlugin();
 
 private:

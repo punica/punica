@@ -30,14 +30,14 @@
 class TestPluginWithCounters: public punica::plugin::Plugin
 {
 public:
-    TestPluginWithCounters(punica::rest::Core *core);
+    TestPluginWithCounters(punica::rest::Core &core);
     ~TestPluginWithCounters();
 
     bool createCounter(std::string name);
     bool destroyCounter(std::string name);
 
 private:
-    punica::rest::Core *mRestCore;
+    punica::rest::Core &mRestCore;
     Counter::map mCounters;
 };
 

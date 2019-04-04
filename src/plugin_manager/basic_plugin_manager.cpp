@@ -28,7 +28,7 @@ static const char *loggingSection = "[PLUGINS]";
 basic_plugin_manager_t *basic_plugin_manager_new(basic_punica_core_t *core)
 {
     return reinterpret_cast<basic_plugin_manager_t *>(
-               new BasicPluginManager(reinterpret_cast<BasicCore *>(core)));
+               new BasicPluginManager(reinterpret_cast<BasicCore &>(*core)));
 }
 
 void basic_plugin_manager_delete(basic_plugin_manager_t *c_manager)
@@ -107,7 +107,7 @@ int basic_plugin_manager_unload_plugins(basic_plugin_manager_t *plugin_manager,
     return plugins_unloaded;
 }
 
-BasicPluginManager::BasicPluginManager(punica::Core *core):
+BasicPluginManager::BasicPluginManager(punica::Core &core):
     mCore(core),
     mPlugins()
 {

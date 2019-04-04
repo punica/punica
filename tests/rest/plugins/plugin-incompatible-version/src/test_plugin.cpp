@@ -19,7 +19,7 @@
 
 #include "test_plugin.hpp"
 
-punica::plugin::Plugin *newTestPlugin(punica::Core *core)
+punica::plugin::Plugin *newTestPlugin(punica::Core &core)
 {
     return new TestPlugin();
 }

@@ -30,8 +30,8 @@ class Core
 public:
     virtual ~Core() { }
 
-    virtual punica::rest::Core *getRestCore() = 0;
-    virtual punica::lwm2m::Core *getLwm2mCore() = 0;
+    virtual punica::rest::Core &getRestCore() = 0;
+    virtual punica::lwm2m::Core &getLwm2mCore() = 0;
 };
 
 } /* namespace punica */

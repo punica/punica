@@ -60,26 +60,26 @@ int createCounterCallback(punica::rest::Request *request,
     return HTTP_201_CREATED;
 }
 
-TestPluginWithCounters::TestPluginWithCounters(punica::rest::Core *core):
+TestPluginWithCounters::TestPluginWithCounters(punica::rest::Core &core):
     mRestCore(core)
 {
     void *pluginContext = reinterpret_cast<void *>(this);
 
-    mRestCore->addCallbackHandler("POST",
-                                  "/test_plugin_with_counters/counter", "", 11,
-                                  &createCounterCallback, pluginContext);
-    mRestCore->addCallbackHandler("DELETE",
-                                  "/test_plugin_with_counters/counter",
-                                  ":name", 11,
-                                  &destroyCounterCallback, pluginContext);
+    mRestCore.addCallbackHandler("POST",
+                                 "/test_plugin_with_counters/counter", "", 11,
+                                 &createCounterCallback, pluginContext);
+    mRestCore.addCallbackHandler("DELETE",
+                                 "/test_plugin_with_counters/counter",
+                                 ":name", 11,
+                                 &destroyCounterCallback, pluginContext);
 }
 
 TestPluginWithCounters::~TestPluginWithCounters()
 {
-    mRestCore->removeCallbackHandler("POST",
-                                     "/test_plugin_with_counters/counter", "");
-    mRestCore->removeCallbackHandler("DELETE",
-                                     "/test_plugin_with_counters/counter", "");
+    mRestCore.removeCallbackHandler("POST",
+                                    "/test_plugin_with_counters/counter", "");
+    mRestCore.removeCallbackHandler("DELETE",
+                                    "/test_plugin_with_counters/counter", "");
 }
 
 bool TestPluginWithCounters::createCounter(std::string name)
@@ -110,9 +110,9 @@ bool TestPluginWithCounters::destroyCounter(std::string name)
     return true;
 }
 
-punica::plugin::Plugin *newTestPlugin(punica::Core *core)
+punica::plugin::Plugin *newTestPlugin(punica::Core &core)
 {
-    punica::rest::Core *restCore = core->getRestCore();
+    punica::rest::Core &restCore = core.getRestCore();
     TestPluginWithCounters *plugin = new TestPluginWithCounters(restCore);
 
     return plugin;

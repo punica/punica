@@ -32,7 +32,7 @@ public:
     typedef std::unique_ptr<Counter> ptr;
     typedef std::map<std::string, Counter::ptr> map;
 
-    Counter(punica::rest::Core *restCore,
+    Counter(punica::rest::Core &restCore,
             std::string prefix,
             std::string name);
     ~Counter();
@@ -41,7 +41,7 @@ public:
     void increment();
 
 private:
-    punica::rest::Core *mRestCore;
+    punica::rest::Core &mRestCore;
     std::string mPrefix, mName;
     int mCount;
 };

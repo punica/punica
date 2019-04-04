@@ -133,7 +133,7 @@ bool BasicPluginWrapper::loadPluginApi()
     return false;
 }
 
-bool BasicPluginWrapper::loadPlugin(punica::Core *core)
+bool BasicPluginWrapper::loadPlugin(punica::Core &core)
 {
     if (((mPluginApi == NULL)
          || (mPluginApi->create == NULL))

@@ -102,14 +102,14 @@ int stampCallback(punica::rest::Request *request,
     return statusCode;
 }
 
-punica::plugin::Plugin *newTestPlugin(punica::Core *core)
+punica::plugin::Plugin *newTestPlugin(punica::Core &core)
 {
     TestPlugin *plugin = new TestPlugin("Test Plugin Stamp");
-    punica::rest::Core *restCore = core->getRestCore();
+    punica::rest::Core &restCore = core.getRestCore();
     void *pluginContext = reinterpret_cast<void *>(plugin);
 
-    restCore->addCallbackHandler("*", "/test_plugin/stamp", "", 10,
-                                 &stampCallback, pluginContext);
+    restCore.addCallbackHandler("*", "/test_plugin/stamp", "", 10,
+                                &stampCallback, pluginContext);
 
     return plugin;
 }

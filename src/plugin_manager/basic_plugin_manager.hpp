@@ -25,14 +25,14 @@
 class BasicPluginManager
 {
 public:
-    BasicPluginManager(punica::Core *core);
+    BasicPluginManager(punica::Core &core);
     ~BasicPluginManager();
 
     bool loadPlugin(std::string name, std::string path);
     bool unloadPlugin(std::string name);
 
 private:
-    punica::Core *mCore;
+    punica::Core &mCore;
     BasicPluginWrapper::map mPlugins;
 };
 
