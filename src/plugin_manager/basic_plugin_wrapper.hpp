@@ -43,7 +43,6 @@ public:
 private:
     void *mDLL;
     std::string mPath, mName;
-    const char *mCName;
     punica::plugin::Plugin *mPlugin;
     punica::plugin::PluginApi *mPluginApi;
 

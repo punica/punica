@@ -34,7 +34,6 @@ BasicPluginWrapper::BasicPluginWrapper(std::string path,
     mDLL(nullptr),
     mPath(path),
     mName(name),
-    mCName(strdup(name.c_str())),
     mPlugin(nullptr),
     mPluginApi(nullptr)
 {
@@ -48,7 +47,6 @@ BasicPluginWrapper::~BasicPluginWrapper()
         unloadPlugin();
     }
     unloadDLL();
-    free((void *)mCName);
 }
 
 bool BasicPluginWrapper::loadDLL()
@@ -64,7 +62,7 @@ bool BasicPluginWrapper::loadDLL()
     {
         log_message(LOG_LEVEL_ERROR,
                     "%s Failed to load plugin \"%s\" DLL.\n\t%s\n",
-                    loggingSection, mCName, dlerror());
+                    loggingSection, mName.c_str(), dlerror());
         return false;
     }
     dlerror(); /* Clear any existing error */
@@ -100,7 +98,7 @@ bool BasicPluginWrapper::loadPluginApi()
     {
         log_message(LOG_LEVEL_ERROR,
                     "%s Failed to load plugin \"%s\" API.\n\t%s\n",
-                    loggingSection, mCName, dlerror());
+                    loggingSection, mName.c_str(), dlerror());
         return false;
     }
     dlerror(); /* Clear any existing error */
@@ -125,13 +123,13 @@ bool BasicPluginWrapper::loadPluginApi()
     {
         log_message(LOG_LEVEL_TRACE,
                     "%s Successfully loaded plugin \"%s\" API.\n",
-                    loggingSection, mCName);
+                    loggingSection, mName.c_str());
         return true;
     }
 
     log_message(LOG_LEVEL_ERROR,
                 "%s Failed to load plugin \"%s\" API.\n\t%s\n",
-                loggingSection, mCName, pluginApiError);
+                loggingSection, mName.c_str(), pluginApiError);
     return false;
 }
 
@@ -149,7 +147,7 @@ bool BasicPluginWrapper::loadPlugin(punica::Core *core)
     {
         log_message(LOG_LEVEL_ERROR,
                     "%s Failed to load plugin \"%s\".\n\t%s\n",
-                    loggingSection, mCName,
+                    loggingSection, mName.c_str(),
                     "PLUGIN_API.create() returned NULL");
 
         return false;
@@ -157,7 +155,7 @@ bool BasicPluginWrapper::loadPlugin(punica::Core *core)
 
     log_message(LOG_LEVEL_INFO,
                 "%s Successfully loaded plugin \"%s\".\n",
-                loggingSection, mCName);
+                loggingSection, mName.c_str());
     return true;
 }
 
@@ -169,13 +167,13 @@ bool BasicPluginWrapper::unloadPlugin()
     {
         log_message(LOG_LEVEL_WARN,
                     "%s Failed to unload plugin \"%s\".\n",
-                    loggingSection, mCName);
+                    loggingSection, mName.c_str());
         return false;
     }
 
     mPluginApi->destroy(mPlugin);
     log_message(LOG_LEVEL_INFO,
                 "%s Successfully unloaded plugin \"%s\".\n",
-                loggingSection, mCName);
+                loggingSection, mName.c_str());
     return true;
 }
