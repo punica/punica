@@ -31,13 +31,13 @@ static const char loggingSection[] = "[PLUGINS]";
 
 BasicPluginWrapper::BasicPluginWrapper(std::string path,
                                        std::string name):
-    mDLL(nullptr),
+    mDll(nullptr),
     mPath(path),
     mName(name),
     mPlugin(nullptr),
     mPluginApi(nullptr)
 {
-    loadDLL();
+    loadDll();
 }
 
 BasicPluginWrapper::~BasicPluginWrapper()
@@ -46,19 +46,19 @@ BasicPluginWrapper::~BasicPluginWrapper()
     {
         unloadPlugin();
     }
-    unloadDLL();
+    unloadDll();
 }
 
-bool BasicPluginWrapper::loadDLL()
+bool BasicPluginWrapper::loadDll()
 {
-    if (mDLL != NULL)
+    if (mDll != NULL)
     {
-        unloadDLL();
+        unloadDll();
     }
 
-    mDLL = dlopen(mPath.c_str(), RTLD_NOW | RTLD_LOCAL);
+    mDll = dlopen(mPath.c_str(), RTLD_NOW | RTLD_LOCAL);
 
-    if (mDLL == NULL)
+    if (mDll == NULL)
     {
         log_message(LOG_LEVEL_ERROR,
                     "%s Failed to load plugin \"%s\" DLL.\n\t%s\n",
@@ -70,14 +70,14 @@ bool BasicPluginWrapper::loadDLL()
     return true;
 }
 
-bool BasicPluginWrapper::unloadDLL()
+bool BasicPluginWrapper::unloadDll()
 {
-    if (mDLL == NULL)
+    if (mDll == NULL)
     {
         return false;
     }
 
-    dlclose(mDLL);
+    dlclose(mDll);
     dlerror(); /* Clear any existing error */
 
     return true;
@@ -86,13 +86,13 @@ bool BasicPluginWrapper::unloadDLL()
 bool BasicPluginWrapper::loadPluginApi()
 {
     const char *pluginApiError, *punicaVersion = PUNICA_VERSION;
-    if (mDLL == NULL)
+    if (mDll == NULL)
     {
         return false;
     }
 
     mPluginApi = static_cast<punica::plugin::PluginApi *>(
-                     dlsym(mDLL, PLUGIN_API_HANDLE_NAME));
+                     dlsym(mDll, PLUGIN_API_HANDLE_NAME));
 
     if (mPluginApi == NULL)
     {

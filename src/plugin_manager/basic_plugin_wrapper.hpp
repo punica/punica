@@ -41,13 +41,13 @@ public:
     bool unloadPlugin();
 
 private:
-    void *mDLL;
+    void *mDll;
     std::string mPath, mName;
     punica::plugin::Plugin *mPlugin;
     punica::plugin::PluginApi *mPluginApi;
 
-    bool loadDLL();
-    bool unloadDLL();
+    bool loadDll();
+    bool unloadDll();
     bool loadPluginApi();
 };
 
