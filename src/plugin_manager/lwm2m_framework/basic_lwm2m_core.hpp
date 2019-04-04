@@ -29,8 +29,6 @@ public:
     BasicLwm2mCore(lwm2m_context_t *lwm2mContext);
     ~BasicLwm2mCore();
 
-    lwm2m_context_t *getContext();
-
 private:
     lwm2m_context_t *mContext;
 };
