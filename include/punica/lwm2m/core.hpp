@@ -20,8 +20,6 @@
 #ifndef PUNICA_LWM2M_CORE_HPP
 #define PUNICA_LWM2M_CORE_HPP
 
-#include <memory>
-
 namespace punica {
 namespace lwm2m {
 
