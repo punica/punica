@@ -36,7 +36,7 @@ static int ulfiusCallback(const struct _u_request *ulfiusRequest,
     UlfiusResponse response(ulfiusResponse);
     int statusCode;
 
-    statusCode = handler->callFunction(*(&request), *(&response));
+    statusCode = handler->callFunction(request, response);
     response.setCode(statusCode);
 
     return U_CALLBACK_COMPLETE;
