@@ -20,7 +20,10 @@
 #include "basic_plugin_manager.hpp"
 #include "basic_plugin_manager.h"
 
+#include "../logging.h"
 #include "basic_core.hpp"
+
+static const char *loggingSection = "[PLUGINS]";
 
 basic_plugin_manager_t *basic_plugin_manager_new(basic_punica_core_t *core)
 {
@@ -117,15 +120,19 @@ BasicPluginManager::~BasicPluginManager()
 
 bool BasicPluginManager::loadPlugin(std::string path, std::string name)
 {
+    if (mPlugins.find(name) != mPlugins.end())
+    {
+        log_message(LOG_LEVEL_WARN,
+                    "%s Skipping plugin \"%s\" loading!\n",
+                    loggingSection, name.c_str());
+        log_message(LOG_LEVEL_INFO,
+                    "\tPlugin with duplicate name found!\n");
+    }
+
     BasicPluginWrapper::ptr plugin(new BasicPluginWrapper(path, name));
     if (plugin->loadPlugin(mCore) != true)
     {
         return false;
-    }
-
-    if (mPlugins.find(name) != mPlugins.end())
-    {
-        unloadPlugin(name);
     }
 
     mPlugins[name] = std::move(plugin);

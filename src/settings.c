@@ -428,14 +428,10 @@ static void set_logging_settings(json_t *j_section, logging_settings_t *settings
 static int set_plugin_entry_settings(json_t *j_plugin_settings,
                                      linked_list_t *plugins_list)
 {
-    linked_list_entry_t *entry;
-    plugin_settings_t *plugin, *plugin_entry;
+    plugin_settings_t *plugin;
     size_t plugin_name_length, plugin_path_length;
-    json_t *j_name, *j_path;
-    const char *name;
-
-    j_name = json_object_get(j_plugin_settings, "name");
-    j_path = json_object_get(j_plugin_settings, "path");
+    json_t *j_name = json_object_get(j_plugin_settings, "name");
+    json_t *j_path = json_object_get(j_plugin_settings, "path");
 
     if (!json_is_string(j_name))
     {
@@ -458,8 +454,8 @@ static int set_plugin_entry_settings(json_t *j_plugin_settings,
     if (!json_is_string(j_path))
     {
         fprintf(stdout,
-                "%s Plugin configured without path.\n",
-                logging_section);
+                "%s Plugin \"%s\" configured without path.\n",
+                logging_section, json_string_value(j_name));
         return 1;
     }
     plugin_path_length = strnlen(json_string_value(j_path),
@@ -468,28 +464,14 @@ static int set_plugin_entry_settings(json_t *j_plugin_settings,
         || plugin_path_length == J_MAX_LENGTH_PLUGIN_PATH)
     {
         fprintf(stdout,
-                "%s Plugin path length is invalid.\n",
-                logging_section);
+                "%s Plugin \"%s\" path length is invalid.\n",
+                logging_section, json_string_value(j_name));
         return 1;
-    }
-
-    name = json_string_value(j_name);
-    for (entry = plugins_list->head; entry != NULL; entry = entry->next)
-    {
-        plugin_entry = entry->data;
-        if (strncmp(plugin_entry->name, name, J_MAX_LENGTH_PLUGIN_NAME) == 0)
-        {
-            fprintf(stdout,
-                    "%s Duplicate plugin name \"%s\" entry found.\n",
-                    logging_section, name);
-
-            return 1;
-        }
     }
 
     plugin = malloc(sizeof(plugin_settings_t));
 
-    plugin->name = strdup(name);
+    plugin->name = strdup(json_string_value(j_name));
     plugin->path = strdup(json_string_value(j_path));
 
     linked_list_add(plugins_list, plugin);
