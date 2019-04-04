@@ -20,6 +20,8 @@
 #ifndef PUNICA_PLUGIN_MANAGER_REST_ULFIUS_CALLBACK_HANDLER_HPP
 #define PUNICA_PLUGIN_MANAGER_REST_ULFIUS_CALLBACK_HANDLER_HPP
 
+#include <memory>
+
 #include <punica/rest/core.hpp>
 
 extern "C" {
