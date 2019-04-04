@@ -22,15 +22,9 @@
 
 #include <punica/rest/core.hpp>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
-
 #include <ulfius.h>
-
-#ifdef __cplusplus
 }
-#endif
 
 class UlfiusCallbackHandler
 {

@@ -26,15 +26,9 @@
 #include "rest_framework/ulfius_rest_core.hpp"
 #include "lwm2m_framework/basic_lwm2m_core.hpp"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
-
 #include <ulfius.h>
-
-#ifdef __cplusplus
 } // extern "C"
-#endif
 
 class BasicCore: public punica::Core
 {

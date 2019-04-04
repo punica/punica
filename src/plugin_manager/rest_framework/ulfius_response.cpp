@@ -23,15 +23,9 @@
 
 #include "../../logging.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
-
 #include <ulfius.h>
-
-#ifdef __cplusplus
 } // extern "C"
-#endif
 
 static const char *loggingSection = "[REST API]";
 

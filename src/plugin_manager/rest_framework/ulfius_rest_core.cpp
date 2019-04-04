@@ -20,15 +20,9 @@
 #include "ulfius_rest_core.hpp"
 #include "ulfius_callback_handler.hpp"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
-
 #include <ulfius.h>
-
-#ifdef __cplusplus
 } // extern "C"
-#endif
 
 UlfiusRestCore::UlfiusRestCore(struct _u_instance *ulfius):
     mUlfius(ulfius)

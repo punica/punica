@@ -21,41 +21,35 @@
 
 #include "ulfius_request.hpp"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
-
 #include <ulfius.h>
-
-#ifdef __cplusplus
 } // extern "C"
-#endif
 
 static std::map<std::string, std::string> ulfiusToStdMap(
     struct _u_map *ulfiusMap)
 {
     std::map<std::string, std::string> stdMap;
     std::string key, value;
-    int headerIterator = 0;
+    int ulfiusMapIterator = 0;
 
     if (ulfiusMap == NULL)
     {
         return stdMap;
     }
 
-    while (ulfiusMap->keys[headerIterator] != NULL)
+    while (ulfiusMap->keys[ulfiusMapIterator] != NULL)
     {
-        key = ulfiusMap->keys[headerIterator];
-        if (ulfiusMap->lengths[headerIterator] > 0)
+        key = ulfiusMap->keys[ulfiusMapIterator];
+        if (ulfiusMap->lengths[ulfiusMapIterator] > 0)
         {
-            value = ulfiusMap->values[headerIterator];
+            value = ulfiusMap->values[ulfiusMapIterator];
         }
         else
         {
             value = "";
         }
         stdMap.insert(std::make_pair(key, value));
-        ++headerIterator;
+        ++ulfiusMapIterator;
     }
 
     return stdMap;
