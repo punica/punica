@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Punica - LwM2M server with REST API
 # Copyright (C) 2018 8devices
@@ -20,8 +20,11 @@
 set -e
 
 PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
+SCRIPTS_DIR="${PROJECT_ROOT_DIR}/script"
 THIRD_PARTY_DIR="${PROJECT_ROOT_DIR}/third_party"
-DEFAULT_LOG_DIR="${PROJECT_ROOT_DIR}/script/log"
+DEFAULT_LOG_DIR="${SCRIPTS_DIR}/log"
+
+source "${SCRIPTS_DIR}/.utils"
 
 if [ -z "${BUILD_DIR}" ]; then
     BUILD_DIR="${PROJECT_ROOT_DIR}/build"
@@ -44,8 +47,8 @@ else
     export LOG_FILE
 fi
 
-BUILD_TOOLS_APT="git-core cmake build-essential automake libtool gnutls-bin"
-DEPENDANT_LIBRARIES_APT="libssl-dev libgnutls28-dev libmicrohttpd-dev uuid-dev"
+BUILD_TOOLS_APT=("git-core" "cmake" "build-essential" "automake" "libtool" "gnutls-bin")
+DEPENDANT_LIBRARIES_APT=("libssl-dev" "libgnutls28-dev" "libmicrohttpd-dev" "uuid-dev")
 
 JANSSON_DIR="${THIRD_PARTY_DIR}/jansson"
 LIBJWT_DIR="${THIRD_PARTY_DIR}/libjwt"
@@ -60,36 +63,12 @@ MAKE_ARGS_BASE=""
 
 CONFIGURE_ARGS_BASE="${CONFIGURE_ARGS_BASE} --enable-static=yes --enable-shared=no"
 
-echo_stderr () {
-    echo "$@" >&2
-}
-
 library_error () {
     echo_stderr "Failed to install $1!"
     echo_stderr ""
     echo_stderr "For more information refer to \"${LOG_FILE}\""
 
     exit 1
-}
-
-update_repositories () {
-    if which apt-get; then
-        sudo apt-get update -qq
-    elif which rpm; then
-        echo_stderr "RPM is not supported yet!"
-        return 1
-    elif which opkg; then
-        echo_stderr "OPKG is not supported yet!"
-        return 1
-    elif which brew; then
-        echo_stderr "BREW is not supported yet!"
-        return 1
-    else
-        echo_stderr "Unknown package manager! (not supported yet)"
-        return 1
-    fi
-
-    return 0
 }
 
 update_submodules () {
@@ -110,46 +89,6 @@ install_submodules () {
     install_curl
     install_ulfius
     install_wakaama
-}
-
-install_build_tools () {
-    if which apt-get; then
-        eval "sudo apt-get install -yqq ${BUILD_TOOLS_APT}"
-    elif which rpm; then
-        echo_stderr "RPM is not supported yet!"
-        return 1
-    elif which opkg; then
-        echo_stderr "OPKG is not supported yet!"
-        return 1
-    elif which brew; then
-        echo_stderr "BREW is not supported yet!"
-        return 1
-    else
-        echo_stderr "Unknown package manager! (not supported yet)"
-        return 1
-    fi
-
-    return $?
-}
-
-install_dependant_libraries_packages () {
-    if which apt-get; then
-        eval "sudo apt-get install -yqq ${DEPENDANT_LIBRARIES_APT}"
-    elif which rpm; then
-        echo_stderr "RPM is not supported yet!"
-        return 1
-    elif which opkg; then
-        echo_stderr "OPKG is not supported yet!"
-        return 1
-    elif which brew; then
-        echo_stderr "BREW is not supported yet!"
-        return 1
-    else
-        echo_stderr "Unknown package manager! (not supported yet)"
-        return 1
-    fi
-
-    return $?
 }
 
 install_jansson () {
@@ -258,10 +197,10 @@ echo "==> Updating package lists..."
 update_repositories >> ${LOG_FILE}
 
 echo "==> Installing building tools..."
-install_build_tools >> ${LOG_FILE}
+install_software_array_if_not_found "${BUILD_TOOLS_APT[@]}" >> ${LOG_FILE}
 
 echo "==> Installing dependant libraries packages..."
-install_dependant_libraries_packages >> ${LOG_FILE}
+install_software_array_if_not_found "${DEPENDANT_LIBRARIES_APT[@]}" >> ${LOG_FILE}
 
 echo "==> Updating submodules..."
 update_submodules >> ${LOG_FILE}
