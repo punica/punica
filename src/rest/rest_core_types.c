@@ -26,9 +26,33 @@
 
 #include <liblwm2m.h>
 
+#define BASE64_BUFFER_SIZE  1024
 
 static const char *base64_table =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+static int base64_table_decode(const char *encoded_string, char *decoded_string)
+{
+    const char *position;
+
+    for (int i = 0; i < strlen(encoded_string); i++)
+    {
+        if (encoded_string[i] == '=')
+        {
+            return 0;
+        }
+
+        position = strchr(base64_table, encoded_string[i]);
+        if (position == NULL)
+        {
+            return -1;
+        }
+
+        decoded_string[i] = position - base64_table;
+    }
+
+    return 0;
+}
 
 size_t rest_get_random(void *buf, size_t buflen)
 {
@@ -108,6 +132,7 @@ int base64_decode(const char *base64_string, uint8_t *data, size_t *length)
     int string_index, data_index = 0;
     int buffer_length, string_length, padding = 0;
     int i;
+    char base64_decoded[BASE64_BUFFER_SIZE];
 
     string_length = strlen(base64_string);
     for (i = 0; i < string_length; i++)
@@ -142,36 +167,28 @@ int base64_decode(const char *base64_string, uint8_t *data, size_t *length)
 
     memset(data, 0, *length);
 
-    uint8_t bits6;
-    const char *pos;
-    for (string_index = 0; string_index < string_length; string_index++)
+    if (base64_table_decode(base64_string, base64_decoded))
     {
-        if (base64_string[string_index] == 0x3d)
-        {
-            break;
-        }
-        if ((pos = strchr(base64_table, base64_string[string_index])) == NULL)
-        {
-            return BASE64_ERR_INV_CHAR;
-        }
-        bits6 = pos - base64_table;
+        return BASE64_ERR_ARG;
+    }
 
-        switch (string_index % 4)
+    string_index = 0;
+    for (data_index = 0; data_index < buffer_length; data_index++)
+    {
+        switch (data_index % 3)
         {
         case 0:
-            data[data_index] = data[data_index] | (bits6 << 2);
+            data[data_index] = data[data_index] | (base64_decoded[string_index] << 2);
+            data[data_index] = data[data_index] | (base64_decoded[string_index + 1] >> 4);
             break;
         case 1:
-            data[data_index] = data[data_index] | (bits6 >> 4);
-            data[data_index + 1] = data[data_index + 1] | (bits6 << 4);
+            data[data_index] = data[data_index] | (base64_decoded[string_index + 1] << 4);
+            data[data_index] = data[data_index] | (base64_decoded[string_index + 2] >> 2);
             break;
         case 2:
-            data[data_index + 1] = data[data_index + 1] | (bits6 >> 2);
-            data[data_index + 2] = data[data_index + 2] | (bits6 << 6);
-            break;
-        case 3:
-            data[data_index + 2] = data[data_index + 2] | (bits6);
-            data_index = data_index + 3;
+            data[data_index] = data[data_index] | (base64_decoded[string_index + 2] << 6);
+            data[data_index] = data[data_index] | (base64_decoded[string_index + 3]);
+            string_index = string_index + 4;
             break;
         }
     }
