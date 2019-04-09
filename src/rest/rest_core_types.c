@@ -169,7 +169,7 @@ int base64_decode(const char *base64_string, uint8_t *data, size_t *length)
 
     if (base64_table_decode(base64_string, base64_decoded))
     {
-        return BASE64_ERR_ARG;
+        return BASE64_ERR_INV_CHAR;
     }
 
     string_index = 0;
