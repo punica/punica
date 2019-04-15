@@ -58,7 +58,7 @@ generate_key_and_certificate () {
         eval "${CERTTOOL_BIN} --generate-self-signed --load-privkey $1 --outfile $2 --template $3"
     } >> ${LOG_FILE} 2>&1 || {
         echo_stderr "Failed to generate private key and certificate!"
-        echo_stderr "\nRefer to \"${LOG_FILE}\" for more detailed information"
+        echo_stderr "Refer to \"${LOG_FILE}\" for more detailed information"
         return 1
     }
 

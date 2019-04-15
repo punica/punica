@@ -34,7 +34,7 @@ build_punica () {
         cd -
     } >> ${LOG_FILE} 2>&1 || {
         echo_stderr "Failed to build punica!"
-        echo_stderr "\nFor more information refer to ${LOG_FILE}"
+        echo_stderr "For more information refer to ${LOG_FILE}"
 
         return 1
     }

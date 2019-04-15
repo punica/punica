@@ -130,8 +130,9 @@ install_software_if_not_found () {
         if install_software "${software}"; then
             echo_and_log "        Success!"
         else
-            echo_stderr "\n     Failed to install \"${software}\"!"
-            echo_and_log "\nRefer to \"${LOG_FILE}\" for more detailed information"
+            echo_and_log ""
+            echo_stderr "     Failed to install \"${software}\"!"
+            echo_and_log "Refer to \"${LOG_FILE}\" for more detailed information"
             return 1
         fi
     fi
