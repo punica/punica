@@ -19,12 +19,12 @@
 
 set -e
 
-PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
-SCRIPTS_DIR="$(dirname "$0")"
+source "$(cd $(dirname "$0") && pwd -P)/.utils"
 
+export BUILD_DIR
 eval "${SCRIPTS_DIR}/update"
 eval "${SCRIPTS_DIR}/test"
 
-PUNICA="${PROJECT_ROOT_DIR}/build/punica"
+PUNICA="${BUILD_DIR}/punica"
 
 eval "${PUNICA} $@"

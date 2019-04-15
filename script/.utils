@@ -17,22 +17,58 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
+PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
+SCRIPTS_DIR="${PROJECT_ROOT_DIR}/script"
+THIRD_PARTY_DIR="${PROJECT_ROOT_DIR}/third_party"
+DEFAULT_LOG_DIR="${SCRIPTS_DIR}/log"
+
+generate_log_file_name () {
+    script_name=$(basename -- "$0")
+    timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
+
+    echo "${log_dir}/${script_name}_${timestamp}.log"
+}
+
+if [ -z "${LOG_FILE}" ]; then
+    log_dir=${DEFAULT_LOG_DIR}
+
+    LOG_FILE=$(generate_log_file_name)
+else
+    log_dir="$(cd $(dirname "$0")/.. && pwd -P)"
+fi
+
+if [ ! -d "${log_dir}" ]; then
+    eval "mkdir -p ${log_dir}"
+fi
+
+if [ -z "${BUILD_DIR}" ]; then
+    BUILD_DIR="${PROJECT_ROOT_DIR}/build"
+fi
+
+export PROJECT_ROOT_DIR
+export SCRIPTS_DIR
+export BUILD_DIR
+export THIRD_PARTY_DIR
+export LOG_FILE
+
 echo_stderr () {
-    echo "$@" >&2
+    eval "(>&2 echo \"$@\" | tee ${LOG_FILE})"
+}
+
+printf_and_log () {
+    eval "printf \"$@\" | tee ${LOG_FILE}"
+}
+
+echo_and_log () {
+    eval "echo \"$@\" | tee ${LOG_FILE}"
 }
 
 update_repositories () {
+    echo_stderr "${LOG_FILE}"
     if which apt-get > /dev/null; then
-        sudo apt-get update -qq
-    elif which rpm > /dev/null; then
-        echo_stderr "RPM is not supported yet!"
-        return 1
-    elif which opkg > /dev/null; then
-        echo_stderr "OPKG is not supported yet!"
-        return 1
-    elif which brew > /dev/null; then
-        echo_stderr "BREW is not supported yet!"
-        return 1
+        sudo apt-get update >> ${LOG_FILE}
+    elif which yum > /dev/null; then
+        eval "sudo yum -y update" >> ${LOG_FILE} 2>&1
     else
         echo_stderr "Unknown package manager! (not supported yet)"
         return 1
@@ -41,27 +77,38 @@ update_repositories () {
     return 0
 }
 
-install_software () {
+look_for_software () {
     if [ -z "$1" ]; then
-        echo "Software name argument is missing or is invalid!"
+        echo_stderr "Software name argument is missing or is invalid!"
         return 1
     fi
 
     local software="$1"
-    echo "      Installing ${software}..."
-    if which apt-get > /dev/null; then
-        eval "sudo apt-get install -yqq ${software}"
+    if which dpkg > /dev/null; then
+        eval "dpkg -s ${software}" >> ${LOG_FILE} 2>&1
     elif which rpm > /dev/null; then
-        echo_stderr "RPM is not supported yet!"
-        return 1
-    elif which opkg > /dev/null; then
-        echo_stderr "OPKG is not supported yet!"
-        return 1
-    elif which brew > /dev/null; then
-        echo_stderr "BREW is not supported yet!"
-        return 1
+        eval "rpm -q ${software}" >> ${LOG_FILE} 2>&1
     else
-        echo_stderr "Unknown package manager! (not supported yet)"
+        echo_stderr "No supported package managers found!"
+        return 1
+    fi
+
+    return $?
+}
+
+install_software () {
+    if [ -z "$1" ]; then
+        echo_stderr "Software name argument is missing or is invalid!"
+        return 1
+    fi
+
+    local software="$1"
+    if which apt-get > /dev/null; then
+        eval "sudo apt-get install -y ${software}" >> ${LOG_FILE} 2>&1
+    elif which yum > /dev/null; then
+        eval "sudo yum -y install ${software}" >> ${LOG_FILE} 2>&1
+    else
+        echo_stderr "No supported package managers found!"
         return 1
     fi
 
@@ -70,16 +117,25 @@ install_software () {
 
 install_software_if_not_found () {
     if [ -z "$1" ]; then
-        echo "Software name argument is missing or is invalid!"
+        echo_stderr "Software name argument is missing or is invalid!"
         return 1
     fi
     local software="$1"
 
-    echo "    - Looking for $software..."
-    command -v ${software} > /dev/null || install_software "${software}" || (
-        (>&2 echo "Failed to install software: \"${software}\"!")
-        return 1
-    )
+    echo_and_log "    - Looking for $software..."
+    if look_for_software ${software}; then
+        echo_and_log "        Found!"
+    else
+        echo_and_log "        Installing ${software}... "
+        if install_software "${software}"; then
+            echo_and_log "        Success!"
+        else
+            echo_and_log ""
+            echo_stderr "     Failed to install \"${software}\"!"
+            return 1
+        fi
+    fi
+            
     return 0
 }
 
@@ -92,6 +148,8 @@ install_software_array_if_not_found () {
 }
 
 export -f echo_stderr
+export -f echo_and_log
+export -f printf_and_log
 export -f update_repositories
 export -f install_software
 export -f install_software_if_not_found

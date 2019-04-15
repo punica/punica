@@ -19,35 +19,9 @@
 
 set -e
 
-PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
-SCRIPTS_DIR="${PROJECT_ROOT_DIR}/script"
-THIRD_PARTY_DIR="${PROJECT_ROOT_DIR}/third_party"
-DEFAULT_LOG_DIR="${SCRIPTS_DIR}/log"
+source "$(cd $(dirname "$0") && pwd -P)/.utils"
 
-source "${SCRIPTS_DIR}/.utils"
-
-if [ -z "${BUILD_DIR}" ]; then
-    BUILD_DIR="${PROJECT_ROOT_DIR}/build"
-fi
-
-if [ -z "${PREFIX_PATH_DIR}" ]; then
-    PREFIX_PATH_DIR="${BUILD_DIR}"
-fi
-
-SCRIPT_NAME=$(basename -- "$0")
-TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
-
-if [ -z "${LOG_FILE}" ]; then
-    if [ ! -d "${DEFAULT_LOG_DIR}" ]; then
-        eval "mkdir ${DEFAULT_LOG_DIR}"
-    fi
-
-    LOG_FILE="${DEFAULT_LOG_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
-else
-    export LOG_FILE
-fi
-
-BUILD_TOOLS_APT=("git-core" "cmake" "build-essential" "automake" "libtool" "gnutls-bin")
+BUILD_TOOLS_APT=("abfabasdfgbasdbgfdf" "git" "cmake" "build-essential" "automake" "libtool" "gnutls-bin")
 DEPENDANT_LIBRARIES_APT=("libssl-dev" "libgnutls28-dev" "libmicrohttpd-dev" "uuid-dev")
 
 JANSSON_DIR="${THIRD_PARTY_DIR}/jansson"
@@ -94,7 +68,7 @@ install_submodules () {
 install_jansson () {
     cmake_args="${CMAKE_ARGS_BASE} -DJANSSON_WITHOUT_TESTS=on -DJANSSON_BUILD_DOCS=off -DJANSSON_EXAMPLES=off -DJANSSON_BUILD_MAN=off"
 
-    echo "    - Installing Jansson..."
+    echo_and_log "    - Installing Jansson..."
 
     eval "rm -rf ${JANSSON_DIR}/build"
     eval "mkdir ${JANSSON_DIR}/build"
@@ -114,7 +88,7 @@ install_jansson () {
 install_libjwt () {
     configure_args="${CONFIGURE_ARGS_BASE} --disable-doxygen-doc PKG_CONFIG_PATH=${PREFIX_PATH_DIR}/lib/pkgconfig"
 
-    echo "    - Installing JWT..."
+    echo_and_log "    - Installing JWT..."
 
     eval "cd ${LIBJWT_DIR}"
 
@@ -134,7 +108,7 @@ install_libjwt () {
 install_curl () {
     configure_args="${CONFIGURE_ARGS_BASE} --without-ssl --with-gnutls  --disable-ares --disable-manual --disable-proxy --disable-verbose --disable-versioned-symbols --enable-hidden-symbols --without-libidn2 --without-librtmp --disable-ldap"
 
-    echo "    - Installing Curl..."
+    echo_and_log "    - Installing Curl..."
 
     eval "cd ${CURL_DIR}"
 
@@ -154,7 +128,7 @@ install_curl () {
 install_ulfius () {
     cmake_args="${CMAKE_ARGS_BASE} -DWITH_YDER=off -DBUILD_UWSC=off -DWITH_GNUTLS=on -DWITH_CURL=on -DBUILD_STATIC=on"
 
-    echo "    - Installing Ulfius..."
+    echo_and_log "    - Installing Ulfius..."
 
     eval "rm -rf ${ULFFIUS_DIR}/build"
     eval "mkdir ${ULFFIUS_DIR}/build"
@@ -175,7 +149,7 @@ install_ulfius () {
 install_wakaama () {
     cmake_args="${CMAKE_ARGS_BASE} -DCUSTOM_CONNECTION_HANDLING=1"
 
-    echo "    - Installing Wakaama..."
+    echo_and_log "    - Installing Wakaama..."
 
     {
         eval "${WAKAAMA_DIR}/script/setup ${cmake_args}" &&
@@ -191,21 +165,21 @@ install_wakaama () {
 sudo -v
 
 eval "rm -rf ${BUILD_DIR}"
-eval "mkdir ${BUILD_DIR}"
+eval "mkdir -p ${BUILD_DIR}"
 
-echo "==> Updating package lists..."
-update_repositories >> ${LOG_FILE}
+echo_and_log "==> Updating package lists..."
+update_repositories
 
-echo "==> Installing building tools..."
-install_software_array_if_not_found "${BUILD_TOOLS_APT[@]}" >> ${LOG_FILE}
+echo_and_log "==> Installing building tools..."
+install_software_array_if_not_found "${BUILD_TOOLS_APT[@]}"
 
-echo "==> Installing dependant libraries packages..."
-install_software_array_if_not_found "${DEPENDANT_LIBRARIES_APT[@]}" >> ${LOG_FILE}
+echo_and_log "==> Installing dependant libraries packages..."
+install_software_array_if_not_found "${DEPENDANT_LIBRARIES_APT[@]}"
 
-echo "==> Updating submodules..."
+echo_and_log "==> Updating submodules..."
 update_submodules >> ${LOG_FILE}
 
-echo "==> Installing submodules..."
+echo_and_log "==> Installing submodules..."
 install_submodules
 
-echo "Finished bootstrapping!"
+echo_and_log "Finished bootstrapping!"

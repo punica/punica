@@ -19,27 +19,13 @@
 
 set -e
 
-PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
-SCRIPTS_DIR="${PROJECT_ROOT_DIR}/script"
-DEFAULT_LOG_DIR="${PROJECT_ROOT_DIR}/script/log"
-
-SCRIPT_NAME=$(basename -- "$0")
-TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
-
-if [ -z "${LOG_FILE}" ]; then
-    if [ ! -d "${DEFAULT_LOG_DIR}" ]; then
-        eval "mkdir ${DEFAULT_LOG_DIR}"
-    fi
-
-    LOG_FILE="${DEFAULT_LOG_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
-else
-    export LOG_FILE
-fi
+source "$(cd $(dirname "$0") && pwd -P)/.utils"
 
 eval "cd ${PROJECT_ROOT_DIR}"
-echo "==> Updating project sources..."
+echo_and_log "==> Updating project sources..."
 git pull >> ${LOG_FILE}
 
+export BUILD_DIR
 eval "${SCRIPTS_DIR}/setup"
 
 cd -
