@@ -18,13 +18,19 @@
 #
 
 PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
+export PROJECT_ROOT_DIR
+
 SCRIPTS_DIR="${PROJECT_ROOT_DIR}/script"
+export SCRIPTS_DIR
+
 THIRD_PARTY_DIR="${PROJECT_ROOT_DIR}/third_party"
+export THIRD_PARTY_DIR
+
 DEFAULT_LOG_DIR="${SCRIPTS_DIR}/log"
 
 generate_log_file_name () {
-    script_name=$(basename -- "$0")
-    timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
+    local script_name=$(basename -- "$0")
+    local timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
 
     echo "${log_dir}/${script_name}_${timestamp}.log"
 }
@@ -35,30 +41,30 @@ if [ -z "${LOG_FILE}" ]; then
     if [ ! -d "${log_dir}" ]; then
         eval "mkdir -p ${log_dir}"
     fi
+
     LOG_FILE=$(generate_log_file_name)
+    export LOG_FILE
 fi
 
 if [ -z "${BUILD_DIR}" ]; then
     BUILD_DIR="${PROJECT_ROOT_DIR}/build"
+    export BUILD_DIR
 fi
-
-export PROJECT_ROOT_DIR
-export SCRIPTS_DIR
-export BUILD_DIR
-export THIRD_PARTY_DIR
-export LOG_FILE
 
 echo_stderr () {
     eval "(>&2 echo \"$@\" | tee ${LOG_FILE})"
 }
+export -f echo_stderr
 
 printf_and_log () {
     eval "printf \"$@\" | tee ${LOG_FILE}"
 }
+export -f printf_and_log
 
 echo_and_log () {
     eval "echo \"$@\" | tee ${LOG_FILE}"
 }
+export -f echo_and_log
 
 update_repositories () {
     echo_stderr "${LOG_FILE}"
@@ -73,6 +79,7 @@ update_repositories () {
 
     return 0
 }
+export -f update_repositories
 
 look_for_software () {
     if [ -z "$1" ]; then
@@ -111,6 +118,7 @@ install_software () {
 
     return $?
 }
+export -f install_software
 
 install_software_if_not_found () {
     if [ -z "$1" ]; then
@@ -136,6 +144,7 @@ install_software_if_not_found () {
             
     return 0
 }
+export -f install_software_if_not_found
 
 install_software_array_if_not_found () {
     local software_array=("$@")
@@ -144,11 +153,4 @@ install_software_array_if_not_found () {
         install_software_if_not_found "${software}"
     done
 }
-
-export -f echo_stderr
-export -f echo_and_log
-export -f printf_and_log
-export -f update_repositories
-export -f install_software
-export -f install_software_if_not_found
 export -f install_software_array_if_not_found

@@ -30,6 +30,7 @@ CURL_DIR="${THIRD_PARTY_DIR}/curl"
 ULFFIUS_DIR="${THIRD_PARTY_DIR}/ulfius"
 WAKAAMA_DIR="${THIRD_PARTY_DIR}/wakaama"
 
+PREFIX_PATH_DIR=$BUILD_DIR
 AUTORECONF_ARGS_BASE="--prepend-include=${PREFIX_PATH_DIR} -i"
 CONFIGURE_ARGS_BASE="--enable-silent-rules --disable-dependency-tracking --prefix ${PREFIX_PATH_DIR}"
 CMAKE_ARGS_BASE="-DCMAKE_INSTALL_PREFIX=${PREFIX_PATH_DIR} -DCMAKE_PREFIX_PATH=${PREFIX_PATH_DIR}"
@@ -66,7 +67,7 @@ install_submodules () {
 }
 
 install_jansson () {
-    cmake_args="${CMAKE_ARGS_BASE} -DJANSSON_WITHOUT_TESTS=on -DJANSSON_BUILD_DOCS=off -DJANSSON_EXAMPLES=off -DJANSSON_BUILD_MAN=off"
+    local cmake_args="${CMAKE_ARGS_BASE} -DJANSSON_WITHOUT_TESTS=on -DJANSSON_BUILD_DOCS=off -DJANSSON_EXAMPLES=off -DJANSSON_BUILD_MAN=off"
 
     echo_and_log "    - Installing Jansson..."
 
@@ -86,7 +87,7 @@ install_jansson () {
 }
 
 install_libjwt () {
-    configure_args="${CONFIGURE_ARGS_BASE} --disable-doxygen-doc PKG_CONFIG_PATH=${PREFIX_PATH_DIR}/lib/pkgconfig"
+    local configure_args="${CONFIGURE_ARGS_BASE} --disable-doxygen-doc PKG_CONFIG_PATH=${PREFIX_PATH_DIR}/lib/pkgconfig"
 
     echo_and_log "    - Installing JWT..."
 
@@ -106,7 +107,7 @@ install_libjwt () {
 }
 
 install_curl () {
-    configure_args="${CONFIGURE_ARGS_BASE} --without-ssl --with-gnutls  --disable-ares --disable-manual --disable-proxy --disable-verbose --disable-versioned-symbols --enable-hidden-symbols --without-libidn2 --without-librtmp --disable-ldap"
+    local configure_args="${CONFIGURE_ARGS_BASE} --without-ssl --with-gnutls  --disable-ares --disable-manual --disable-proxy --disable-verbose --disable-versioned-symbols --enable-hidden-symbols --without-libidn2 --without-librtmp --disable-ldap"
 
     echo_and_log "    - Installing Curl..."
 
@@ -126,7 +127,7 @@ install_curl () {
 }
 
 install_ulfius () {
-    cmake_args="${CMAKE_ARGS_BASE} -DWITH_YDER=off -DBUILD_UWSC=off -DWITH_GNUTLS=on -DWITH_CURL=on -DBUILD_STATIC=on"
+    local cmake_args="${CMAKE_ARGS_BASE} -DWITH_YDER=off -DBUILD_UWSC=off -DWITH_GNUTLS=on -DWITH_CURL=on -DBUILD_STATIC=on"
 
     echo_and_log "    - Installing Ulfius..."
 
@@ -147,7 +148,7 @@ install_ulfius () {
 }
 
 install_wakaama () {
-    cmake_args="${CMAKE_ARGS_BASE} -DCUSTOM_CONNECTION_HANDLING=1"
+    local cmake_args="${CMAKE_ARGS_BASE} -DCUSTOM_CONNECTION_HANDLING=1"
 
     echo_and_log "    - Installing Wakaama..."
 
