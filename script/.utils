@@ -32,13 +32,10 @@ generate_log_file_name () {
 if [ -z "${LOG_FILE}" ]; then
     log_dir=${DEFAULT_LOG_DIR}
 
+    if [ ! -d "${log_dir}" ]; then
+        eval "mkdir -p ${log_dir}"
+    fi
     LOG_FILE=$(generate_log_file_name)
-else
-    log_dir="$(cd $(dirname "$0")/.. && pwd -P)"
-fi
-
-if [ ! -d "${log_dir}" ]; then
-    eval "mkdir -p ${log_dir}"
 fi
 
 if [ -z "${BUILD_DIR}" ]; then
