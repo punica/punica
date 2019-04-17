@@ -21,6 +21,7 @@ set -e
 
 source "$(cd $(dirname "$0") && pwd -P)/.utils"
 
+PREFIX_PATH_DIR=${BUILD_DIR}
 CMAKE_ARGS_BASE="-DCMAKE_INSTALL_PREFIX:PATH=${PREFIX_PATH_DIR} -DCMAKE_PREFIX_PATH=${PREFIX_PATH_DIR}"
 
 build_punica () {
