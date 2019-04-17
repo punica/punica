@@ -52,17 +52,17 @@ if [ -z "${BUILD_DIR}" ]; then
 fi
 
 echo_stderr () {
-    eval "(>&2 echo \"$@\" | tee ${LOG_FILE})"
+    eval "(>&2 echo \"$@\" | tee -a ${LOG_FILE})"
 }
 export -f echo_stderr
 
 printf_and_log () {
-    eval "printf \"$@\" | tee ${LOG_FILE}"
+    eval "printf \"$@\" | tee -a ${LOG_FILE}"
 }
 export -f printf_and_log
 
 echo_and_log () {
-    eval "echo \"$@\" | tee ${LOG_FILE}"
+    eval "echo \"$@\" | tee -a ${LOG_FILE}"
 }
 export -f echo_and_log
 
