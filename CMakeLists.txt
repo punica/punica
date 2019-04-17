@@ -115,7 +115,10 @@ set(LIBRARIES ${LIBRARIES} ${UUID_LIBRARY})
 message("ALL libraries: ${LIBRARIES}")
 target_link_libraries(${PROJECT_NAME} ${LIBRARIES})
 
-target_compile_options(${PROJECT_NAME} PRIVATE "-Wall")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -O -g3")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -O -g3")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 
 if(CODE_COVERAGE)
     target_compile_options(${PROJECT_NAME} PRIVATE "-coverage")
