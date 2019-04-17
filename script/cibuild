@@ -41,7 +41,7 @@ else
 fi
 
 export BUILD_DIR
-eval "${SCRIPTS_DIR}/setup -DCODE_COVERAGE=ON"
+eval "${SCRIPTS_DIR}/setup -DCODE_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug"
 
 eval "${SCRIPTS_DIR}/test"
 
