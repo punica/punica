@@ -67,7 +67,8 @@ echo_and_log () {
 export -f echo_and_log
 
 update_repositories () {
-    echo_stderr "${LOG_FILE}"
+    echo_and_log "  - Updating package lists..."
+
     if which apt-get > /dev/null; then
         sudo apt-get update >> ${LOG_FILE}
     elif which yum > /dev/null; then
@@ -79,33 +80,16 @@ update_repositories () {
 
     return 0
 }
-export -f update_repositories
-
-look_for_software () {
-    if [ -z "$1" ]; then
-        echo_stderr "Software name argument is missing or is invalid!"
-        return 1
-    fi
-
-    local software="$1"
-    if which dpkg > /dev/null; then
-        eval "dpkg -s ${software}" >> ${LOG_FILE} 2>&1
-    elif which rpm > /dev/null; then
-        eval "rpm -q ${software}" >> ${LOG_FILE} 2>&1
-    else
-        echo_stderr "No supported package managers found!"
-        return 1
-    fi
-
-    return $?
-}
 
 install_software () {
+    update_repositories
+
     if [ -z "$1" ]; then
         echo_stderr "Software name argument is missing or is invalid!"
         return 1
     fi
 
+    echo_and_log "  - Installing software..."
     local software="$1"
     if which apt-get > /dev/null; then
         eval "sudo apt-get install -y ${software}" >> ${LOG_FILE} 2>&1
@@ -119,38 +103,3 @@ install_software () {
     return $?
 }
 export -f install_software
-
-install_software_if_not_found () {
-    if [ -z "$1" ]; then
-        echo_stderr "Software name argument is missing or is invalid!"
-        return 1
-    fi
-    local software="$1"
-
-    echo_and_log "    - Looking for $software..."
-    if look_for_software ${software}; then
-        echo_and_log "        Found!"
-    else
-        echo_and_log "        Installing ${software}... "
-        if install_software "${software}"; then
-            echo_and_log "        Success!"
-        else
-            echo_and_log ""
-            echo_stderr "     Failed to install \"${software}\"!"
-            echo_and_log "Refer to \"${LOG_FILE}\" for more detailed information"
-            return 1
-        fi
-    fi
-            
-    return 0
-}
-export -f install_software_if_not_found
-
-install_software_array_if_not_found () {
-    local software_array=("$@")
-    for software in "${software_array[@]}";
-    do
-        install_software_if_not_found "${software}"
-    done
-}
-export -f install_software_array_if_not_found

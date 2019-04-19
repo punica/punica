@@ -21,8 +21,8 @@ set -e
 
 source "$(cd $(dirname "$0") && pwd -P)/.utils"
 
-BUILD_TOOLS_APT=("git" "cmake" "build-essential" "automake" "libtool" "gnutls-bin")
-DEPENDANT_LIBRARIES_APT=("libssl-dev" "libgnutls28-dev" "libmicrohttpd-dev" "uuid-dev")
+BUILD_TOOLS="git cmake build-essential automake libtool gnutls-bin"
+DEPENDANT_LIBRARIES="libssl-dev libgnutls28-dev libmicrohttpd-dev uuid-dev"
 
 JANSSON_DIR="${THIRD_PARTY_DIR}/jansson"
 LIBJWT_DIR="${THIRD_PARTY_DIR}/libjwt"
@@ -168,14 +168,11 @@ sudo -v
 eval "rm -rf ${BUILD_DIR}"
 eval "mkdir -p ${BUILD_DIR}"
 
-echo_and_log "==> Updating package lists..."
-update_repositories
-
 echo_and_log "==> Installing building tools..."
-install_software_array_if_not_found "${BUILD_TOOLS_APT[@]}"
+install_software "${BUILD_TOOLS}"
 
-echo_and_log "==> Installing dependant libraries packages..."
-install_software_array_if_not_found "${DEPENDANT_LIBRARIES_APT[@]}"
+echo_and_log "==> Installing dependant libraries..."
+install_software "${DEPENDANT_LIBRARIES}"
 
 echo_and_log "==> Updating submodules..."
 update_submodules >> ${LOG_FILE}
