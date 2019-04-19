@@ -24,7 +24,6 @@ source "$(cd $(dirname "$0") && pwd -P)/.utils"
 export BUILD_DIR
 eval "${SCRIPTS_DIR}/setup -DCODE_COVERAGE=ON"
 eval "${SCRIPTS_DIR}/test"
-
 ###############################################################################
 # FOLLOWING SECTION WAITS UNTIL COVERAGE REPORT DIRECTORIES APPEAR IN PROJECT
 # DIRECTORY, BY DEFAULT TIMEOUT IS SET TO 10 s, INTERVAL IS 100 ms
