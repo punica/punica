@@ -24,6 +24,7 @@ describe('Secure connection', function () {
       const options = {
         host: 'localhost',
         port: '8889',
+        rejectUnauthorized: false,
         path: '/version',
         ca: [
           fs.readFileSync(key_dir + '/certificate.pem'),
@@ -78,6 +79,7 @@ describe('Secure connection', function () {
       const options = {
         host: 'localhost',
         port: '8889',
+        rejectUnauthorized: false,
         path: '/authenticate',
         ca: [
           fs.readFileSync(key_dir + '/certificate.pem'),
@@ -147,6 +149,7 @@ describe('Secure connection', function () {
       const options = {
         host: 'localhost',
         port: '8889',
+        rejectUnauthorized: false,
         path: '/authenticate',
         ca: [
           fs.readFileSync(key_dir + '/certificate.pem'),
@@ -190,6 +193,7 @@ describe('Secure connection', function () {
       const options = {
         host: 'localhost',
         port: '8889',
+        rejectUnauthorized: false,
         path: '/authenticate',
         ca: [
           fs.readFileSync(key_dir + '/certificate.pem'),
@@ -233,6 +237,7 @@ describe('Secure connection', function () {
       const options = {
         host: 'localhost',
         port: '8889',
+        rejectUnauthorized: false,
         path: '/authenticate',
         ca: [
           fs.readFileSync(key_dir + '/certificate.pem'),
@@ -274,6 +279,7 @@ describe('Secure connection', function () {
       const options = {
         host: 'localhost',
         port: '8889',
+        rejectUnauthorized: false,
         path: '/authenticate',
         ca: [
           fs.readFileSync(key_dir + '/certificate.pem'),
@@ -318,6 +324,7 @@ describe('Secure connection', function () {
       const options = {
         host: 'localhost',
         port: '8889',
+        rejectUnauthorized: false,
         ca: [
           fs.readFileSync(key_dir + '/certificate.pem'),
         ],
@@ -378,6 +385,7 @@ describe('Secure connection', function () {
       const options = {
         host: 'localhost',
         port: '8889',
+        rejectUnauthorized: false,
         ca: [
           fs.readFileSync(key_dir + '/certificate.pem'),
         ],
@@ -428,6 +436,7 @@ describe('Secure connection', function () {
       const options = {
         host: 'localhost',
         port: '8889',
+        rejectUnauthorized: false,
         ca: [
           fs.readFileSync(key_dir + '/certificate.pem'),
         ],
@@ -476,6 +485,7 @@ describe('Secure connection', function () {
       const options = {
         host: 'localhost',
         port: '8889',
+        rejectUnauthorized: false,
         ca: [
           fs.readFileSync(key_dir + '/certificate.pem'),
         ],
@@ -499,6 +509,7 @@ describe('Secure connection', function () {
       const options = {
         host: 'localhost',
         port: '8889',
+        rejectUnauthorized: false,
         ca: [
           fs.readFileSync(key_dir + '/certificate.pem'),
         ],
@@ -525,6 +536,7 @@ describe('Secure connection', function () {
       const options = {
         host: 'localhost',
         port: '8889',
+        rejectUnauthorized: false,
         ca: [
           fs.readFileSync(key_dir + '/certificate.pem'),
         ],
@@ -551,6 +563,7 @@ describe('Secure connection', function () {
       const options = {
         host: 'localhost',
         port: '8889',
+        rejectUnauthorized: false,
         ca: [
           fs.readFileSync(key_dir + '/certificate.pem'),
         ],
@@ -577,6 +590,7 @@ describe('Secure connection', function () {
       const options = {
         host: 'localhost',
         port: '8889',
+        rejectUnauthorized: false,
         ca: [
           fs.readFileSync(key_dir + '/certificate.pem'),
         ],
@@ -603,6 +617,7 @@ describe('Secure connection', function () {
       const options = {
         host: 'localhost',
         port: '8889',
+        rejectUnauthorized: false,
         ca: [
           fs.readFileSync(key_dir + '/certificate.pem'),
         ],
