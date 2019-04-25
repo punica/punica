@@ -72,6 +72,5 @@ fi
 
 echo "==> Building punica..."
 build_punica "$@"
-eval "strip --only-keep-debug ${BUILD_DIR}/punica"
 
 echo "Finished setting up punica!"
