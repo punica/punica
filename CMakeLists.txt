@@ -127,17 +127,17 @@ if(CODE_COVERAGE)
     target_link_libraries(${PROJECT_NAME} "gcov")
 endif()
 
-set(RELEASE_OPTIONS
-    ${BASE_OPTIONS}
+set(RELEASE_COMPILE_OPTIONS
+    ${BASE_COMPILE_OPTIONS}
     "-O3"
    )
-set(DEBUG_OPTIONS
-    ${BASE_OPTIONS}
+set(DEBUG_COMPILE_OPTIONS
+    ${BASE_COMPILE_OPTIONS}
     "-O"
     "-g3"
    )
 
 target_compile_options(${PROJECT_NAME} PRIVATE
-                       "$<$<CONFIG:DEBUG>:${DEBUG_OPTIONS}>")
+                       "$<$<CONFIG:DEBUG>:${DEBUG_COMPILE_OPTIONS}>")
 target_compile_options(${PROJECT_NAME} PRIVATE
-                       "$<$<CONFIG:RELEASE>:${RELEASE_OPTIONS}>")
+                       "$<$<CONFIG:RELEASE>:${RELEASE_COMPILE_OPTIONS}>")
