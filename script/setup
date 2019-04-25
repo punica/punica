@@ -53,6 +53,7 @@ build_punica () {
 
     {
         eval "cmake ${cmake_arguments} ${PROJECT_ROOT_DIR}" &&
+        make clean &&
         make &&
         cd -
     } >> ${LOG_FILE} 2>&1 || {
@@ -71,6 +72,6 @@ fi
 
 echo "==> Building punica..."
 build_punica "$@"
-eval "strip -s ${BUILD_DIR}/punica"
+eval "strip --only-keep-debug ${BUILD_DIR}/punica"
 
 echo "Finished setting up punica!"
