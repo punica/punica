@@ -115,12 +115,29 @@ set(LIBRARIES ${LIBRARIES} ${UUID_LIBRARY})
 message("ALL libraries: ${LIBRARIES}")
 target_link_libraries(${PROJECT_NAME} ${LIBRARIES})
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -O -g3")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -O -g3")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
+set(BASE_COMPILE_OPTIONS
+    "-Wall"
+   )
 
 if(CODE_COVERAGE)
-    target_compile_options(${PROJECT_NAME} PRIVATE "-coverage")
+    set(BASE_COMPILE_OPTIONS
+        ${BASE_COMPILE_OPTIONS}
+        "-coverage"
+       )
     target_link_libraries(${PROJECT_NAME} "gcov")
 endif()
+
+set(RELEASE_OPTIONS
+    ${BASE_OPTIONS}
+    "-O3"
+   )
+set(DEBUG_OPTIONS
+    ${BASE_OPTIONS}
+    "-O"
+    "-g3"
+   )
+
+target_compile_options(${PROJECT_NAME} PRIVATE
+                       "$<$<CONFIG:DEBUG>:${DEBUG_OPTIONS}>")
+target_compile_options(${PROJECT_NAME} PRIVATE
+                       "$<$<CONFIG:RELEASE>:${RELEASE_OPTIONS}>")
