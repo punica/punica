@@ -62,12 +62,17 @@ REST core, requests and responses interfaces.
 ```C++
 typedef int(CallbackFunction)(Request &, Response &, void *);                   
 ```
-in other words, callback function declaration would look like that:
+Callback function parameters:
+    1. Reference to  [REST request interface](#REST-request-interface),
+    2. Reference to [REST response interface](#REST-response-interface),
+    3. Pointer to `void *` context ([callback addition method](#Adding-callback-handler) `handlerContext` parameter), 
+
+Callback function declaration example:
 ```C++
 punica::rest::CallbackFunction someCallbackFunction;
 ```
 
-callback function definition would look like that:
+Callback function definition example:
 ```C++
 int someCallbackFunction(punica::rest::Request &request,
                          punica::rest::Response &response,
@@ -96,7 +101,7 @@ Returns `true` on success, `false` if it fails.
 Lower callback handler `priority` number - higher callback priority.
 `handlerContext` - pointer which will be passed to [`handlerFunction`](#Callback-function) as a context.
 
-example calls:
+Example calls:
 ```C++
 const char importantData = "Very important string...";
 
@@ -112,7 +117,7 @@ bool removeCallbackHandler(const std::string method,
 Removes `method` callback with `urlPrefix` and `urlFormat` from REST API.
 Returns `true` on success, `false` if it fails.
 
-example calls:
+Example calls:
 ```C++
 restCore.removeCallbackHandler("*", "/some", "")
 restCore.removeCallbackHandler("GET", "/some/url/prefix", "/:name")
@@ -127,51 +132,91 @@ std::string getPath()
 ```
 Returns request path as `std::string`.
 
+Example calls:
+```C++
+std::string path = request.getPath();
+```
+
 ##### Getting request method
 ```C++
-virtual std::string getMethod()
+std::string getMethod()
 ```
 Returns request method as `std::string`.
 
+Example calls:
+```C++
+std::string method = request.getMethod();
+```
+
 ##### Getting request headers 
 ```C++
-virtual std::string getHeader(const std::string header)
+std::string getHeader(const std::string header)
 ```
 Returns request `header` named header value as `std::string`.
 
-##### Getting request path 
+Example calls:
 ```C++
-virtual std::string getUrlFormat(const std::string name)
+std::string contentType = request.getHeader("Content-Type");
+```
+
+##### Getting request URL format 
+```C++
+std::string getUrlFormat(const std::string name)
 ```
 Returns request `name` named part of HTTP URL as `std::string`.
 
+Example calls (if [added callback](#Adding-callback-handler) `urlFormat` was `"/:name"`):
+```C++
+std::string name = request.getUrlFormat("name");
+```
+
 ##### Getting request body 
 ```C++
-virtual std::vector<uint8_t> getBody()
+std::vector<uint8_t> getBody()
 ```
 Returns request body as `std::vector<uint8_t>`.
+
+Example calls:
+```C++
+std::vector<uint8_t> body = request.getBody();
+```
 
 #### REST response interface
 `punica::rest::Response` interface is described in `include/punica/rest/response.hpp`.
 
 ##### Setting response body
 ```C++
-virtual void setBody(std::vector<uint8_t> binary_data)
+void setBody(std::vector<uint8_t> binary_data)
 ```
 Writes `binary_data` to response body.
 
+Example calls:
+```C++
+std::string stringBody = "Some message";
+response.setBody(std::vector<uint8_t>(stringBody.begin(), stringBody.end()));
+```
+
 ##### Setting response HTTP status code
 ```C++
-virtual void setCode(const int code)
+void setCode(const int code)
 ```
 Sets response HTTP status code to `code`.
 
+Example calls:
+```C++
+response.setCode(200);
+```
+
 ##### Setting response headers
 ```C++
-virtual void setHeader(const std::string header,
-                       const std::string value)
+void setHeader(const std::string header, const std::string value)
 ```
 Sets response `header` to `value`.
+
+Example calls:
+```C++
+response.setHeader("Content-Type", "text/plain");
+```
 
 ### LwM2M API
 
