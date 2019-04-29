@@ -2,9 +2,11 @@
 [![Build Status](https://travis-ci.com/punica/punica.svg?branch=master)](https://travis-ci.com/punica/punica) [![codecov.io](http://codecov.io/github/punica/punica/coverage.svg?branch=master)](http://codecov.io/github/punica/punica?branch=master)
 
 ## Introduction
-Punica contains easy to use interface to the LwM2M server and client communication.
+Punica contains easy to use REST API interface to the LwM2M server and client communication.
 
-Detailed [Punica API documentation](./doc/PUNICA_API.md).
+Detailed [Punica REST API documentation](./doc/PUNICA_API.md).
+Punica could be extended with plugins, [Public API documentation](./doc/PUBLIC_API.md)
+describes, how to use Public API to create such plugins.
 
 ## Building
 Punica follows [scripts to rule them all](https://github.com/github/scripts-to-rule-them-all) guidelines, therefore getting dependencies,
