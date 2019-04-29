@@ -1,4 +1,4 @@
-# Plugin API
+# Public API
 
 ## Table of contents
 1. [Overview](#Overview)
@@ -19,9 +19,10 @@
         3. [Valid `PluginApi` example](#Valid-PluginApi-example)
 
 ## Overview
-[Plugin API](#Plugin-API) enables external projects or code integration to Punica.
-As of current implementation, Plugin API allows [registering new REST API callbacks]().
-Everything, that plugin needs could be found in `include/punica` directory.
+[Punica Public API](#Public-API) allows user to use external projects together with Punica.
+
+Punica extensions could be implemented by using [Plugin API](#Plugin-API) and other APIs,
+which headers could be found in `include/punica` directory.
 
 ## Minimal requirements
 There are minimal requirements for plugin to be compatible with punica, or else it won't be loaded:
@@ -54,8 +55,10 @@ Returns [LwM2M core interface](#LwM2M-core-interface)
 for management of [LwM2M](#LwM2M-API) interactions.
 
 ### REST API
-REST part of public Punica API consists of callback function type,
-REST core, requests and responses interfaces.
+As of current implementation, [REST API](#REST-API)
+allows [adding](#Adding-callback-handler)
+and [removing](#Removing-callback-handler)
+[REST Callbacks](#Callback-function).
 
 #### Callback function
 `punica::rest::CallbackFunction` type is defined in `include/punica/rest/core.hpp`:
