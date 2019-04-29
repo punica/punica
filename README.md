@@ -5,6 +5,7 @@
 Punica contains easy to use REST API interface to the LwM2M server and client communication.
 
 Detailed [Punica REST API documentation](./doc/PUNICA_API.md).
+
 Punica could be extended with plugins, [Public API documentation](./doc/PUBLIC_API.md)
 describes, how to use Public API to create such plugins.
 
