@@ -115,9 +115,29 @@ set(LIBRARIES ${LIBRARIES} ${UUID_LIBRARY})
 message("ALL libraries: ${LIBRARIES}")
 target_link_libraries(${PROJECT_NAME} ${LIBRARIES})
 
-target_compile_options(${PROJECT_NAME} PRIVATE "-Wall")
+set(BASE_COMPILE_OPTIONS
+    "-Wall"
+   )
 
 if(CODE_COVERAGE)
-    target_compile_options(${PROJECT_NAME} PRIVATE "-coverage")
+    set(BASE_COMPILE_OPTIONS
+        ${BASE_COMPILE_OPTIONS}
+        "-coverage"
+       )
     target_link_libraries(${PROJECT_NAME} "gcov")
 endif()
+
+set(RELEASE_COMPILE_OPTIONS
+    ${BASE_COMPILE_OPTIONS}
+    "-O3"
+   )
+set(DEBUG_COMPILE_OPTIONS
+    ${BASE_COMPILE_OPTIONS}
+    "-O"
+    "-g3"
+   )
+
+target_compile_options(${PROJECT_NAME} PRIVATE
+                       "$<$<CONFIG:DEBUG>:${DEBUG_COMPILE_OPTIONS}>")
+target_compile_options(${PROJECT_NAME} PRIVATE
+                       "$<$<CONFIG:RELEASE>:${RELEASE_COMPILE_OPTIONS}>")
