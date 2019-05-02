@@ -157,10 +157,25 @@ run_punica () {
 }
 
 stop_punica () {
-    eval "kill -2 $1"
+    local time_left=10
+    local interval=0.1
+
+    # send SIGINT signal to PID, log any output, early return if command fails
+    eval "kill -2 $1" >> ${LOG_FILE} 2>&1 || return 0
+
+    # check if PID file exists, every {interval} seconds,
+    # until {time_left} reaches 0 seconds.
     while [ -e /proc/$1 ]
     do
-        sleep .5
+        sleep ${interval}
+        # bc is used to support floating point precision arithmetics
+        time_left=$( echo ${time_left} - ${interval} | bc )
+        comparison_status=$(echo "${time_left} <= 0" | bc)
+        if [ ${comparison_status} -eq 1 ]; then
+            # Warn about processes that fail to stop during timeout
+            echo "WARNING! Timeout is reached when waiting for PID $1 to stop!"
+            break
+        fi
     done
 }
 

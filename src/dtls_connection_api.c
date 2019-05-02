@@ -59,10 +59,12 @@ typedef struct secure_connection_context_t
 } secure_connection_context_t;
 
 static int dtls_connection_start(void *context_p);
-static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size, void **connection,
+static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size,
+                                   session_t *connection,
                                    struct timeval *tv);
-static int dtls_connection_send(void *context_p, void *connection, uint8_t *buffer, size_t length);
-static int dtls_connection_close(void *context_p, void *connection);
+static int dtls_connection_send(void *context_p, session_t connection, uint8_t *buffer,
+                                size_t length);
+static int dtls_connection_close(void *context_p, session_t connection);
 static int dtls_connection_stop(void *context_p);
 
 static credentials_mode_t get_session_ciphersuite(gnutls_session_t session)
@@ -91,7 +93,7 @@ static credentials_mode_t get_session_ciphersuite(gnutls_session_t session)
     }
 }
 
-static const void *dtls_connection_get_identifier(void *connection)
+static const void *dtls_connection_get_identifier(session_t connection)
 {
     device_connection_t *conn = (device_connection_t *)connection;
 
@@ -103,7 +105,7 @@ static const void *dtls_connection_get_identifier(void *connection)
     return conn->device_identifier;
 }
 
-static int dtls_connection_set_identifier(void *connection, void *identifier)
+static int dtls_connection_set_identifier(session_t connection, void *identifier)
 {
     device_connection_t *conn = (device_connection_t *)connection;
 
@@ -177,7 +179,7 @@ static int dtls_connection_handshake_done(device_connection_t *conn,
         return -1;
     }
 
-    ret = context->handshake_done_cb(conn, public_data, public_data_size, context->data, context);
+    ret = context->handshake_done_cb(conn, public_data, public_data_size, context->data);
 
     if (ciphersuite == DEVICE_CREDENTIALS_CERT)
     {
@@ -564,7 +566,7 @@ static device_connection_t *dtls_connection_find(linked_list_t *connection_list,
 }
 
 static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size,
-                                   void **connection, struct timeval *tv)
+                                   session_t *connection, struct timeval *tv)
 {
     secure_connection_context_t *context = (secure_connection_context_t *)context_p;
     fd_set read_fds;
@@ -686,7 +688,7 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
     return 0;
 }
 
-static int dtls_connection_close(void *context_p, void *connection)
+static int dtls_connection_close(void *context_p, session_t connection)
 {
     secure_connection_context_t *context = (secure_connection_context_t *)context_p;
     device_connection_t *conn = (device_connection_t *)connection;
@@ -717,7 +719,8 @@ static int dtls_connection_close(void *context_p, void *connection)
     return 0;
 }
 
-static int dtls_connection_send(void *context_p, void *connection, uint8_t *buffer, size_t length)
+static int dtls_connection_send(void *context_p, session_t connection, uint8_t *buffer,
+                                size_t length)
 {
     device_connection_t *conn = (device_connection_t *)connection;
 
