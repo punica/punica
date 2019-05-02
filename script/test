@@ -21,6 +21,8 @@ set -e
 
 source "$(cd $(dirname "$0") && pwd -P)/.utils"
 
+TEST_TOOLS="valgrind gnutls-bin"
+
 CERTIFICATE_SETTINGS_TEMPLATE="${PROJECT_ROOT_DIR}/tests/rest/certificate_template.cfg"
 KEY_DIR="${PROJECT_ROOT_DIR}/tests/rest/keys"
 TEST_PRIVATE_KEY="${KEY_DIR}/private.key"
@@ -31,6 +33,9 @@ ECDSA_TEST_PRIVATE_KEY="${KEY_DIR}/ecdsa.key"
 ECDSA_TEST_CERTIFICATE="${KEY_DIR}/ecdsa.pem"
 
 CERTTOOL_BIN="certtool"
+
+SECURE_PUNICA_NAME="secure"
+REGULAR_PUNICA_NAME="regular"
 
 generate_key_and_certificate () {
     if [ "$#" -ne 3 ]; then
@@ -177,11 +182,6 @@ log_leak_check () {
     return 0
 }
 
-<<<<<<< HEAD
-sudo -v
-
-echo_and_log "==> Checking code style..."
-=======
 logs_leak_check () {
     if [ -z "$1" ]; then
         (>&2 echo "Invalid punica leak report log file!")
@@ -200,15 +200,20 @@ logs_leak_check () {
 
     if [ "${logs_status}" != "0" ]; then
         (>&2 echo "Punica memory leaks found!")
-        (>&2 echo "\n\nRefer to \"${LOG_FILE}\" for more detailed information")
+        (>&2 echo "Refer to \"${LOG_FILE}\" for more detailed information")
     else
         (echo "No Punica memory leaks found!")
     fi
 
     return $logs_status
 }
-echo "==> Checking code style..."
->>>>>>> c980ad351d21c1f3463a43e30e3a593b0f6f0779
+
+sudo -v
+
+echo_and_log "==> Installing tools for testing..."
+install_software "${TEST_TOOLS}"
+
+echo_and_log "==> Checking code style..."
 eval "${SCRIPTS_DIR}/format_style.sh --dry-run" >> ${LOG_FILE} 2>&1
 
 if [ ! -x "${BUILD_DIR}/punica" ]
@@ -225,15 +230,9 @@ generate_key_and_certificate ${TEST_PRIVATE_KEY} ${TEST_CERTIFICATE} ${CERTIFICA
 generate_key_and_certificate ${OTHER_TEST_PRIVATE_KEY} ${OTHER_TEST_CERTIFICATE} ${CERTIFICATE_SETTINGS_TEMPLATE}
 generate_key_and_certificate_ecdsa ${ECDSA_TEST_PRIVATE_KEY} ${ECDSA_TEST_CERTIFICATE}
 
-<<<<<<< HEAD
 echo_and_log "==> Starting punica(-s)..."
-REGULAR_PUNICA_PID=$(run_punica "regular")
-SECURE_PUNICA_PID=$(run_punica "secure" "-c ${PROJECT_ROOT_DIR}/tests/rest/secure.cfg -d ${PROJECT_ROOT_DIR}/tests/rest/database.json")
-=======
-echo "==> Starting punica(-s)..."
 REGULAR_PUNICA_PID=$(run_punica "${REGULAR_PUNICA_NAME}")
 SECURE_PUNICA_PID=$(run_punica "${SECURE_PUNICA_NAME}" "-c ${PROJECT_ROOT_DIR}/tests/rest/secure.cfg -d ${PROJECT_ROOT_DIR}/tests/rest/database.json")
->>>>>>> c980ad351d21c1f3463a43e30e3a593b0f6f0779
 
 echo_and_log "==> Running coverage tests..."
 test_status=1
@@ -247,9 +246,6 @@ echo_and_log "==> Stopping punica(-s)..."
 stop_punica $REGULAR_PUNICA_PID
 stop_punica $SECURE_PUNICA_PID
 
-<<<<<<< HEAD
-echo_and_log "Finished testing!"
-=======
 if [ ${test_status} -eq 0 ];
 then
     echo "==> Checking for leaks..."
@@ -259,7 +255,6 @@ then
         || test_status=1
 fi
 
-echo "Finished testing!"
->>>>>>> c980ad351d21c1f3463a43e30e3a593b0f6f0779
+echo_and_log "Finished testing!"
 
 exit $test_status
