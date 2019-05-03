@@ -19,6 +19,8 @@
 
 #include <string.h>
 
+#include <gnutls/gnutls.h>
+
 #include "../database.h"
 #include "../punica.h"
 #include "../linked_list.h"
@@ -101,8 +103,7 @@ static int rest_devices_remove_list(linked_list_t *list, const char *id)
 
 static int append_server_key(json_t *j_object, const char *certificate_file)
 {
-    uint8_t binary_buffer[1024]; // sufficient size to store certificate
-    size_t binary_length;
+    gnutls_datum_t cert_buffer = {NULL, 0};
     static json_t *j_string;
     static bool cert_loaded = false;
 
@@ -113,13 +114,15 @@ static int append_server_key(json_t *j_object, const char *certificate_file)
 
     if (cert_loaded == false)
     {
-        binary_length = sizeof(binary_buffer);
-        if (utils_load_certificate(binary_buffer, &binary_length, certificate_file))
+        if (gnutls_load_file(certificate_file, &cert_buffer) != 0)
         {
             return -1;
         }
 
-        j_string = json_object_from_binary(binary_buffer, "server_key", binary_length);
+        j_string = json_object_from_binary(cert_buffer.data,
+                                           "server_key",
+                                           cert_buffer.size + 1);
+        gnutls_free(cert_buffer.data);
         if (j_string == NULL)
         {
             return -1;
@@ -128,7 +131,7 @@ static int append_server_key(json_t *j_object, const char *certificate_file)
         cert_loaded = true;
     }
 
-    if (json_object_update(j_object, j_string))
+    if (json_object_update(j_object, j_string) != 0)
     {
         json_decref(j_string);
         cert_loaded = false;
@@ -253,6 +256,7 @@ static int append_client_key(json_t *j_object, database_entry_t *device_entry)
         return -1;
     }
 
+    json_decref(j_string);
     return 0;
 }
 

@@ -597,6 +597,7 @@ int main(int argc, char *argv[])
     rest_cleanup(&rest);
 
     jwt_cleanup(&settings.http.security.jwt);
+    security_unload(&settings.http.security);
 
     return 0;
 }

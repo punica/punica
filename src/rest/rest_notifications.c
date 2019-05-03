@@ -39,10 +39,7 @@ bool validate_callback(json_t *jcallback, rest_context_t *rest)
     ulfius_resp_t test_response;
     struct _u_map headers;
     bool validation_state = true;
-    json_t *jbody = json_pack("{s:[], s:[], s:[], s:[]}",
-                              "registrations", "reg-updates",
-                              "async-responses", "de-registrations");
-
+    json_t *jbody;
 
     if (jcallback == NULL)
     {
@@ -97,12 +94,15 @@ bool validate_callback(json_t *jcallback, rest_context_t *rest)
     {
         log_message(LOG_LEVEL_ERROR, "[CALLBACK] Failed to set client security credentials\n");
 
-        json_decref(jbody);
         u_map_clean(&headers);
         ulfius_clean_request(&test_request);
 
         return -1;
     }
+
+    jbody = json_pack("{s:[], s:[], s:[], s:[]}",
+                      "registrations", "reg-updates",
+                      "async-responses", "de-registrations");
 
     u_map_copy_into(test_request.map_header, &headers);
     ulfius_set_json_body_request(&test_request, jbody);

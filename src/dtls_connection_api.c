@@ -514,6 +514,7 @@ static int dtls_connection_start(void *context_p)
 exit:
     if (ret <= 0)
     {
+        gnutls_free(context->cookie_key.data);
         gnutls_certificate_free_credentials(context->server_cert);
         gnutls_priority_deinit(context->priority_cache);
         gnutls_psk_free_server_credentials(context->server_psk);
@@ -575,6 +576,7 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
     gnutls_dtls_prestate_st prestate;
     credentials_mode_t ciphersuite;
     const char *err_str;
+    char *session_desc = NULL;
 
 //  to reduce code redundancy
     sock = context->conn_listen->sock;
@@ -632,7 +634,8 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
 
             if (conn != NULL)
             {
-                if (gnutls_session_get_desc(conn->session) == NULL)
+                session_desc = gnutls_session_get_desc(conn->session);
+                if (session_desc == NULL)
                 {
                     ret = gnutls_handshake(conn->session);
 
@@ -660,6 +663,7 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
                 }
                 else
                 {
+                    gnutls_free(session_desc);
                     conn->addr_size = sizeof(conn->addr);
 
                     do
@@ -746,6 +750,7 @@ static int dtls_connection_stop(void *context_p)
 
     linked_list_delete(context->connection_list);
 
+    gnutls_free(context->cookie_key.data);
     gnutls_certificate_free_credentials(context->server_cert);
     gnutls_priority_deinit(context->priority_cache);
     gnutls_psk_free_server_credentials(context->server_psk);

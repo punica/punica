@@ -18,6 +18,9 @@
  */
 #include <string.h>
 
+#include <gnutls/gnutls.h>
+#include <gnutls/x509.h>
+
 #include "rest_utils.h"
 
 #include "../punica.h"
@@ -240,26 +243,6 @@ int coap_to_http_status(int status)
     default:
         return -(((status >> 5) & 0x7) * 100 + (status & 0x1F));
     }
-}
-
-int utils_load_certificate(uint8_t *buffer, size_t *length, const char *cert_file)
-{
-    gnutls_datum_t cert_buffer = {NULL, 0};
-
-    if (gnutls_load_file(cert_file, &cert_buffer) != 0)
-    {
-        return -1;
-    }
-
-    if (*length < cert_buffer.size)
-    {
-        return -1;
-    }
-
-    memcpy(buffer, cert_buffer.data, cert_buffer.size);
-    *length = cert_buffer.size;
-
-    return 0;
 }
 
 json_t *json_object_from_string(const char *string, const char *key)

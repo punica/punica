@@ -23,6 +23,7 @@
 #include "punica.h"
 
 int database_load_file(rest_context_t *rest);
+int devices_database_unload(linked_list_t *devices_database);
 
 int database_validate_entry(json_t *j_device_object);
 int database_validate_new_entry(json_t *j_new_device_object);
