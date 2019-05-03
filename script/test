@@ -172,9 +172,7 @@ log_leak_check () {
 
     if [ "${definite_leaks}" != "0" ]\
     || [ "${indirect_leaks}" != "0" ]\
-    || [ "${possible_leaks}" != "0" ]\
-    || [ "${reachable_memory}" != "0" ]\
-    || [ "${suppressed}" != "0" ];
+    || [ "${possible_leaks}" != "0" ];
     then
         return 1
     fi
