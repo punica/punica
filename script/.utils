@@ -1,0 +1,105 @@
+#!/bin/bash
+#
+# Punica - LwM2M server with REST API
+# Copyright (C) 2018 8devices
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+
+PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
+export PROJECT_ROOT_DIR
+
+SCRIPTS_DIR="${PROJECT_ROOT_DIR}/script"
+export SCRIPTS_DIR
+
+THIRD_PARTY_DIR="${PROJECT_ROOT_DIR}/third_party"
+export THIRD_PARTY_DIR
+
+DEFAULT_LOG_DIR="${SCRIPTS_DIR}/log"
+
+generate_log_file_name () {
+    local script_name=$(basename -- "$0")
+    local timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
+
+    echo "${log_dir}/${script_name}_${timestamp}.log"
+}
+
+if [ -z "${LOG_FILE}" ]; then
+    log_dir=${DEFAULT_LOG_DIR}
+
+    if [ ! -d "${log_dir}" ]; then
+        eval "mkdir -p ${log_dir}"
+    fi
+
+    LOG_FILE=$(generate_log_file_name)
+    export LOG_FILE
+fi
+
+if [ -z "${BUILD_DIR}" ]; then
+    BUILD_DIR="${PROJECT_ROOT_DIR}/build"
+    export BUILD_DIR
+fi
+
+echo_stderr () {
+    eval "(>&2 echo \"$@\" | tee -a ${LOG_FILE})"
+}
+export -f echo_stderr
+
+printf_and_log () {
+    eval "printf \"$@\" | tee -a ${LOG_FILE}"
+}
+export -f printf_and_log
+
+echo_and_log () {
+    eval "echo \"$@\" | tee -a ${LOG_FILE}"
+}
+export -f echo_and_log
+
+update_repositories () {
+    echo_and_log "  - Updating package lists..."
+
+    if which apt-get > /dev/null; then
+        sudo apt-get update >> ${LOG_FILE}
+    elif which yum > /dev/null; then
+        eval "sudo yum -y update" >> ${LOG_FILE} 2>&1
+    else
+        echo_stderr "Unknown package manager! (not supported yet)"
+        return 1
+    fi
+
+    return 0
+}
+
+install_software () {
+    update_repositories
+
+    if [ -z "$1" ]; then
+        echo_stderr "Software name argument is missing or is invalid!"
+        return 1
+    fi
+
+    echo_and_log "  - Installing software..."
+    local software="$1"
+    if which apt-get > /dev/null; then
+        eval "sudo apt-get install -y ${software}" >> ${LOG_FILE} 2>&1
+    elif which yum > /dev/null; then
+        eval "sudo yum -y install ${software}" >> ${LOG_FILE} 2>&1
+    else
+        echo_stderr "No supported package managers found!"
+        return 1
+    fi
+
+    return $?
+}
+export -f install_software

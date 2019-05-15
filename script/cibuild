@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Punica - LwM2M server with REST API
 # Copyright (C) 2018 8devices
@@ -19,32 +19,11 @@
 
 set -e
 
-PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
-SCRIPTS_DIR="${PROJECT_ROOT_DIR}/script"
-DEFAULT_LOG_DIR="${PROJECT_ROOT_DIR}/script/log"
-
-if [ -z "${BUILD_DIR}" ]; then
-    BUILD_DIR="${PROJECT_ROOT_DIR}/build"
-fi
-
-SCRIPT_NAME=$(basename -- "$0")
-TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
-
-if [ -z "${LOG_FILE}" ]; then
-    if [ ! -d "${DEFAULT_LOG_DIR}" ]; then
-        eval "mkdir ${DEFAULT_LOG_DIR}"
-    fi
-
-    LOG_FILE="${DEFAULT_LOG_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
-else
-    export LOG_FILE
-fi
+source "$(cd $(dirname "$0") && pwd -P)/.utils"
 
 export BUILD_DIR
 eval "${SCRIPTS_DIR}/setup -DCODE_COVERAGE=ON"
-
 eval "${SCRIPTS_DIR}/test"
-
 ###############################################################################
 # FOLLOWING SECTION WAITS UNTIL COVERAGE REPORT DIRECTORIES APPEAR IN PROJECT
 # DIRECTORY, BY DEFAULT TIMEOUT IS SET TO 10 s, INTERVAL IS 100 ms
@@ -55,19 +34,19 @@ sleep_timeout=10 # Timeout in seconds
 for time_slept in $(seq 0.0 ${sleep_interval} ${sleep_timeout})
 do
     if [ -d "regular" ] && [ -d "secure" ]; then
-        eval "echo 'Time until coverage directories appeared: ${time_slept} s' >> ${LOG_FILE}"
+        eval "echo_and_log 'Time until coverage directories appeared: ${time_slept} s' >> ${LOG_FILE}"
         # If another way of making sure that coverage reports appears is found,
         # following code can be moved out of this for-if section
         eval "cp -r ${BUILD_DIR} ${PROJECT_ROOT_DIR}/src ${PROJECT_ROOT_DIR}/secure"
         eval "cp -r ${BUILD_DIR} ${PROJECT_ROOT_DIR}/src ${PROJECT_ROOT_DIR}/regular"
         eval "cp -r ${BUILD_DIR} ${PROJECT_ROOT_DIR}/src ${PROJECT_ROOT_DIR}/plugins"
 
-        echo "Finished continuous integration procedure!"
+        echo_and_log "Finished continuous integration procedure!"
 
         exit 0
     fi
     eval "sleep ${sleep_interval}"
 done
 
-(>&2 echo "Not all code coverage report directories appeared in ${sleep_timeout} seconds!")
+echo_stderr "Not all code coverage report directories appeared in ${sleep_timeout} seconds!"
 exit 1
