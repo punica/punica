@@ -69,11 +69,35 @@ int security_load(http_security_settings_t *settings)
     if (settings->private_key_file == NULL || settings->certificate_file == NULL)
     {
         log_message(LOG_LEVEL_ERROR, "Failed to read security files\n");
+        security_unload(settings);
         return 1;
     }
     log_message(LOG_LEVEL_TRACE, "Successfully loaded security configuration\n");
 
     return 0;
+}
+
+void security_unload(http_security_settings_t *settings)
+{
+    if (settings != NULL)
+    {
+        if (settings->private_key == NULL)
+        {
+            free(settings->private_key);
+        }
+        if (settings->private_key_file == NULL)
+        {
+            free(settings->private_key_file);
+        }
+        if (settings->certificate == NULL)
+        {
+            free(settings->certificate);
+        }
+        if (settings->certificate_file == NULL)
+        {
+            free(settings->certificate_file);
+        }
+    }
 }
 
 user_t *security_user_new(void)
@@ -91,23 +115,23 @@ user_t *security_user_new(void)
 
 void security_user_delete(user_t *user)
 {
-    if (user->name)
+    if (user != NULL)
     {
-        memset(user->name, 0, strnlen(user->name, J_MAX_LENGTH_USER_NAME));
-    }
+        if (user->name)
+        {
+            free(user->name);
+        }
+        if (user->secret)
+        {
+            free(user->secret);
+        }
+        if (user->j_scope_list)
+        {
+            json_decref(user->j_scope_list);
+        }
 
-    if (user->secret)
-    {
-        memset(user->secret, 0, strnlen(user->secret, J_MAX_LENGTH_USER_SECRET));
+        free(user);
     }
-
-    if (user->j_scope_list)
-    {
-        json_decref(user->j_scope_list);
-        user->j_scope_list = NULL;
-    }
-
-    free(user);
 }
 
 int security_user_set(user_t *user, const char *name, const char *secret, json_t *scope)
@@ -157,8 +181,10 @@ int security_user_check_scope(user_t *user, char *required_scope)
 
         if (regexec(&regex, required_scope, 0, NULL, 0) == 0)
         {
+            regfree(&regex);
             return 0;
         }
+        regfree(&regex);
     }
 
     return 1;

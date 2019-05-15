@@ -59,6 +59,8 @@ void rest_cleanup(rest_context_t *rest)
     linked_list_delete(rest->pendingResponseList);
     linked_list_delete(rest->observeList);
 
+    devices_database_unload(rest->devicesList);
+
     assert(pthread_mutex_destroy(&rest->mutex) == 0);
 }
 
