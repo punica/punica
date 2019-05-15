@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Punica - LwM2M server with REST API
 # Copyright (C) 2018 8devices
@@ -19,30 +19,7 @@
 
 set -e
 
-PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
-SCRIPTS_DIR="${PROJECT_ROOT_DIR}/script"
-DEFAULT_LOG_DIR="${PROJECT_ROOT_DIR}/script/log"
-
-if [ -z "${BUILD_DIR}" ]; then
-    BUILD_DIR="${PROJECT_ROOT_DIR}/build"
-fi
-
-if [ -z "${PREFIX_PATH_DIR}" ]; then
-    PREFIX_PATH_DIR="${BUILD_DIR}"
-fi
-
-SCRIPT_NAME=$(basename -- "$0")
-TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
-
-if [ -z "${LOG_FILE}" ]; then
-    if [ ! -d "${DEFAULT_LOG_DIR}" ]; then
-        eval "mkdir ${DEFAULT_LOG_DIR}"
-    fi
-
-    LOG_FILE="${DEFAULT_LOG_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
-else
-    export LOG_FILE
-fi
+source "$(cd $(dirname "$0") && pwd -P)/.utils"
 
 CERTIFICATE_SETTINGS_TEMPLATE="${PROJECT_ROOT_DIR}/tests/rest/certificate_template.cfg"
 KEY_DIR="${PROJECT_ROOT_DIR}/tests/rest/keys"
@@ -57,22 +34,22 @@ CERTTOOL_BIN="certtool"
 
 generate_key_and_certificate () {
     if [ "$#" -ne 3 ]; then
-        echo "Illegal number of parameters"
+        echo_and_log "Illegal number of parameters"
         return 1
     fi
 
     if [ -z "$1" ]; then
-        echo "Private key file name argument is missing or is invalid"
+        echo_and_log "Private key file name argument is missing or is invalid"
         return 1
     fi
 
     if [ -z "$2" ]; then
-        echo "Certificate file name argument is missing or is invalid"
+        echo_and_log "Certificate file name argument is missing or is invalid"
         return 1
     fi
 
     if [ -z "$3" ]; then
-        echo "Certificate template file name argument is missing or is invalid"
+        echo_and_log "Certificate template file name argument is missing or is invalid"
         return 1
     fi
 
@@ -80,8 +57,8 @@ generate_key_and_certificate () {
         eval "${CERTTOOL_BIN} --generate-privkey --outfile $1" &&
         eval "${CERTTOOL_BIN} --generate-self-signed --load-privkey $1 --outfile $2 --template $3"
     } >> ${LOG_FILE} 2>&1 || {
-        (>&2 echo "Failed to generate private key and certificate!")
-        (>&2 echo "\n\nRefer to \"${LOG_FILE}\" for more detailed information")
+        echo_stderr "Failed to generate private key and certificate!"
+        echo_stderr "Refer to \"${LOG_FILE}\" for more detailed information"
         return 1
     }
 
@@ -90,17 +67,17 @@ generate_key_and_certificate () {
 
 generate_key_and_certificate_ecdsa () {
     if [ "$#" -ne 2 ]; then
-        echo "Illegal number of parameters"
+        echo_and_log "Illegal number of parameters"
         return 1
     fi
 
     if [ -z "$1" ]; then
-        echo "Private key file name argument is missing or is invalid"
+        echo_and_log "Private key file name argument is missing or is invalid"
         return 1
     fi
 
     if [ -z "$2" ]; then
-        echo "Certificate file name argument is missing or is invalid"
+        echo_and_log "Certificate file name argument is missing or is invalid"
         return 1
     fi
 
@@ -173,16 +150,18 @@ stop_punica () {
     done
 }
 
-echo "==> Checking code style..."
+sudo -v
+
+echo_and_log "==> Checking code style..."
 eval "${SCRIPTS_DIR}/format_style.sh --dry-run" >> ${LOG_FILE} 2>&1
 
 if [ ! -x "${BUILD_DIR}/punica" ]
 then
-    echo "Punica binary not found!"
+    echo_and_log "Punica binary not found!"
     exit 1
 fi
 
-echo "==> Generating security files..."
+echo_and_log "==> Generating security files..."
 if [ ! -d "${KEY_DIR}" ]; then
     eval "mkdir ${KEY_DIR}"
 fi
@@ -190,11 +169,11 @@ generate_key_and_certificate ${TEST_PRIVATE_KEY} ${TEST_CERTIFICATE} ${CERTIFICA
 generate_key_and_certificate ${OTHER_TEST_PRIVATE_KEY} ${OTHER_TEST_CERTIFICATE} ${CERTIFICATE_SETTINGS_TEMPLATE}
 generate_key_and_certificate_ecdsa ${ECDSA_TEST_PRIVATE_KEY} ${ECDSA_TEST_CERTIFICATE}
 
-echo "==> Starting punica(-s)..."
+echo_and_log "==> Starting punica(-s)..."
 REGULAR_PUNICA_PID=$(run_punica "regular")
 SECURE_PUNICA_PID=$(run_punica "secure" "-c ${PROJECT_ROOT_DIR}/tests/rest/secure.cfg -d ${PROJECT_ROOT_DIR}/tests/rest/database.json")
 
-echo "==> Running coverage tests..."
+echo_and_log "==> Running coverage tests..."
 test_status=1
 if eval "cd ${PROJECT_ROOT_DIR}/tests/rest" && npm install && npm test
 then
@@ -202,10 +181,10 @@ then
 fi
 cd -
 
-echo "==> Stopping punica(-s)..."
+echo_and_log "==> Stopping punica(-s)..."
 stop_punica $REGULAR_PUNICA_PID
 stop_punica $SECURE_PUNICA_PID
 
-echo "Finished testing!"
+echo_and_log "Finished testing!"
 
 exit $test_status

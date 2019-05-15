@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Punica - LwM2M server with REST API
 # Copyright (C) 2018 8devices
@@ -19,31 +19,9 @@
 
 set -e
 
-PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
-SCRIPTS_DIR="${PROJECT_ROOT_DIR}/script"
-DEFAULT_LOG_DIR="${PROJECT_ROOT_DIR}/script/log"
+source "$(cd $(dirname "$0") && pwd -P)/.utils"
 
-if [ -z "${BUILD_DIR}" ]; then
-    BUILD_DIR="${PROJECT_ROOT_DIR}/build"
-fi
-
-if [ -z "${PREFIX_PATH_DIR}" ]; then
-    PREFIX_PATH_DIR="${BUILD_DIR}"
-fi
-
-SCRIPT_NAME=$(basename -- "$0")
-TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
-
-if [ -z "${LOG_FILE}" ]; then
-    if [ ! -d "${DEFAULT_LOG_DIR}" ]; then
-        eval "mkdir ${DEFAULT_LOG_DIR}"
-    fi
-
-    LOG_FILE="${DEFAULT_LOG_DIR}/${SCRIPT_NAME}_${TIMESTAMP}.log"
-else
-    export LOG_FILE
-fi
-
+PREFIX_PATH_DIR=${BUILD_DIR}
 CMAKE_ARGS_BASE="-DCMAKE_INSTALL_PREFIX:PATH=${PREFIX_PATH_DIR} -DCMAKE_PREFIX_PATH=${PREFIX_PATH_DIR}"
 
 build_punica () {
@@ -56,8 +34,8 @@ build_punica () {
         make &&
         cd -
     } >> ${LOG_FILE} 2>&1 || {
-        (>&2 echo "Failed to build punica!")
-        (>&2 echo "\nFor more information refer to ${LOG_FILE}")
+        echo_stderr "Failed to build punica!"
+        echo_stderr "For more information refer to ${LOG_FILE}"
 
         return 1
     }
@@ -69,8 +47,8 @@ if [ ! "${SKIP_BOOTSTRAP}" = "true" ]; then
     eval "${SCRIPTS_DIR}/bootstrap"
 fi
 
-echo "==> Building punica..."
+echo_and_log "==> Building punica..."
 build_punica "$@"
 eval "strip -s ${BUILD_DIR}/punica"
 
-echo "Finished setting up punica!"
+echo_and_log "Finished setting up punica!"
