@@ -21,6 +21,7 @@
 #include "rest_utils.h"
 
 #include "../punica.h"
+#include "../utils/base64.h"
 
 #define PSK_ID_BUFFER_LENGTH      12
 #define PSK_BUFFER_LENGTH         16
@@ -289,16 +290,19 @@ json_t *json_object_from_string(const char *string, const char *key)
 
 json_t *json_object_from_binary(uint8_t *buffer, const char *key, size_t buffer_length)
 {
-    char base64_string[1024] = {0}; // provide sufficient size
-    size_t base64_length = sizeof(base64_string);
+    char *base64_string = malloc(base64_encoded_length(buffer_length));
+    size_t base64_length;
     json_t *j_object;
 
-    if (base64_encode(buffer, buffer_length, base64_string, &base64_length) != 0)
+    if (base64_encode(buffer, buffer_length,
+                      base64_string, &base64_length) != 0)
     {
+        free(base64_string);
         return NULL;
     }
 
     j_object = json_object_from_string(base64_string, key);
+    free(base64_string);
     if (j_object == NULL)
     {
         return NULL;

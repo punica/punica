@@ -20,9 +20,9 @@
 #include "database.h"
 #include <uuid/uuid.h>
 #include "settings.h"
-#include "rest/rest_core_types.h"
 #include "linked_list.h"
 #include "punica.h"
+#include "utils/base64.h"
 
 #define DATABASE_UUID_KEY_BIT       0x01
 #define DATABASE_MODE_KEY_BIT       0x02
@@ -281,8 +281,7 @@ int database_validate_entry(json_t *j_device_object)
         else if (strcasecmp(key, "public_key") == 0)
         {
             ret = base64_decode(json_string_value(j_value), buffer, &buffer_len);
-            if ((ret != BASE64_ERR_NONE) &&
-                (ret != BASE64_ERR_ARG)) // key might contain string with length of zero
+            if (ret != 0)
             {
                 return -1;
             }
@@ -291,7 +290,7 @@ int database_validate_entry(json_t *j_device_object)
         else if (strcasecmp(key, "secret_key") == 0)
         {
             ret = base64_decode(json_string_value(j_value), buffer, &buffer_len);
-            if ((ret != BASE64_ERR_NONE) && (ret != BASE64_ERR_ARG))
+            if (ret != 0)
             {
                 return -1;
             }
@@ -300,7 +299,7 @@ int database_validate_entry(json_t *j_device_object)
         else if (strcasecmp(key, "serial") == 0)
         {
             ret = base64_decode(json_string_value(j_value), buffer, &buffer_len);
-            if ((ret != BASE64_ERR_NONE) && (ret != BASE64_ERR_ARG))
+            if (ret != 0)
             {
                 return -1;
             }
