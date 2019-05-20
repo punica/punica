@@ -22,7 +22,7 @@ set -e
 source "$(cd $(dirname "$0") && pwd -P)/.utils"
 
 export BUILD_DIR
-eval "${SCRIPTS_DIR}/setup -DCODE_COVERAGE=ON"
+eval "${SCRIPTS_DIR}/setup -DCODE_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug"
 eval "${SCRIPTS_DIR}/test"
 ###############################################################################
 # FOLLOWING SECTION WAITS UNTIL COVERAGE REPORT DIRECTORIES APPEAR IN PROJECT
