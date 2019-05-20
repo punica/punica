@@ -32,6 +32,22 @@ ECDSA_TEST_CERTIFICATE="${KEY_DIR}/ecdsa.pem"
 
 CERTTOOL_BIN="certtool"
 
+build_test_plugins () {
+    TEST_PLUGINS_DIR=$( cd "${PROJECT_ROOT_DIR}/tests/rest/plugins"; pwd )
+
+    for plugin in ${TEST_PLUGINS_DIR}/*/; do
+        plugin_build_dir="${plugin}build"
+        mkdir -p ${plugin_build_dir} || true
+        cd ${plugin_build_dir}
+        cmake ../
+        make clean
+        make
+        cd -
+    done
+
+    return 0
+}
+
 generate_key_and_certificate () {
     if [ "$#" -ne 3 ]; then
         echo_and_log "Illegal number of parameters"
@@ -161,6 +177,9 @@ then
     exit 1
 fi
 
+echo_and_log "==> Building test plugins..."
+build_test_plugins
+
 echo_and_log "==> Generating security files..."
 if [ ! -d "${KEY_DIR}" ]; then
     eval "mkdir ${KEY_DIR}"
@@ -172,6 +191,7 @@ generate_key_and_certificate_ecdsa ${ECDSA_TEST_PRIVATE_KEY} ${ECDSA_TEST_CERTIF
 echo_and_log "==> Starting punica(-s)..."
 REGULAR_PUNICA_PID=$(run_punica "regular")
 SECURE_PUNICA_PID=$(run_punica "secure" "-c ${PROJECT_ROOT_DIR}/tests/rest/secure.cfg -d ${PROJECT_ROOT_DIR}/tests/rest/database.json")
+PLUGINS_PUNICA_PID=$(run_punica "plugins" "-c ./tests/rest/plugins.cfg")
 
 echo_and_log "==> Running coverage tests..."
 test_status=1
@@ -184,6 +204,7 @@ cd -
 echo_and_log "==> Stopping punica(-s)..."
 stop_punica $REGULAR_PUNICA_PID
 stop_punica $SECURE_PUNICA_PID
+stop_punica $PLUGINS_PUNICA_PID
 
 echo_and_log "Finished testing!"
 

@@ -39,6 +39,7 @@ do
         # following code can be moved out of this for-if section
         eval "cp -r ${BUILD_DIR} ${PROJECT_ROOT_DIR}/src ${PROJECT_ROOT_DIR}/secure"
         eval "cp -r ${BUILD_DIR} ${PROJECT_ROOT_DIR}/src ${PROJECT_ROOT_DIR}/regular"
+        eval "cp -r ${BUILD_DIR} ${PROJECT_ROOT_DIR}/src ${PROJECT_ROOT_DIR}/plugins"
 
         echo_and_log "Finished continuous integration procedure!"
 

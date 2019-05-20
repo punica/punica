@@ -1,6 +1,6 @@
 /*
  * Punica - LwM2M server with REST API
- * Copyright (C) 2018 8devices
+ * Copyright (C) 2019 8devices
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by
@@ -17,10 +17,19 @@
  *
  */
 
-#ifndef VERSION_H
-#define VERSION_H
+#include <string>
 
-#define PUNICA_VERSION "0.0.0"
-#define PUNICA_FULL_VERSION "punica 0.0.0"
+#include <punica/plugin/plugin.hpp>
 
-#endif // VERSION_H
+class PluginWithoutApi: public punica::plugin::Plugin
+{
+public:
+    PluginWithoutApi(std::string testStamp): mStamp(testStamp) { }
+    ~PluginWithoutApi() { }
+
+    std::string getStamp();
+    void setStamp(std::string newStamp);
+
+private:
+    std::string mStamp;
+};

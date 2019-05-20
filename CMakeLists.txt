@@ -2,6 +2,8 @@ cmake_minimum_required (VERSION 3.5)
 
 project (punica)
 
+set(CMAKE_CXX_STANDARD 11)
+
 option(CODE_COVERAGE "Enable code coverage" OFF)
 
 if(DTLS)
@@ -13,7 +15,11 @@ set(THIRD_PARTY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party")
 set(ULFIUS_CMAKE_MODULES_DIR "${THIRD_PARTY_DIR}/ulfius/cmake-modules")
 set(WAKAAMA_SOURCES_DIR "${THIRD_PARTY_DIR}/wakaama/core")
 set(SHARED_INCLUDE_DIRS "${THIRD_PARTY_DIR}/wakaama/examples/shared")
-include_directories (${WAKAAMA_SOURCES_DIR} ${SHARED_INCLUDE_DIRS} ${CMAKE_INSTALL_PREFIX}/include)
+
+include_directories(${WAKAAMA_SOURCES_DIR}
+                    ${SHARED_INCLUDE_DIRS}
+                    ${CMAKE_INSTALL_PREFIX}/include
+                    ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 execute_process(COMMAND git describe --abbrev=0 --tags OUTPUT_VARIABLE PUNICA_VERSION)
 
@@ -22,7 +28,8 @@ string(REPLACE "v" "" PUNICA_VERSION ${PUNICA_VERSION})
 
 set(PUNICA_FULL_VERSION "${PROJECT_NAME} ${PUNICA_VERSION}")
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/version.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/punica/version.h.in
+               ${CMAKE_CURRENT_SOURCE_DIR}/include/punica/version.h)
 
 list(APPEND CMAKE_MODULE_PATH ${ULFIUS_CMAKE_MODULES_DIR})
 
@@ -111,6 +118,9 @@ set(LIBRARIES ${LIBRARIES} ${WAKAAMA_LIBRARY})
 # UUID_LIBRARY
 find_library(UUID_LIBRARY uuid)
 set(LIBRARIES ${LIBRARIES} ${UUID_LIBRARY})
+
+# DL_LIBRARY
+set(LIBRARIES ${LIBRARIES} ${CMAKE_DL_LIBS})
 
 message("ALL libraries: ${LIBRARIES}")
 target_link_libraries(${PROJECT_NAME} ${LIBRARIES})
