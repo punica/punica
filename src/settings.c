@@ -21,9 +21,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <punica/version.h>
 #include "linked_list.h"
 #include "settings.h"
-#include "version.h"
 #include "security.h"
 #include "rest/rest_core_types.h"
 
@@ -33,6 +33,7 @@
 #define DATABASE_ALL_KEYS_SET       0x7
 
 const char *argp_program_version = PUNICA_FULL_VERSION;
+static const char *logging_section = "[SETTINGS]";
 
 static char doc[] = "Punica - REST interface to LwM2M server and all clients connected to it";
 
@@ -441,6 +442,97 @@ static void set_logging_settings(json_t *j_section, logging_settings_t *settings
     }
 }
 
+static int set_plugin_entry_settings(json_t *j_plugin_settings,
+                                     linked_list_t *plugins_list)
+{
+    plugin_settings_t *plugin;
+    size_t plugin_name_length, plugin_path_length;
+    json_t *j_name = json_object_get(j_plugin_settings, "name");
+    json_t *j_path = json_object_get(j_plugin_settings, "path");
+
+    if (!json_is_string(j_name))
+    {
+        fprintf(stdout,
+                "%s Plugin configured without name.\n",
+                logging_section);
+        return 1;
+    }
+    plugin_name_length = strnlen(json_string_value(j_name),
+                                 J_MAX_LENGTH_PLUGIN_NAME);
+    if (plugin_name_length == 0
+        || plugin_name_length == J_MAX_LENGTH_PLUGIN_NAME)
+    {
+        fprintf(stdout,
+                "%s Plugin name length is invalid.\n",
+                logging_section);
+        return 1;
+    }
+
+    if (!json_is_string(j_path))
+    {
+        fprintf(stdout,
+                "%s Plugin \"%s\" configured without path.\n",
+                logging_section, json_string_value(j_name));
+        return 1;
+    }
+    plugin_path_length = strnlen(json_string_value(j_path),
+                                 J_MAX_LENGTH_PLUGIN_NAME);
+    if (plugin_path_length == 0
+        || plugin_path_length == J_MAX_LENGTH_PLUGIN_PATH)
+    {
+        fprintf(stdout,
+                "%s Plugin \"%s\" path length is invalid.\n",
+                logging_section, json_string_value(j_name));
+        return 1;
+    }
+
+    plugin = malloc(sizeof(plugin_settings_t));
+
+    plugin->name = strdup(json_string_value(j_name));
+    plugin->path = strdup(json_string_value(j_path));
+
+    linked_list_add(plugins_list, plugin);
+
+    return 0;
+}
+
+static int set_plugins_settings(json_t *j_section,
+                                plugins_settings_t *plugins_settings)
+{
+    int plugin_status, plugins_status = 0;
+    size_t plugin_index;
+    const char *section_name = "plugins";
+    json_t *j_plugin_settings;
+
+    json_array_foreach(j_section, plugin_index, j_plugin_settings)
+    {
+        if (!json_is_object(j_plugin_settings))
+        {
+            fprintf(stdout,
+                    "%s \"%s\" section contains invalid type value\n",
+                    logging_section, section_name);
+            plugins_status = 1;
+        }
+
+        plugin_status =
+            set_plugin_entry_settings(j_plugin_settings,
+                                      plugins_settings->plugins_list);
+        if (plugin_status != 0)
+        {
+            plugins_status = plugin_status;
+        }
+    }
+
+    if (plugins_status != 0)
+    {
+        fprintf(stdout,
+                "%s Some entries in \"%s\" section aren't configured corretly!\n",
+                logging_section, section_name);
+    }
+
+    return plugins_status;
+}
+
 static int read_config(char *config_name, settings_t *settings)
 {
     json_error_t error;
@@ -469,6 +561,10 @@ static int read_config(char *config_name, settings_t *settings)
         else if (strcasecmp(section, "logging") == 0)
         {
             set_logging_settings(j_value, &settings->logging);
+        }
+        else if (strcasecmp(section, "plugins") == 0)
+        {
+            set_plugins_settings(j_value, &settings->plugins);
         }
         else
         {
