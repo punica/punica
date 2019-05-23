@@ -145,14 +145,46 @@ static void set_coap_settings(json_t *j_section, coap_settings_t *settings)
     }
 }
 
+static int validate_user_settings_scope(json_t *j_scope)
+{
+    json_t *j_scope_value;
+    char *scope_value;
+    size_t scope_length, scope_index;
+
+    if (!json_is_array(j_scope))
+    {
+        return -1;
+    }
+
+    json_array_foreach(j_scope, scope_index, j_scope_value)
+    {
+        if (!json_is_string(j_scope_value))
+        {
+            fprintf(stdout, "User scope must be an array!\n");
+            return -1;
+        }
+
+        scope_value = (char *) json_string_value(j_scope_value);
+        scope_length = strnlen(scope_value,
+                               J_MAX_LENGTH_METHOD + 1 + J_MAX_LENGTH_URL);
+        if ((scope_length == 0)
+            || (scope_length == J_MAX_LENGTH_METHOD + 1 + J_MAX_LENGTH_URL))
+        {
+            fprintf(stdout, "User scope array must contain regex strings!\n");
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 static int set_user_settings(json_t *user_settings, linked_list_t *users_list)
 {
     user_t *user, *user_entry;
     linked_list_entry_t *entry;
-    json_t *j_name, *j_secret, *j_scope, *j_scope_value;
+    json_t *j_name, *j_secret, *j_scope;
     const char *user_name, *user_secret;
-    char *scope_value;
-    size_t user_name_length, user_secret_length, scope_length, scope_index;
+    size_t user_name_length, user_secret_length;
 
     j_name = json_object_get(user_settings, "name");
     j_secret = json_object_get(user_settings, "secret");
@@ -197,27 +229,12 @@ static int set_user_settings(json_t *user_settings, linked_list_t *users_list)
         return 1;
     }
 
-    if (!json_is_array(j_scope))
+    if (validate_user_settings_scope(j_scope) != 0)
     {
-        fprintf(stdout, "User \"%s\" configured without valid scope. Setting default scope.\n", user_name);
-        j_scope = json_array();
-    }
-
-    json_array_foreach(j_scope, scope_index, j_scope_value)
-    {
-        if (!json_is_string(j_scope_value))
-        {
-            fprintf(stdout, "User %s scope list configuration contains invalid type value\n", user_name);
-            return 1;
-        }
-
-        scope_value = (char *) json_string_value(j_scope_value);
-        scope_length = strnlen(scope_value, J_MAX_LENGTH_METHOD + 1 + J_MAX_LENGTH_URL);
-        if (scope_length == 0 || scope_length == J_MAX_LENGTH_METHOD + 1 + J_MAX_LENGTH_URL)
-        {
-            fprintf(stdout, "User %s scope list configuration contains invalid length value\n", user_name);
-            return 1;
-        }
+        fprintf(stdout,
+                "User \"%s\" configured without valid scope.\n",
+                user_name);
+        return 1;
     }
 
     user = security_user_new();

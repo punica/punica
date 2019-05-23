@@ -517,6 +517,7 @@ static int dtls_connection_start(void *context_p)
 exit:
     if (ret <= 0)
     {
+        gnutls_free(context->cookie_key.data);
         gnutls_certificate_free_credentials(context->server_cert);
         gnutls_priority_deinit(context->priority_cache);
         gnutls_psk_free_server_credentials(context->server_psk);
@@ -750,6 +751,7 @@ static int dtls_connection_stop(void *context_p)
 
     linked_list_delete(context->connection_list);
 
+    gnutls_free(context->cookie_key.data);
     gnutls_certificate_free_credentials(context->server_cert);
     gnutls_priority_deinit(context->priority_cache);
     gnutls_psk_free_server_credentials(context->server_psk);
