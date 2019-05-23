@@ -36,7 +36,7 @@ CERTTOOL_BIN="certtool"
 
 SECURE_PUNICA_NAME="secure"
 REGULAR_PUNICA_NAME="regular"
-PLUGINS_PUNICA_NAME="regular"
+PLUGINS_PUNICA_NAME="plugins"
 
 build_test_plugins () {
     TEST_PLUGINS_DIR=$( cd "${PROJECT_ROOT_DIR}/tests/rest/plugins"; pwd )
