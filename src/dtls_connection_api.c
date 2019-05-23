@@ -580,7 +580,6 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
     gnutls_dtls_prestate_st prestate;
     credentials_mode_t ciphersuite;
     const char *err_str;
-    char *session_desc = NULL;
 
 //  to reduce code redundancy
     sock = context->conn_listen->sock;
@@ -666,7 +665,6 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
                 }
                 else
                 {
-                    gnutls_free(session_desc);
                     conn->addr_size = sizeof(conn->addr);
 
                     do
