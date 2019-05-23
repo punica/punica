@@ -228,9 +228,6 @@ sudo -v
 echo_and_log "==> Installing tools for testing..."
 install_software "${TEST_TOOLS}"
 
-=======
-sudo -v
-
 echo_and_log "==> Checking code style..."
 eval "${SCRIPTS_DIR}/format_style.sh --dry-run" >> ${LOG_FILE} 2>&1
 
