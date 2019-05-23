@@ -27,6 +27,7 @@
 
 #include "logging.h"
 #include "security.h"
+#include "plugin_manager/basic_plugin_manager.h"
 #include "rest/rest_utils.h"
 
 typedef enum
@@ -56,6 +57,7 @@ typedef struct
     http_settings_t http;
     coap_settings_t coap;
     logging_settings_t logging;
+    plugins_settings_t plugins;
 } settings_t;
 
 error_t parse_opt(int key, char *arg, struct argp_state *state);

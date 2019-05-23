@@ -36,6 +36,23 @@ CERTTOOL_BIN="certtool"
 
 SECURE_PUNICA_NAME="secure"
 REGULAR_PUNICA_NAME="regular"
+PLUGINS_PUNICA_NAME="regular"
+
+build_test_plugins () {
+    TEST_PLUGINS_DIR=$( cd "${PROJECT_ROOT_DIR}/tests/rest/plugins"; pwd )
+
+    for plugin in ${TEST_PLUGINS_DIR}/*/; do
+        plugin_build_dir="${plugin}build"
+        mkdir -p ${plugin_build_dir} || true
+        cd ${plugin_build_dir}
+        cmake ../
+        make clean
+        make
+        cd -
+    done
+
+    return 0
+}
 
 generate_key_and_certificate () {
     if [ "$#" -ne 3 ]; then
@@ -159,6 +176,7 @@ stop_punica () {
     done
 }
 
+<<<<<<< HEAD
 log_leak_check () {
     echo "  - checking for leaks in $1" >> ${LOG_FILE} 2>&1
 
@@ -211,6 +229,9 @@ sudo -v
 echo_and_log "==> Installing tools for testing..."
 install_software "${TEST_TOOLS}"
 
+=======
+sudo -v
+
 echo_and_log "==> Checking code style..."
 eval "${SCRIPTS_DIR}/format_style.sh --dry-run" >> ${LOG_FILE} 2>&1
 
@@ -219,6 +240,9 @@ then
     echo_and_log "Punica binary not found!"
     exit 1
 fi
+
+echo_and_log "==> Building test plugins..."
+build_test_plugins
 
 echo_and_log "==> Generating security files..."
 if [ ! -d "${KEY_DIR}" ]; then
@@ -231,6 +255,7 @@ generate_key_and_certificate_ecdsa ${ECDSA_TEST_PRIVATE_KEY} ${ECDSA_TEST_CERTIF
 echo_and_log "==> Starting punica(-s)..."
 REGULAR_PUNICA_PID=$(run_punica "${REGULAR_PUNICA_NAME}")
 SECURE_PUNICA_PID=$(run_punica "${SECURE_PUNICA_NAME}" "-c ${PROJECT_ROOT_DIR}/tests/rest/secure.cfg -d ${PROJECT_ROOT_DIR}/tests/rest/database.json")
+PLUGINS_PUNICA_PID=$(run_punica "${PLUGINS_PUNICA_NAME}" "-c ./tests/rest/plugins.cfg")
 
 echo_and_log "==> Running coverage tests..."
 test_status=1
@@ -243,6 +268,7 @@ cd -
 echo_and_log "==> Stopping punica(-s)..."
 stop_punica $REGULAR_PUNICA_PID
 stop_punica $SECURE_PUNICA_PID
+stop_punica $PLUGINS_PUNICA_PID
 
 if [ ${test_status} -eq 0 ];
 then
@@ -250,6 +276,7 @@ then
     logs_leak_check \
         "${DEFAULT_LOG_DIR}/${REGULAR_PUNICA_NAME}_valgrind.log" \
         "${DEFAULT_LOG_DIR}/${SECURE_PUNICA_NAME}_valgrind.log" \
+        "${DEFAULT_LOG_DIR}/${PLUGINS_PUNICA_NAME}_valgrind.log" \
         || test_status=1
 fi
 

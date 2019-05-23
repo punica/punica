@@ -21,9 +21,9 @@
 #define PUNICA_H
 
 #include <liblwm2m.h>
+#include <punica/rest/http_codes.h>
 #include <ulfius.h>
 
-#include "http_codes.h"
 #include "rest/rest_core_types.h"
 #include "rest/rest_utils.h"
 #include "settings.h"

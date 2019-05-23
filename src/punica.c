@@ -26,16 +26,18 @@
 #include <liblwm2m.h>
 #include <ulfius.h>
 
+#include <punica/version.h>
 #include "database.h"
 #include "punica.h"
 #include "udp_connection_api.h"
 #include "dtls_connection_api.h"
 #include "logging.h"
 #include "settings.h"
-#include "version.h"
 #include "security.h"
 #include "rest/rest_authentication.h"
 #include "linked_list.h"
+#include "plugin_manager/basic_plugin_manager.h"
+#include "plugin_manager/basic_core.h"
 
 static volatile int punica_quit;
 static void sigint_handler(int signo)
@@ -362,6 +364,8 @@ int main(int argc, char *argv[])
     rest_context_t rest;
     connection_api_t *conn_api;
     uint8_t buffer[1500];
+    basic_punica_core_t *punica_core;
+    basic_plugin_manager_t *plugin_manager;
     session_t connection;
 
     static settings_t settings =
@@ -397,9 +401,11 @@ int main(int argc, char *argv[])
         },
     };
 
+    settings.plugins.plugins_list = linked_list_new();
     settings.http.security.jwt.users_list = linked_list_new();
     settings.http.security.jwt.secret_key = (unsigned char *) malloc(
                                                 settings.http.security.jwt.secret_key_length * sizeof(unsigned char));
+
     rest_get_random(settings.http.security.jwt.secret_key,
                     settings.http.security.jwt.secret_key_length);
 
@@ -551,6 +557,11 @@ int main(int argc, char *argv[])
         }
     }
 
+    /* Plugin manager initialization and loading of plugins */
+    punica_core = basic_punica_core_new(&instance, rest.lwm2m);
+    plugin_manager = basic_plugin_manager_new(punica_core);
+    basic_plugin_manager_load_plugins(plugin_manager, &settings.plugins);
+
     /* Main section */
     while (!punica_quit)
     {
@@ -587,6 +598,11 @@ int main(int argc, char *argv[])
             rest_unlock(&rest);
         }
     }
+
+    /* Unloading of plugins and plugin manager cleanup */
+    basic_plugin_manager_unload_plugins(plugin_manager, &settings.plugins);
+    basic_plugin_manager_delete(plugin_manager);
+    basic_punica_core_delete(punica_core);
 
     ulfius_stop_framework(&instance);
     ulfius_clean_instance(&instance);
