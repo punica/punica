@@ -38,6 +38,7 @@ typedef struct _device_connection_t
     struct sockaddr_storage addr;
     socklen_t addr_size;
     void *device_identifier;
+    bool handshake_done;
 } device_connection_t;
 
 typedef struct secure_connection_context_t
@@ -185,6 +186,8 @@ static int dtls_connection_handshake_done(device_connection_t *conn,
     {
         free(public_data);
     }
+
+    conn->handshake_done = true;
 
     return ret;
 }
@@ -535,6 +538,7 @@ static device_connection_t *dtls_connection_new_incoming(secure_connection_conte
     conn->sock = context->conn_listen->sock;
     memcpy(&conn->addr, &context->conn_listen->addr, sizeof(struct sockaddr_storage));
     memcpy(&conn->addr_size, &context->conn_listen->addr_size, sizeof(socklen_t));
+    conn->handshake_done = false;
 
     if (dtls_connection_init(context, conn, prestate))
     {
@@ -632,7 +636,7 @@ static int dtls_connection_receive(void *context_p, uint8_t *buffer, size_t size
 
             if (conn != NULL)
             {
-                if (gnutls_session_get_desc(conn->session) == NULL)
+                if (conn->handshake_done == false)
                 {
                     ret = gnutls_handshake(conn->session);
 
