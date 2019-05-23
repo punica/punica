@@ -17,6 +17,12 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
+echo_and_log () {
+    eval "echo \"$@\" | tee -a ${LOG_FILE}"
+}
+
+echo_and_log "TEST: UTILS LAUNCHED"
+
 PROJECT_ROOT_DIR="$(cd $(dirname "$0")/.. && pwd -P)"
 export PROJECT_ROOT_DIR
 
@@ -36,9 +42,12 @@ generate_log_file_name () {
 }
 
 if [ -z "${LOG_FILE}" ]; then
+    echo_and_log "TEST: LOG FILE STRING DOESN'T EXIST"
     log_dir=${DEFAULT_LOG_DIR}
 
     if [ ! -d "${log_dir}" ]; then
+        echo_and_log "TEST: LOG FILE DIR DOESN'T EXIST"
+        eval "echo_and_log "ALL LOGS LOCATED AT: $log_dir""
         eval "mkdir -p ${log_dir}"
     fi
 
@@ -61,9 +70,6 @@ printf_and_log () {
 }
 export -f printf_and_log
 
-echo_and_log () {
-    eval "echo \"$@\" | tee -a ${LOG_FILE}"
-}
 export -f echo_and_log
 
 update_repositories () {
