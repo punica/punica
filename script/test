@@ -176,7 +176,6 @@ stop_punica () {
     done
 }
 
-<<<<<<< HEAD
 log_leak_check () {
     echo "  - checking for leaks in $1" >> ${LOG_FILE} 2>&1
 
