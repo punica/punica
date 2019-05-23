@@ -135,6 +135,9 @@ run_punica () {
     punica_command="${BUILD_DIR}/punica ${initial_punica_arguments}"
 
     if ! [ -z "$1" ]; then
+        if [ ! -d "${DEFAULT_LOG_DIR}" ]; then
+            eval "mkdir -p ${DEFAULT_LOG_DIR}"
+        fi
         punica_log_file="${DEFAULT_LOG_DIR}/$1.log"
         valgrind_log_file="${DEFAULT_LOG_DIR}/$1_valgrind.log"
         punica_command="valgrind --leak-check=yes --log-file=${valgrind_log_file} ${punica_command}"
