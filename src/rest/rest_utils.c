@@ -18,9 +18,6 @@
  */
 #include <string.h>
 
-#include <gnutls/gnutls.h>
-#include <gnutls/x509.h>
-
 #include "rest_utils.h"
 
 #include "../punica.h"
