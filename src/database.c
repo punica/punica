@@ -149,6 +149,25 @@ exit:
     return ret;
 }
 
+int devices_database_unload(linked_list_t *devices_database)
+{
+    linked_list_entry_t *list_entry;
+
+    if (devices_database == NULL)
+    {
+        return 0;
+    }
+
+    for (list_entry = devices_database->head;
+         list_entry != NULL; list_entry = list_entry->next)
+    {
+        database_free_entry(list_entry->data);
+    }
+
+    linked_list_delete(devices_database);
+    return 0;
+}
+
 database_entry_t *database_get_entry_by_uuid(linked_list_t *device_list, const char *uuid)
 {
     linked_list_entry_t *device_entry;
@@ -186,6 +205,10 @@ void database_free_entry(database_entry_t *device_entry)
         if (device_entry->secret_key)
         {
             free(device_entry->secret_key);
+        }
+        if (device_entry->serial)
+        {
+            free(device_entry->serial);
         }
 
         free(device_entry);

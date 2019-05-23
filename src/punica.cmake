@@ -3,7 +3,6 @@
 
 include(${CMAKE_CURRENT_LIST_DIR}/rest/rest.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/utils/utils.cmake)
-
 include(${CMAKE_CURRENT_LIST_DIR}/plugin_manager/plugin_manager.cmake)
 
 set(PUNICA_SOURCES_DIR ${CMAKE_CURRENT_LIST_DIR})

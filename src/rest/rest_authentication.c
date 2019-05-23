@@ -231,6 +231,7 @@ static jwt_error_t access_token_check_scope(char *access_token, jwt_settings_t *
 exit:
     free(grants_string);
     jwt_free(jwt);
+    json_decref(j_grants);
     return status;
 }
 
@@ -242,7 +243,7 @@ int rest_authenticate_cb(const struct _u_request *request, struct _u_response *r
     jwt_settings_t *jwt_settings = (jwt_settings_t *)user_data;
     linked_list_entry_t *entry;
     user_t *user = NULL, *user_entry;
-    char *token;
+    char *token = NULL;
     const char *user_name, *user_secret;
     time_t issuing_time;
     int status = U_CALLBACK_COMPLETE;
@@ -324,7 +325,11 @@ exit:
     }
     if (jwt != NULL)
     {
-        free(jwt);
+        jwt_free(jwt);
+    }
+    if (token != NULL)
+    {
+        free(token);
     }
 
     return status;
