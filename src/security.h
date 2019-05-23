@@ -74,7 +74,7 @@ typedef struct
 } http_security_settings_t;
 
 int security_load(http_security_settings_t *settings);
-int security_unload(http_security_settings_t *settings);
+void security_unload(http_security_settings_t *settings);
 
 void jwt_init(jwt_settings_t *settings);
 void jwt_cleanup(jwt_settings_t *settings);
