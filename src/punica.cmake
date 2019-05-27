@@ -2,7 +2,7 @@
 # and sets 'LWM2M_SERVER_MODE' flag
 
 include(${CMAKE_CURRENT_LIST_DIR}/rest/rest.cmake)
-
+include(${CMAKE_CURRENT_LIST_DIR}/utils/utils.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/plugin_manager/plugin_manager.cmake)
 
 set(PUNICA_SOURCES_DIR ${CMAKE_CURRENT_LIST_DIR})
@@ -19,7 +19,11 @@ set(PUNICA_SOURCES
     ${PUNICA_SOURCES_DIR}/dtls_connection_api.c
     )
 
-set(PUNICA_SOURCES ${PUNICA_SOURCES} ${REST_SOURCES})
-set(PUNICA_SOURCES ${PUNICA_SOURCES} ${PLUGIN_MANAGER_SOURCES})
+set(PUNICA_SOURCES
+    ${PUNICA_SOURCES}
+    ${REST_SOURCES}
+    ${PLUGIN_MANAGER_SOURCES}
+    ${UTILS_SOURCES}
+    )
 
 add_definitions(-DLWM2M_SERVER_MODE)

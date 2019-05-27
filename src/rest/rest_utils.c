@@ -18,9 +18,13 @@
  */
 #include <string.h>
 
+#include <gnutls/gnutls.h>
+#include <gnutls/x509.h>
+
 #include "rest_utils.h"
 
 #include "../punica.h"
+#include "../utils/base64.h"
 
 #define PSK_ID_BUFFER_LENGTH      12
 #define PSK_BUFFER_LENGTH         16
@@ -269,16 +273,20 @@ json_t *json_object_from_string(const char *string, const char *key)
 
 json_t *json_object_from_binary(uint8_t *buffer, const char *key, size_t buffer_length)
 {
-    char base64_string[1024] = {0}; // provide sufficient size
-    size_t base64_length = sizeof(base64_string);
+    size_t base64_length = base64_encoded_length(buffer_length);
+    char *base64_string = (char *) malloc(base64_length + 1);
     json_t *j_object;
 
-    if (base64_encode(buffer, buffer_length, base64_string, &base64_length) != 0)
+    if (base64_encode(buffer, buffer_length,
+                      base64_string, &base64_length) != 0)
     {
+        free(base64_string);
         return NULL;
     }
+    base64_string[base64_length] = '\0';
 
     j_object = json_object_from_string(base64_string, key);
+    free(base64_string);
     if (j_object == NULL)
     {
         return NULL;
@@ -319,7 +327,8 @@ uint8_t *binary_from_json_object(json_t *j_object, const char *key, size_t *buff
         return NULL;
     }
 
-    if (base64_decode(base64_string, NULL, buffer_length) != 0)
+    if (base64_decode(base64_string, strlen(base64_string),
+                      NULL, buffer_length) != 0)
     {
         free(base64_string);
         return NULL;
@@ -332,7 +341,8 @@ uint8_t *binary_from_json_object(json_t *j_object, const char *key, size_t *buff
         return NULL;
     }
 
-    status = base64_decode(base64_string, binary_buffer, buffer_length);
+    status = base64_decode(base64_string, strlen(base64_string),
+                           binary_buffer, buffer_length);
     free(base64_string);
 
     if (status != 0)
