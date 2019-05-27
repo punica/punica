@@ -18,53 +18,48 @@
  */
 
 #include <nettle/base64.h>
-#include <string.h>
-
-#include <stdio.h>
 
 #include "base64.h"
 
 size_t base64_encoded_length(size_t data_length)
 {
-    return BASE64_ENCODE_RAW_LENGTH(data_length) + 1;
+    return BASE64_ENCODE_RAW_LENGTH(data_length);
 }
 
-size_t base64_decoded_length(size_t b64_string_length)
+size_t base64_decoded_length(size_t base64_length)
 {
-    return BASE64_DECODE_LENGTH(b64_string_length - 1);
+    return BASE64_DECODE_LENGTH(base64_length);
 }
 
 int base64_encode(const uint8_t *data, size_t length,
-                  char *base64_string, size_t *base64_length)
+                  char *base64_data, size_t *base64_length)
 {
     struct base64_encode_ctx b64_ctx;
 
-    if ((base64_string == NULL)
+    if ((base64_data == NULL)
         || (base64_length == NULL))
     {
-        printf("NU TIKRAI ZOPAA!!! (nes nu tipo %p %p %p)\n",
-               data, base64_string, base64_length);
         return -1;
     }
 
     base64_encode_init(&b64_ctx);
-    *base64_length = base64_encode_update(&b64_ctx, base64_string,
+    *base64_length = base64_encode_update(&b64_ctx, base64_data,
                                           length, data);
     *base64_length += base64_encode_final(&b64_ctx,
-                                          base64_string + *base64_length);
-    base64_string[*base64_length++] = '\0';
+                                          base64_data + *base64_length);
 
     return 0;
 }
 
-int base64_decode(const char *base64_string, uint8_t *data, size_t *length)
+int base64_decode(const char *base64_data, size_t base64_length,
+                  uint8_t *data, size_t *length)
 {
     struct base64_decode_ctx b64_ctx;
 
     base64_decode_init(&b64_ctx);
 
     if (base64_decode_update(&b64_ctx, length, data,
-                             strlen(base64_string) + 1, base64_string) != 0)
+                             base64_length, base64_data) != 0)
     {
         return -1;
     }

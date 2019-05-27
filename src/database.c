@@ -303,7 +303,10 @@ int database_validate_entry(json_t *j_device_object)
         }
         else if (strcasecmp(key, "public_key") == 0)
         {
-            ret = base64_decode(json_string_value(j_value), buffer, &buffer_len);
+            value_string = json_string_value(j_value);
+
+            ret = base64_decode(value_string, strlen(value_string),
+                                buffer, &buffer_len);
             if (ret != 0)
             {
                 return -1;
@@ -312,7 +315,10 @@ int database_validate_entry(json_t *j_device_object)
         }
         else if (strcasecmp(key, "secret_key") == 0)
         {
-            ret = base64_decode(json_string_value(j_value), buffer, &buffer_len);
+            value_string = json_string_value(j_value);
+
+            ret = base64_decode(value_string, strlen(value_string),
+                                buffer, &buffer_len);
             if (ret != 0)
             {
                 return -1;
@@ -321,7 +327,10 @@ int database_validate_entry(json_t *j_device_object)
         }
         else if (strcasecmp(key, "serial") == 0)
         {
-            ret = base64_decode(json_string_value(j_value), buffer, &buffer_len);
+            value_string = json_string_value(j_value);
+
+            ret = base64_decode(value_string, strlen(value_string),
+                                buffer, &buffer_len);
             if (ret != 0)
             {
                 return -1;
@@ -495,21 +504,26 @@ int database_list_to_json_array(linked_list_t *device_list, json_t *j_array)
         memset(base64_serial, 0, sizeof(base64_serial));
 
         base64_length = sizeof(base64_secret_key);
-        if (base64_encode(device_entry->secret_key, device_entry->secret_key_len, base64_secret_key,
-                          &base64_length))
+        if (base64_encode(device_entry->secret_key,
+                          device_entry->secret_key_len,
+                          base64_secret_key,
+                          &base64_length) != 0)
         {
             return -1;
         }
 
         base64_length = sizeof(base64_public_key);
-        if (base64_encode(device_entry->public_key, device_entry->public_key_len, base64_public_key,
+        if (base64_encode(device_entry->public_key,
+                          device_entry->public_key_len,
+                          base64_public_key,
                           &base64_length))
         {
             return -1;
         }
 
         base64_length = sizeof(base64_serial);
-        if (base64_encode(device_entry->serial, device_entry->serial_len, base64_serial, &base64_length))
+        if (base64_encode(device_entry->serial, device_entry->serial_len,
+                          base64_serial, &base64_length))
         {
             return -1;
         }

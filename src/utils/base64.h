@@ -23,10 +23,11 @@
 #include <stdint.h>
 
 size_t base64_encoded_length(size_t data_length);
-size_t base64_decoded_length(size_t b64_string_length);
+size_t base64_decoded_length(size_t base64_length);
 
 int base64_encode(const uint8_t *data, size_t length,
-                  char *base64_string, size_t *base64_length);
-int base64_decode(const char *base64_string, uint8_t *data, size_t *length);
+                  char *base64_data, size_t *base64_length);
+int base64_decode(const char *base64_data, size_t base64_length,
+                  uint8_t *data, size_t *length);
 
 #endif /* PUNICA_UTILS_BASE64_H */

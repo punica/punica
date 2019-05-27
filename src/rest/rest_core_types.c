@@ -100,6 +100,7 @@ int rest_async_response_set(rest_async_response_t *response, int status,
                             const uint8_t *payload, size_t length)
 {
     size_t base64_length = base64_encoded_length(length);
+    char *encoded_payload = NULL;
 
     response->timestamp = lwm2m_getmillis();
     response->status = status;
@@ -110,16 +111,19 @@ int rest_async_response_set(rest_async_response_t *response, int status,
         response->payload = NULL;
     }
 
-    response->payload = malloc(base64_length);
-    if (response->payload == NULL)
+    encoded_payload = (char *)malloc(base64_length + 1);
+    if (encoded_payload == NULL)
     {
         return -1;
     }
 
-    if (base64_encode(payload, length, (char *)response->payload, &base64_length))
+    if (base64_encode(payload, length, encoded_payload, &base64_length))
     {
+        free(encoded_payload);
         return -1;
     }
+    encoded_payload[base64_length] = '\0';
+    response->payload = encoded_payload;
 
     return 0;
 }
