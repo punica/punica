@@ -22,11 +22,57 @@
 
 #include <stdint.h>
 
+/**
+ * Calculate encoded base64 buffer length.
+ *
+ * This function returns maximum encoded base64 buffer length.
+ * NOTE: Includes padding length.
+ * NOTE: Doesn't include NULL terminator to the length.
+ *
+ * @param base64_length Encoded buffer length.
+ *
+ * @return Maximum length of output buffer length for base64_encode.
+ */
 size_t base64_encoded_length(size_t data_length);
+
+/**
+ * Calculate decoded base64 buffer length.
+ *
+ * This function returns maximum decoded base64 buffer length.
+ *
+ * @param base64_length Encoded buffer length.
+ *
+ * @return Maximum length of output buffer length for base64_decode.
+ */
 size_t base64_decoded_length(size_t base64_length);
 
+/**
+ * Encode base64 buffer.
+ *
+ * This function returns result buffer and its length through parameters.
+ *
+ * @param data Pointer to data buffer.
+ * @param length Data buffer length.
+ * @param base64_data Pointer to buffer, where encoded buffer will be stored.
+ * @param base64_length Pointer to encoded buffer length.
+ *
+ * @return 0 on success, -1 on error.
+ */
 int base64_encode(const uint8_t *data, size_t length,
                   char *base64_data, size_t *base64_length);
+
+/**
+ * Decode base64 buffer.
+ *
+ * This function returns result buffer and its length through parameters.
+ *
+ * @param base64_data Pointer to encoded base64 buffer.
+ * @param base64_length Base64 buffer length.
+ * @param data Pointer to buffer, where decoded buffer will be stored.
+ * @param length Pointer to decoded buffer length.
+ *
+ * @return 0 on success, -1 on error.
+ */
 int base64_decode(const char *base64_data, size_t base64_length,
                   uint8_t *data, size_t *length);
 
