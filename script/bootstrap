@@ -22,7 +22,7 @@ set -e
 source "$(cd $(dirname "$0") && pwd -P)/.utils"
 
 BUILD_TOOLS="git cmake build-essential automake libtool"
-DEPENDANT_LIBRARIES="libssl-dev libgnutls28-dev libmicrohttpd-dev uuid-dev"
+DEPENDANT_LIBRARIES="libssl-dev libgnutls28-dev libmicrohttpd-dev uuid-dev pkg-config"
 
 JANSSON_DIR="${THIRD_PARTY_DIR}/jansson"
 LIBJWT_DIR="${THIRD_PARTY_DIR}/libjwt"
