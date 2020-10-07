@@ -180,7 +180,13 @@ stop_punica () {
 }
 
 log_leak_check () {
+    local no_leaks_string="All heap blocks were freed -- no leaks are possible"
     echo "  - checking for leaks in $1" >> ${LOG_FILE} 2>&1
+
+    if eval "grep \"${no_leaks_string}\" $1 2>&1 > /dev/null";
+    then
+        return 0;
+    fi
 
     leak_summary=$(eval "tail -n 11 $1")
 
